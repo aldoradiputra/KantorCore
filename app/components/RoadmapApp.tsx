@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import ListView from './ListView'
+import MapView from './MapView'
 import DetailPanel from './DetailPanel'
 import SearchFilterBar, { Filters } from './SearchFilterBar'
 
@@ -31,9 +32,12 @@ const DEFAULT_FILTERS: Filters = {
   types: ['module', 'app', 'feature', 'infrastructure'],
 }
 
+type ViewMode = 'list' | 'map'
+
 export default function RoadmapApp({ nodes, version }: Props) {
   const [selected, setSelected] = useState<Node | null>(null)
-  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
+  const [filters, setFilters]   = useState<Filters>(DEFAULT_FILTERS)
+  const [view, setView]         = useState<ViewMode>('list')
 
   const displayable = nodes.filter(n => n.type !== 'root')
 
@@ -50,14 +54,12 @@ export default function RoadmapApp({ nodes, version }: Props) {
     return true
   })
 
-  // When filtering, also include ancestor modules/apps so hierarchy renders correctly
-  const filteredIds = new Set(filtered.map(n => n.id))
+  // When filtering, include ancestor modules/apps so hierarchy still renders
   const visibleIds = new Set<string>()
   const byId = Object.fromEntries(nodes.map(n => [n.id, n]))
 
   filtered.forEach(n => {
     visibleIds.add(n.id)
-    // walk up and include parents so grouping still renders
     let cur = n.parent ? byId[n.parent] : null
     while (cur && cur.type !== 'root') {
       visibleIds.add(cur.id)
@@ -95,26 +97,69 @@ export default function RoadmapApp({ nodes, version }: Props) {
           v{version}
         </span>
         <span style={{ flex: 1 }} />
+
+        {/* View toggle */}
+        <div style={{
+          display: 'flex',
+          background: 'var(--bg)',
+          border: '1px solid var(--border)',
+          borderRadius: 7,
+          padding: 3,
+          gap: 2,
+        }}>
+          {(['list', 'map'] as ViewMode[]).map(v => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                padding: '4px 12px',
+                borderRadius: 5,
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                background: view === v ? 'var(--white)' : 'transparent',
+                color: view === v ? 'var(--navy)' : 'var(--muted)',
+                boxShadow: view === v ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.15s',
+              }}
+            >
+              {v === 'list' ? 'List' : 'Map'}
+            </button>
+          ))}
+        </div>
+
         <span style={{ fontSize: 13, color: 'var(--muted)' }}>Roadmap</span>
       </header>
 
-      {/* Search + Filter bar */}
-      <SearchFilterBar
-        filters={filters}
-        onChange={setFilters}
-        total={displayable.length}
-        visible={filtered.length}
-      />
+      {/* Search + Filter bar — only in list view */}
+      {view === 'list' && (
+        <SearchFilterBar
+          filters={filters}
+          onChange={setFilters}
+          total={displayable.length}
+          visible={filtered.length}
+        />
+      )}
 
       {/* Content */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        <ListView
-          nodes={visibleNodes}
-          allNodes={nodes}
-          selected={selected}
-          onSelect={setSelected}
-          isFiltering={!!filters.search || filters.phases.length < 3}
-        />
+        {view === 'list' ? (
+          <ListView
+            nodes={visibleNodes}
+            allNodes={nodes}
+            selected={selected}
+            onSelect={setSelected}
+            isFiltering={!!filters.search || filters.phases.length < 3}
+          />
+        ) : (
+          <MapView
+            nodes={nodes}
+            selected={selected}
+            onSelect={setSelected}
+          />
+        )}
         <DetailPanel node={selected} onClose={() => setSelected(null)} />
       </div>
     </div>

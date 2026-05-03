@@ -22,3 +22,39 @@ html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMa
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Map view animations */
+@keyframes mapNodeIn {
+  from { opacity: 0; transform: scale(0.75); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes mapLineIn {
+  from { stroke-dashoffset: 800; opacity: 0; }
+  to   { stroke-dashoffset: 0;   opacity: 1; }
+}
+
+@keyframes mapPulse {
+  0%, 100% { opacity: 0.35; r: 0; }
+  50%       { opacity: 0.65; }
+}
+
+@keyframes mapRingPulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%       { opacity: 0.7; transform: scale(1.04); }
+}
+
+.map-node {
+  animation: mapNodeIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.map-line {
+  stroke-dasharray: 800;
+  animation: mapLineIn 0.6s ease both;
+}
+
+.map-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mapRingPulse 2s ease-in-out infinite;
+}
