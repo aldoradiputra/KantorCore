@@ -191,64 +191,68 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
           const label      = node.label.length > 17 ? node.label.slice(0, 16) + '…' : node.label
 
           return (
+            // Outer g: SVG attribute transform for positioning (not CSS)
             <g
               key={node.id}
-              className="map-node"
-              style={{
-                transformBox: 'fill-box',
-                transformOrigin: `${pos.x}px ${pos.y}px`,
-                transform: isHovered || isSelected
-                  ? `translate(${pos.x}px, ${pos.y}px) scale(1.07)`
-                  : `translate(${pos.x}px, ${pos.y}px) scale(1)`,
-                transition: 'transform 0.18s cubic-bezier(0.34,1.56,0.64,1)',
-                animationDelay: `${i * 28}ms`,
-                cursor: 'pointer',
-              }}
+              transform={`translate(${pos.x}, ${pos.y})`}
+              style={{ cursor: 'pointer' }}
               onClick={e => { e.stopPropagation(); onSelect(node) }}
               onMouseEnter={() => setHovered(node.id)}
               onMouseLeave={() => setHovered(null)}
             >
-              {/* Pulsing selection ring */}
-              {isSelected && (
-                <rect
-                  className="map-ring"
-                  x={-w / 2 - 7} y={-h / 2 - 7}
-                  width={w + 14} height={h + 14}
-                  rx={13}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth="2"
-                />
-              )}
-
-              {/* Card */}
-              <rect
-                x={-w / 2} y={-h / 2}
-                width={w} height={h}
-                rx={9}
-                fill={isRoot ? color : lightBg}
-                stroke={color}
-                strokeWidth={isSelected ? 2.5 : 1.5}
-                filter={isHovered || isSelected ? 'url(#shadow-md)' : 'url(#shadow-sm)'}
-              />
-
-              {/* Label */}
-              <text
-                x={0} y={0}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize={isRoot ? 13 : 11}
-                fontWeight={700}
-                fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-                fill={isRoot ? '#FFFFFF' : color}
+              {/* Inner g: CSS transform only for hover scale + fade-in animation */}
+              <g
+                className="map-node"
+                style={{
+                  transformBox: 'fill-box',
+                  transformOrigin: 'center',
+                  transform: `scale(${isHovered || isSelected ? 1.07 : 1})`,
+                  transition: 'transform 0.18s cubic-bezier(0.34,1.56,0.64,1)',
+                  animationDelay: `${i * 28}ms`,
+                }}
               >
-                {label}
-              </text>
+                {/* Pulsing selection ring */}
+                {isSelected && (
+                  <rect
+                    className="map-ring"
+                    x={-w / 2 - 7} y={-h / 2 - 7}
+                    width={w + 14} height={h + 14}
+                    rx={13}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth="2"
+                  />
+                )}
 
-              {/* Status dot for in-progress modules */}
-              {!isRoot && node.status === 'in-progress' && (
-                <circle cx={w / 2 - 9} cy={-h / 2 + 9} r={3.5} fill={color} opacity={0.85} />
-              )}
+                {/* Card */}
+                <rect
+                  x={-w / 2} y={-h / 2}
+                  width={w} height={h}
+                  rx={9}
+                  fill={isRoot ? color : lightBg}
+                  stroke={color}
+                  strokeWidth={isSelected ? 2.5 : 1.5}
+                  filter={isHovered || isSelected ? 'url(#shadow-md)' : 'url(#shadow-sm)'}
+                />
+
+                {/* Label */}
+                <text
+                  x={0} y={0}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize={isRoot ? 13 : 11}
+                  fontWeight={700}
+                  fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+                  fill={isRoot ? '#FFFFFF' : color}
+                >
+                  {label}
+                </text>
+
+                {/* Status dot for in-progress modules */}
+                {!isRoot && node.status === 'in-progress' && (
+                  <circle cx={w / 2 - 9} cy={-h / 2 + 9} r={3.5} fill={color} opacity={0.85} />
+                )}
+              </g>
             </g>
           )
         })}
