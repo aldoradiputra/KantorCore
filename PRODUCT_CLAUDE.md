@@ -91,6 +91,92 @@ SMS OTP is a security anti-pattern (SIM swap). TOTP and passkeys are the MFA str
 
 ---
 
+## Platform Core Architecture
+
+**Platform Core is built before any domain module.** Every feature in every module is implemented as a chain through these 8 primitives.
+
+### Core Mental Model
+
+```
+  User UI / API / Agent / Workflow
+           │
+           ▼
+     Tool Registry ◄── Permission Fabric
+           │
+           ▼
+     Domain Logic
+           │
+           ├──► DB (Drizzle, multi-tenant)
+           └──► Event Bus ──► Audit Log
+                         ──► Workflow Engine
+                         ──► Real-time clients
+                         ──► Webhooks / Connectors
+                         ──► AI Agents
+```
+
+Every action — whether triggered by a human in the UI, an API call, a scheduled workflow, or an AI agent — flows through the Tool Registry. The Tool Registry checks permissions, executes domain logic, emits a domain event, and returns a typed result. The event fan-out handles everything else asynchronously.
+
+### The 8 Primitives
+
+#### 1. Event Bus + Outbox (IS-PLAT-EVT)
+- Postgres transactional outbox guarantees zero event loss even if the message broker is temporarily unavailable
+- Events fan out to: Audit Log writer, Workflow trigger evaluator, Real-time hub broadcaster, Webhook dispatcher, AI agent notifier
+- Every event envelope: `{ tenant_id, actor_id, actor_type, event_type, payload, correlation_id, causation_id, timestamp }`
+- `correlation_id` tracks an entire user session or API request chain; `causation_id` points to the parent event that caused this one
+- Broker: NATS or Redis Streams (swap without changing producers/consumers)
+
+#### 2. Tool Registry (IS-PLAT-TOOL)
+- Every capability in the system is a **named, typed, versioned tool**: `hr.employee.create`, `finance.invoice.approve`, `workflow.run`
+- Tools are the single entry point for all callers — UI buttons, REST endpoints, workflow steps, AI agents all invoke the same tool
+- Tool manifest is machine-readable (JSON Schema): enables self-documenting API, AI agent function calling, and no-code builder action pickers
+- The executor pattern: validate input schema → check permissions → run handler → emit event → return typed result
+- Registering a new feature = writing a tool handler; the platform handles the rest
+
+#### 3. Audit Log (IS-PLAT-AUD)
+- Append-only table; never updated or deleted
+- Columns: `id, tenant_id, actor_id, actor_type (user|service|agent|workflow), tool_name, intent, input_snapshot, before_state, after_state, source (ui|api|workflow|agent), timestamp, correlation_id`
+- Query API supports: filter by actor, resource type, time range, action type; returns structured diffs
+- Powers: compliance reports, breach detection anomaly baseline, "who changed this?" UX in every record detail view
+- UU PDP requires immutable audit log for personal data processing — this is that log
+
+#### 4. Schema Extensibility (IS-PLAT-SCH)
+- Architecture: Drizzle-managed kernel columns (typed, indexed, migrated) + `custom_fields JSONB` overlay column
+- Field definitions stored in a `schema_registry` table (per-tenant): `{ id, entity_type, field_key, field_type, label_id, validation, options }`
+- No DB migration required when a company adds a custom field — just a row insert in `schema_registry`
+- Frontend reads field definitions and renders forms dynamically; validation rules colocated with definition
+- Custom views (saved column sets, filters, sorts) also stored in schema registry — same pattern
+
+#### 5. Workflow Engine (IS-PLAT-WF, moved to Phase 1)
+- **First-class versioned objects**, not config stored in random tables
+- Trigger types: domain event (e.g. `invoice.approved`), schedule (cron), manual, API call, AI agent
+- Step types: Tool Registry call, condition branch, wait-for-event, human approval gate, sub-workflow, loop
+- Each workflow run stored as a state machine with full step history — resumable after crash or timeout
+- Moved to Phase 1 because approval flows (PO, leave, expense) are required in v1.0 domain modules
+- AI agents in Phase 2+ are implemented as workflow steps that call the AI Platform tool
+
+#### 6. Real-time Layer (IS-PLAT-RT)
+- Hono WebSocket server; clients authenticate with the same JWT as REST calls
+- Clients subscribe to tenant-scoped channels (e.g. `tenant:acmecorp:finance:invoices`)
+- Events fan in from the Event Bus consumer; only events the connected user has permission to see are forwarded
+- Presence tracking: which users are viewing which record IDs — surfaces "3 people are editing this PO" in the UI
+- Powers: live dashboard charts, notification bell, collaborative editing indicators, approval status updates
+
+#### 7. Permission Fabric (IS-PLAT-PERM)
+- Subjects are not just users: **users, service accounts, workflow automation actors, AI agents, external integrations** — all are first-class permission subjects with scoped tokens
+- Permission model: RBAC (roles → permissions) + ABAC (attribute conditions: department, ownership, status)
+- Enforced exclusively inside the Tool Registry executor — not scattered across handlers
+- Record-level and field-level scopes; field-level masking for PII (e.g. salary visible only to HR and Finance roles)
+- Every permission check decision is logged: `{ subject_id, subject_type, tool, resource_id, decision, rule_matched, timestamp }` — enables who-can-do-what compliance reports
+
+#### 8. Data Lineage + Consent Capture (IS-PLAT-DLP)
+- PII field catalog: mark any schema field with `{ pii: true, category: 'health'|'salary'|'identity'|'contact', retention_days }`
+- Consent records: `{ subject_id, purpose, granted_at, withdrawn_at, legal_basis }`
+- Retention worker: scheduled job scans for expired PII records and purges or pseudonymises them per retention policy
+- DSAR handler: on request, aggregates all personal data for a subject across all tables, returns as structured JSON within 14-day SLA
+- Drives encryption-at-rest decisions: PII fields use application-level envelope encryption with per-tenant keys
+
+---
+
 ## Design System
 
 CSS variables (IS design tokens — same as roadmap app):
@@ -162,6 +248,7 @@ Indonesian UX conventions: Rupiah formatting (Rp 1.000.000), tanggal DD/MM/YYYY,
 - Technical requirements: encryption at rest + in transit, RBAC, audit logging, breach detection (<14 days notification), consent management, DSAR response capability
 - Data residency: use AWS ap-southeast-3 Jakarta or GCP asia-southeast2 to eliminate risk
 - Sanctions: up to 2% annual revenue
+- **Platform Core primitives (Audit Log, Permission Fabric, Data Lineage) are specifically designed to satisfy these requirements**
 
 ### PSrE / E-Sign
 - Do NOT become a PSrE — partner with PrivyID and Peruri
@@ -169,21 +256,41 @@ Indonesian UX conventions: Rupiah formatting (Rp 1.000.000), tanggal DD/MM/YYYY,
 
 ---
 
-## Phase 1 — v1.0 Modules (Build Order)
+## Phase 1 — v1.0 Build Order
 
-Build order is dependency-driven:
+Build order is dependency-driven. **Platform Core is built first** — everything else depends on it.
 
-1. **Authentication** (IS-AUTH) — foundational, nothing works without it
-2. **HR & Employees** (IS-HR) — first visible value; covers NIK onboarding via PrivyID, employee records, org chart
-3. **Finance — Accounting** (IS-FIN) — COA, journal entries, AR/AP; unlocks QRIS invoicing
-4. **Procurement** (IS-PROC) — PO flow; depends on Finance
-5. **Sales & CRM** (IS-SALES, IS-CRM) — pipeline, quotations, SO; depends on Finance
-6. **Inventory** (IS-INV) — stock management; depends on Procurement + Sales
-7. **Projects** (IS-PROJ) — project tracking; relatively standalone
-8. **Documents** (IS-DOCS-STORE) — file storage; relatively standalone
-9. **Chat / Messaging** (IS-CHAT) — internal comms; standalone
+1. **Platform Core** (IS-PLAT) — Event Bus, Tool Registry, Audit Log, Schema Extensibility, Real-time Layer, Permission Fabric, Data Lineage, Connector Framework, Job Queue. Nothing else starts until this layer is stable.
+2. **Authentication** (IS-AUTH) — Login, TOTP MFA, RBAC, session management. Requires Permission Fabric.
+3. **HR & Employees** (IS-HR) — Employee records, org chart, NIK onboarding via PrivyID. First user-visible value.
+4. **Finance — Accounting** (IS-FIN) — COA, journal entries, AR/AP. Unlocks QRIS invoicing.
+5. **Workflow Engine** (IS-WF) — Approval flows (PO, leave, expense) required by Finance, HR, Procurement. Moved from Phase 2 to Phase 1.
+6. **Procurement** (IS-PROC) — PO flow with approval workflow. Depends on Finance + Workflow.
+7. **Sales & CRM** (IS-SALES, IS-CRM) — Pipeline, quotations, SO. Depends on Finance.
+8. **Inventory** (IS-INV) — Stock management. Depends on Procurement + Sales.
+9. **Projects** (IS-PROJ) — Project tracking. Relatively standalone.
+10. **Documents** (IS-DOCS-STORE) — File storage. Relatively standalone.
+11. **Chat / Messaging** (IS-CHAT) — Internal comms. Standalone.
+12. **Mobile PWA** (IS-MOB) — PWA shell, offline mode, push notifications. Requires real-time layer.
 
 All Phase 1 modules ship in v1.0. Timeline target: 12 months to v1.0.
+
+---
+
+## Phase 2 & 3 Highlights
+
+### Phase 2 (v2.0)
+- **Conversational** (IS-CONV) — WhatsApp Business approvals and NL agent using Tool Registry
+- **Compliance Automation** (IS-COMP) — DPO dashboard, breach detection, tax deadline calendar
+- **AI Platform** (IS-AI) — AI agent orchestration as a thin layer on Tool Registry + Event Bus
+- Email, meetings, omnichannel customer comms
+- Manufacturing, helpdesk, knowledge base, fleet, field service
+- Passkeys / WebAuthn, SAML SSO
+
+### Phase 3 (v3.0)
+- **Marketplace** (IS-MKT) — Plugin SDK + App Store for third-party extensions
+- **Studio** (IS-STUDIO) — No-code/low-code app builder using Tool Registry action picker
+- AI-native marketing, B2B network, public sector modules, IoT, PLM
 
 ---
 
@@ -192,6 +299,7 @@ All Phase 1 modules ship in v1.0. Timeline target: 12 months to v1.0.
 All features follow the IS-{MODULE}-{APP}-{SEQ} format, defined in the public roadmap (`is-roadmap` repo, `data/features.json`). Use these codes in commit messages, PR titles, and issue references.
 
 Examples:
+- `IS-PLAT-TOOL-001` — Tool Definitions
 - `IS-AUTH-001` — Login & Session
 - `IS-HR-EMP-001` — Employee Record
 - `IS-FIN-AR-001` — AR Invoice
@@ -265,17 +373,19 @@ Kamal handles: image build, push to registry, rolling deploy, health checks, SSL
 
 ---
 
-## What NOT to build (avoid redundancy with ecosystem)
+## What NOT to Build (avoid redundancy with ecosystem)
 
 | Area | Don't build | Use instead |
 |---|---|---|
-| NIK chip reading | ❌ Private NFC chip read not supported | PrivyID OCR + verification API |
-| IKD QR scan | ❌ Blocked for private apps | Wait for Dukcapil SDK (2026+) |
-| QRIS infrastructure | ❌ Requires BI PJP license | Xendit / DOKU as acquirer |
-| Payment rail | ❌ Requires BI licensing | BI-FAST via bank API or Xendit |
-| CA / certificate authority | ❌ PSRE requires BSSN accreditation | PrivyID (e-sign), Peruri (e-Meterai) |
-| SMS OTP | ❌ Security anti-pattern | TOTP / passkeys instead |
-| Tax engine (core) | ❌ DJP handles rules | Pajakku/PajakExpress API for filing |
+| NIK chip reading | Private NFC chip read not supported | PrivyID OCR + verification API |
+| IKD QR scan | Blocked for private apps | Wait for Dukcapil SDK (2026+) |
+| QRIS infrastructure | Requires BI PJP license | Xendit / DOKU as acquirer |
+| Payment rail | Requires BI licensing | BI-FAST via bank API or Xendit |
+| CA / certificate authority | PSrE requires BSSN accreditation | PrivyID (e-sign), Peruri (e-Meterai) |
+| SMS OTP | Security anti-pattern | TOTP / passkeys instead |
+| Tax engine (core) | DJP handles rules | Pajakku/PajakExpress API for filing |
+| Message broker infrastructure | Operational complexity | NATS JetServer or Redis Streams (managed) |
+| AI model hosting | Requires GPU infra + ops | Anthropic API / OpenAI API via AI Platform connector |
 
 ---
 
