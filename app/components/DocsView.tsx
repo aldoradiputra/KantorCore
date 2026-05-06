@@ -21,7 +21,7 @@ export default function DocsView({ nodes, version }: Props) {
       <DocSidebar active={activeDoc} onChange={setActiveDoc} />
 
       {/* Main content */}
-      <DocContent active={activeDoc} nodes={nodes} version={version} />
+      <DocContent active={activeDoc} nodes={nodes} version={version} onNavigate={setActiveDoc} />
 
       {/* Ask Claude panel */}
       {chatOpen

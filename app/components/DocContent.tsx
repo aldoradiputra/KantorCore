@@ -153,13 +153,13 @@ function StructuredPage({ page }: { page: DocPage }) {
 
 // ── Welcome page ─────────────────────────────────────────────────────────────
 
-function WelcomePage({ nodes, version }: { nodes: Node[]; version: string }) {
+function WelcomePage({ nodes, version, onNavigate }: { nodes: Node[]; version: string; onNavigate: (id: string) => void }) {
   const modules = nodes.filter(n => n.type === 'module').sort((a, b) => a.phase - b.phase)
 
-  const CARDS = [
-    { tag: 'NEW HERE', title: 'Quick start', sub: 'Get the lay of the land in 5 minutes', color: 'var(--indigo)' },
-    { tag: 'USERS',    title: 'Using the system', sub: 'HR, Finance, Procurement, day-to-day ops', color: 'var(--teal)' },
-    { tag: 'TEAM',     title: 'Internal docs', sub: 'Architecture, Platform Core, ops and deploy', color: 'var(--amber)' },
+  const CARDS: { tag: string; title: string; sub: string; color: string; dest: string }[] = [
+    { tag: 'NEW HERE', title: 'Quick start', sub: 'Get the lay of the land in 5 minutes', color: 'var(--indigo)', dest: 'getting-started' },
+    { tag: 'USERS',    title: 'Using the system', sub: 'HR, Finance, Procurement, day-to-day ops', color: 'var(--teal)', dest: 'hr' },
+    { tag: 'TEAM',     title: 'Internal docs', sub: 'Architecture, Platform Core, ops and deploy', color: 'var(--amber)', dest: 'concepts-architecture' },
   ]
 
   return (
@@ -178,7 +178,7 @@ function WelcomePage({ nodes, version }: { nodes: Node[]; version: string }) {
       {/* Quick start cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 44 }}>
         {CARDS.map(card => (
-          <div key={card.tag} style={{
+          <div key={card.tag} onClick={() => onNavigate(card.dest)} style={{
             borderRadius: 10, border: '1px solid var(--border)',
             borderTop: `3px solid ${card.color}`, padding: '18px 20px 20px',
             cursor: 'pointer', background: 'var(--white)', transition: 'box-shadow 0.15s',
@@ -202,7 +202,7 @@ function WelcomePage({ nodes, version }: { nodes: Node[]; version: string }) {
           const color  = PHASE_COLOR[mod.phase] ?? 'var(--muted)'
           const bg     = PHASE_BG[mod.phase] ?? 'var(--bg)'
           return (
-            <div key={mod.id} style={{
+            <div key={mod.id} onClick={() => onNavigate(mod.id)} style={{
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '10px 12px', border: '1px solid var(--border)',
               borderRadius: 8, cursor: 'pointer', background: 'var(--white)',
@@ -229,7 +229,7 @@ function WelcomePage({ nodes, version }: { nodes: Node[]; version: string }) {
       {/* Recent updates */}
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
         <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy)' }}>Recent updates</h2>
-        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--indigo)', cursor: 'pointer' }}>Changelog →</span>
+        <span onClick={() => onNavigate('changelog')} style={{ fontSize: 12, fontWeight: 600, color: 'var(--indigo)', cursor: 'pointer' }}>Changelog →</span>
       </div>
       {RECENT_UPDATES.map(u => (
         <div key={u.version} style={{ display: 'flex', gap: 14, padding: '10px 0', borderBottom: '1px solid var(--border)', alignItems: 'baseline' }}>
@@ -265,14 +265,14 @@ function StubPage({ id }: { id: string }) {
 
 // ── Router ────────────────────────────────────────────────────────────────────
 
-type Props = { active: DocId; nodes: Node[]; version: string }
+type Props = { active: DocId; nodes: Node[]; version: string; onNavigate: (id: string) => void }
 
-export default function DocContent({ active, nodes, version }: Props) {
+export default function DocContent({ active, nodes, version, onNavigate }: Props) {
   const page = DOCS_MAP[active]
   return (
     <main style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)' }}>
       {active === 'welcome'
-        ? <WelcomePage nodes={nodes} version={version} />
+        ? <WelcomePage nodes={nodes} version={version} onNavigate={onNavigate} />
         : page
           ? <StructuredPage page={page} />
           : <StubPage id={active} />
