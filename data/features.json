@@ -1,5 +1,5 @@
 {
-  "version": "0.7",
+  "version": "0.8",
   "lastUpdated": "2026-05-03",
   "nodes": [
     {
@@ -5670,6 +5670,105 @@
       "phase": 3,
       "parent": "industry-templates",
       "code": "IS-IND-RT",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "plat-viz",
+      "label": "Analytics Layer",
+      "description": "One widget engine powering three surfaces: inline summary bar on every list view, per-module home canvas, and global home dashboard. All fed by Tool Registry aggregate tools and updated by Real-time Layer. No XML, no separate dashboard app.",
+      "type": "app",
+      "status": "planned",
+      "phase": 1,
+      "parent": "platform-core",
+      "code": "IS-PLAT-VIZ",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "plat-viz-widget-runtime",
+      "label": "Widget Runtime",
+      "description": "Renders Apache ECharts widgets from JSON config; subscribes to Real-time Layer channels for live delta updates; Canvas rendering for 60fps with large datasets",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "plat-viz",
+      "code": "IS-PLAT-VIZ-001",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "plat-viz-aggregate-api",
+      "label": "Aggregate Tools API",
+      "description": "Standard Tool Registry aggregate method pattern all modules implement: { tool, group_by, filter, metrics, limit } — type-safe, permission-scoped, same auth as UI read calls",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "plat-viz",
+      "code": "IS-PLAT-VIZ-002",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "plat-viz-summary-bar",
+      "label": "Inline Summary Bar",
+      "description": "Live stat bar at top of every list view; auto-computes totals, counts, averages from the current filter set; replaces the graph view mode-switch concept with always-visible insight",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "plat-viz",
+      "code": "IS-PLAT-VIZ-003",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "plat-viz-module-home",
+      "label": "Module Home Canvas",
+      "description": "Every module home is a react-grid-layout widget grid; IS ships strong per-module defaults; users add/remove/resize widgets; layout saved as JSONB — no separate Dashboard app needed",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "plat-viz",
+      "code": "IS-PLAT-VIZ-004",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "plat-viz-global-home",
+      "label": "Global Home Dashboard",
+      "description": "Personal cross-module canvas at the top level; users pick widgets from any installed module; role-based defaults (CEO view differs from HR Manager view)",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "plat-viz",
+      "code": "IS-PLAT-VIZ-005",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "plat-viz-report-scheduler",
+      "label": "Report Scheduler",
+      "description": "Save any dashboard as a report; schedule delivery via Workflow Engine (cron trigger); export PDF/Excel via Job Queue; distribute to email list or IS Chat",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "plat-viz",
+      "code": "IS-PLAT-VIZ-006",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "studio-viz-composer",
+      "label": "Widget Composer",
+      "description": "No-code drag-drop dashboard builder: query picker from aggregate tools, chart type selector (bar, line, pie, heatmap, gauge, table), color and axis config; generates the same JSON config the Widget Runtime uses",
+      "type": "feature",
+      "status": "planned",
+      "phase": 3,
+      "parent": "studio-apps",
+      "code": "IS-STUDIO-APP-004",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "studio-viz-report-builder",
+      "label": "Cross-Module Report Builder",
+      "description": "Combine aggregate tools from multiple modules into a single report canvas; used for management dashboards crossing HR, Finance, and Operations data; LLM can draft the layout from a natural language description",
+      "type": "feature",
+      "status": "planned",
+      "phase": 3,
+      "parent": "studio-apps",
+      "code": "IS-STUDIO-APP-005",
       "milestone": "v3.0"
     }
   ]
