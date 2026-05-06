@@ -175,6 +175,25 @@ Every action — whether triggered by a human in the UI, an API call, a schedule
 - DSAR handler: on request, aggregates all personal data for a subject across all tables, returns as structured JSON within 14-day SLA
 - Drives encryption-at-rest decisions: PII fields use application-level envelope encryption with per-tenant keys
 
+#### 9. Organization Structure (IS-PLAT-ORG)
+- Multi-company and multi-branch hierarchy lives entirely within the tenant database — the `is_registry` DB only knows about the tenant (billing unit), not internal structure
+- Three tables: `organizations` (the holding group) → `companies` (legal entities, each with NPWP + NIB + default CoA) → `branches` (physical locations or cost centers, each with address + cost center code)
+- **Every record on every model carries `company_id` (required) and `branch_id` (optional)** as kernel fields — set automatically by the Tool Registry from the caller's context
+- Permission Fabric enforces cross-company isolation via ABAC condition `company_id = caller.company_id`; users with cross-company roles (e.g. group CFO) are granted explicit multi-company scope
+- Event Bus envelope includes `company_id` + `branch_id` — workflows, real-time channels, and audit log entries are all correctly scoped
+- Finance module: Chart of Accounts, e-Faktur NPWP binding, and BPJS contributions are per-`company_id`
+- Must be the **first** app built within Platform Core — HR, Finance, and Auth all depend on company/branch context
+
+```
+Tenant  (is_tenant_acmecorp — one PG database, one billing unit)
+  └── Organization: Acme Group
+        ├── Company: PT Acme Indonesia  (NPWP: 01.xxx)
+        │     ├── Branch: Jakarta HQ
+        │     └── Branch: Surabaya
+        └── Company: PT Acme Logistik  (NPWP: 02.xxx)
+              └── Branch: Cikarang Warehouse
+```
+
 ---
 
 ## Design System
@@ -260,7 +279,7 @@ Indonesian UX conventions: Rupiah formatting (Rp 1.000.000), tanggal DD/MM/YYYY,
 
 Build order is dependency-driven. **Platform Core is built first** — everything else depends on it.
 
-1. **Platform Core** (IS-PLAT) — Event Bus, Tool Registry, Audit Log, Schema Extensibility, Real-time Layer, Permission Fabric, Data Lineage, Connector Framework, Job Queue. Nothing else starts until this layer is stable.
+1. **Platform Core** (IS-PLAT) — Build in this sub-order: Organization Structure first (company/branch context everything depends on), then Permission Fabric, Tool Registry, Event Bus + Outbox, Audit Log, Real-time Layer, Schema Extensibility, Connector Framework + Job Queue. Nothing else starts until this layer is stable.
 2. **Authentication** (IS-AUTH) — Login, TOTP MFA, RBAC, session management. Requires Permission Fabric.
 3. **HR & Employees** (IS-HR) — Employee records, org chart, NIK onboarding via PrivyID. First user-visible value.
 4. **Finance — Accounting** (IS-FIN) — COA, journal entries, AR/AP. Unlocks QRIS invoicing.

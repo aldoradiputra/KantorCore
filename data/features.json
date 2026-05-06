@@ -1,5 +1,5 @@
 {
-  "version": "0.5",
+  "version": "0.6",
   "lastUpdated": "2026-05-03",
   "nodes": [
     {
@@ -5504,6 +5504,61 @@
       "parent": "mkt-store",
       "code": "IS-MKT-STORE-002",
       "milestone": "v3.0"
+    },
+    {
+      "id": "plat-org",
+      "label": "Organization Structure",
+      "description": "Multi-company and multi-branch hierarchy within a tenant: organizations, legal entities (companies), and branches/business units — the context every record and permission scope is anchored to",
+      "type": "app",
+      "status": "planned",
+      "phase": 1,
+      "parent": "platform-core",
+      "code": "IS-PLAT-ORG",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "plat-org-hierarchy",
+      "label": "Org Hierarchy",
+      "description": "organizations → companies → branches tables in tenant DB; one tenant can hold multiple legal entities (holding group use case)",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "plat-org",
+      "code": "IS-PLAT-ORG-001",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "plat-org-company",
+      "label": "Company Profile",
+      "description": "Legal entity record: NPWP, NIB, legal name, address, default Chart of Accounts, default currency, e-Faktur NPWP binding",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "plat-org",
+      "code": "IS-PLAT-ORG-002",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "plat-org-branch",
+      "label": "Branch / Business Unit",
+      "description": "Physical location or cost center within a company: address, cost center code, default bank account — assigned to users and records",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "plat-org",
+      "code": "IS-PLAT-ORG-003",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "plat-org-context",
+      "label": "Request Context",
+      "description": "Every Tool Registry call is stamped with company_id + branch_id from the caller context; Permission Fabric enforces cross-company isolation via ABAC; Event Bus envelope carries both IDs",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "plat-org",
+      "code": "IS-PLAT-ORG-004",
+      "milestone": "v1.0"
     }
   ]
 }
