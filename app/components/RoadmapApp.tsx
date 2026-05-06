@@ -5,6 +5,9 @@ import ListView from './ListView'
 import MapView from './MapView'
 import DetailPanel from './DetailPanel'
 import SearchFilterBar, { Filters } from './SearchFilterBar'
+import TopNav, { Page } from './TopNav'
+import DocsView from './DocsView'
+import LearnView from './LearnView'
 
 export type Node = {
   id: string
@@ -35,10 +38,48 @@ const DEFAULT_FILTERS: Filters = {
 type ViewMode = 'list' | 'map'
 
 export default function RoadmapApp({ nodes, version }: Props) {
+  const [page, setPage]         = useState<Page>('roadmap')
   const [selected, setSelected] = useState<Node | null>(null)
   const [filters, setFilters]   = useState<Filters>(DEFAULT_FILTERS)
   const [view, setView]         = useState<ViewMode>('list')
 
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      <TopNav page={page} onChange={setPage} version={version} />
+
+      {page === 'roadmap' && (
+        <RoadmapPage
+          nodes={nodes}
+          selected={selected}
+          onSelect={setSelected}
+          filters={filters}
+          setFilters={setFilters}
+          view={view}
+          setView={setView}
+        />
+      )}
+
+      {page === 'docs'  && <DocsView />}
+      {page === 'learn' && <LearnView />}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Roadmap page (extracted from the previous top-level component)
+// ─────────────────────────────────────────────────────────────────────────────
+
+type RoadmapPageProps = {
+  nodes: Node[]
+  selected: Node | null
+  onSelect: (n: Node | null) => void
+  filters: Filters
+  setFilters: (f: Filters) => void
+  view: ViewMode
+  setView: (v: ViewMode) => void
+}
+
+function RoadmapPage({ nodes, selected, onSelect, filters, setFilters, view, setView }: RoadmapPageProps) {
   const displayable = nodes.filter(n => n.type !== 'root')
 
   const filtered = displayable.filter(n => {
@@ -57,7 +98,6 @@ export default function RoadmapApp({ nodes, version }: Props) {
   // When filtering, include ancestor modules/apps so hierarchy still renders
   const visibleIds = new Set<string>()
   const byId = Object.fromEntries(nodes.map(n => [n.id, n]))
-
   filtered.forEach(n => {
     visibleIds.add(n.id)
     let cur = n.parent ? byId[n.parent] : null
@@ -66,39 +106,23 @@ export default function RoadmapApp({ nodes, version }: Props) {
       cur = cur.parent ? byId[cur.parent] : null
     }
   })
-
   const visibleNodes = nodes.filter(n => visibleIds.has(n.id))
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-      {/* Toolbar */}
-      <header style={{
+    <>
+      {/* Roadmap-local toolbar (List / Map toggle) */}
+      <div style={{
         display: 'flex',
         alignItems: 'center',
         gap: 12,
-        padding: '0 24px',
-        height: 52,
+        padding: '8px 24px',
         borderBottom: '1px solid var(--border)',
         background: 'var(--white)',
         flexShrink: 0,
       }}>
-        <span style={{ fontWeight: 700, color: 'var(--navy)', fontSize: 15, letterSpacing: '-0.3px' }}>
-          Indonesia System
+        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', letterSpacing: '0.3px' }}>
+          VIEW
         </span>
-        <span style={{
-          fontSize: 11,
-          fontWeight: 600,
-          color: 'var(--white)',
-          background: 'var(--indigo)',
-          borderRadius: 4,
-          padding: '2px 7px',
-          letterSpacing: '0.2px',
-        }}>
-          v{version}
-        </span>
-        <span style={{ flex: 1 }} />
-
-        {/* View toggle */}
         <div style={{
           display: 'flex',
           background: 'var(--bg)',
@@ -129,11 +153,9 @@ export default function RoadmapApp({ nodes, version }: Props) {
             </button>
           ))}
         </div>
+      </div>
 
-        <span style={{ fontSize: 13, color: 'var(--muted)' }}>Roadmap</span>
-      </header>
-
-      {/* Search + Filter bar — only in list view */}
+      {/* Search + filter bar — only in list view */}
       {view === 'list' && (
         <SearchFilterBar
           filters={filters}
@@ -150,18 +172,18 @@ export default function RoadmapApp({ nodes, version }: Props) {
             nodes={visibleNodes}
             allNodes={nodes}
             selected={selected}
-            onSelect={setSelected}
+            onSelect={onSelect}
             isFiltering={!!filters.search || filters.phases.length < 3}
           />
         ) : (
           <MapView
             nodes={nodes}
             selected={selected}
-            onSelect={setSelected}
+            onSelect={onSelect}
           />
         )}
-        <DetailPanel node={selected} onClose={() => setSelected(null)} />
+        <DetailPanel node={selected} onClose={() => onSelect(null)} />
       </div>
-    </div>
+    </>
   )
 }
