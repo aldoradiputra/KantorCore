@@ -9,6 +9,7 @@ import TopNav, { Page } from './TopNav'
 import DocsView from './DocsView'
 import LearnView from './LearnView'
 import SearchModal from './SearchModal'
+import { LocaleContext, type Locale } from '../locale-context'
 import type { Node } from '../types'
 
 export type { Node }
@@ -32,8 +33,9 @@ export default function RoadmapApp({ nodes, version }: Props) {
   const [selected, setSelected] = useState<Node | null>(null)
   const [filters, setFilters]   = useState<Filters>(DEFAULT_FILTERS)
   const [view, setView]         = useState<ViewMode>('list')
-  const [activeDoc, setActiveDoc] = useState('welcome')
+  const [activeDoc, setActiveDoc]   = useState('welcome')
   const [searchOpen, setSearchOpen] = useState(false)
+  const [locale, setLocale]         = useState<Locale>('en')
 
   // ⌘K / Ctrl+K opens search
   useEffect(() => {
@@ -60,9 +62,12 @@ export default function RoadmapApp({ nodes, version }: Props) {
     }
   }
 
+  const toggleLocale = () => setLocale(l => l === 'en' ? 'id' : 'en')
+
   return (
+    <LocaleContext.Provider value={locale}>
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-      <TopNav page={page} onChange={setPage} version={version} onOpenSearch={() => setSearchOpen(true)} />
+      <TopNav page={page} onChange={setPage} version={version} onOpenSearch={() => setSearchOpen(true)} locale={locale} onLocaleToggle={toggleLocale} />
 
       {page === 'roadmap' && (
         <RoadmapPage
@@ -87,6 +92,7 @@ export default function RoadmapApp({ nodes, version }: Props) {
         />
       )}
     </div>
+    </LocaleContext.Provider>
   )
 }
 

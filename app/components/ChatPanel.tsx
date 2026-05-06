@@ -1,16 +1,9 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useLocale, STRINGS } from '../locale-context'
 
 type Message = { role: 'user' | 'assistant'; content: string }
-
-const SUGGESTIONS = [
-  'What is Platform Core?',
-  'What modules ship in Phase 1?',
-  'How does multi-tenancy work?',
-  'What Indonesian integrations are included?',
-  'Explain the Tool Registry',
-]
 
 type Props = { onClose: () => void }
 
@@ -19,6 +12,8 @@ export default function ChatPanel({ onClose }: Props) {
   const [input, setInput]       = useState('')
   const [loading, setLoading]   = useState(false)
   const bottomRef               = useRef<HTMLDivElement>(null)
+  const locale = useLocale()
+  const s = STRINGS[locale]
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -112,8 +107,8 @@ export default function ChatPanel({ onClose }: Props) {
           ✦
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--navy)' }}>Ask Claude</div>
-          <div style={{ fontSize: 11, color: 'var(--muted)' }}>All docs</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--navy)' }}>{s.askClaude}</div>
+          <div style={{ fontSize: 11, color: 'var(--muted)' }}>{locale === 'en' ? 'All docs' : 'Semua dokumentasi'}</div>
         </div>
         <button
           onClick={onClose}
@@ -136,13 +131,13 @@ export default function ChatPanel({ onClose }: Props) {
         {empty ? (
           <div>
             <p style={{ fontSize: 13, color: 'var(--slate)', marginBottom: 16, lineHeight: 1.6 }}>
-              Hi! I can answer questions across all docs. Try:
+              {s.chatIntro}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {SUGGESTIONS.map(s => (
+              {s.chatSuggestions.map(suggestion => (
                 <button
-                  key={s}
-                  onClick={() => send(s)}
+                  key={suggestion}
+                  onClick={() => send(suggestion)}
                   style={{
                     textAlign: 'left',
                     padding: '9px 13px',
@@ -160,7 +155,7 @@ export default function ChatPanel({ onClose }: Props) {
                   onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--indigo)'}
                   onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
                 >
-                  {s}
+                  {suggestion}
                 </button>
               ))}
             </div>
@@ -203,7 +198,7 @@ export default function ChatPanel({ onClose }: Props) {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input) } }}
-          placeholder="Ask anything…"
+          placeholder={s.chatPlaceholder}
           style={{
             flex: 1,
             padding: '8px 12px',

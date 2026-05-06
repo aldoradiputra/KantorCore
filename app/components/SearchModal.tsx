@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { DOCS_MAP } from '../docs-content'
+import { useLocale, STRINGS } from '../locale-context'
 import type { Node } from '../types'
 
 type DocResult  = { kind: 'doc';  id: string; title: string; breadcrumb: string }
@@ -28,6 +29,8 @@ export default function SearchModal({ nodes, onNavigate, onClose }: Props) {
   const [query, setQuery]   = useState('')
   const [cursor, setCursor] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
+  const locale = useLocale()
+  const s = STRINGS[locale]
 
   useEffect(() => { inputRef.current?.focus() }, [])
 
@@ -88,7 +91,7 @@ export default function SearchModal({ nodes, onNavigate, onClose }: Props) {
             ref={inputRef}
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search docs and modules…"
+            placeholder={s.searchModalPlaceholder}
             style={{
               flex: 1, border: 'none', outline: 'none', fontSize: 15,
               fontFamily: 'inherit', color: 'var(--navy)', background: 'none',
@@ -103,14 +106,14 @@ export default function SearchModal({ nodes, onNavigate, onClose }: Props) {
         <div style={{ maxHeight: 420, overflowY: 'auto' }}>
           {allResults.length === 0 ? (
             <div style={{ padding: '28px 16px', textAlign: 'center', fontSize: 13, color: 'var(--muted)' }}>
-              No results for &ldquo;{query}&rdquo;
+              {s.searchEmpty} &ldquo;{query}&rdquo;
             </div>
           ) : (
             <>
               {docResults.length > 0 && (
                 <>
                   <div style={{ padding: '10px 16px 6px', fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                    Documentation
+                    {s.searchGroupDocs}
                   </div>
                   {docResults.map((r, i) => {
                     const active = cursor === i
@@ -138,7 +141,7 @@ export default function SearchModal({ nodes, onNavigate, onClose }: Props) {
               {nodeResults.length > 0 && (
                 <>
                   <div style={{ padding: '10px 16px 6px', fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                    Modules & Features
+                    {s.searchGroupModules}
                   </div>
                   {nodeResults.map((r, i) => {
                     const idx    = docResults.length + i

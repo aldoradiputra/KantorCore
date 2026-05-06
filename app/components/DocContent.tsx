@@ -3,6 +3,7 @@
 import type { Node } from '../types'
 import type { DocId } from './DocSidebar'
 import { DOCS_MAP, type Block, type DocPage } from '../docs-content'
+import { useLocale, STRINGS } from '../locale-context'
 
 // ── Module display helpers (Welcome page) ────────────────────────────────────
 
@@ -154,48 +155,46 @@ function StructuredPage({ page }: { page: DocPage }) {
 // ── Welcome page ─────────────────────────────────────────────────────────────
 
 function WelcomePage({ nodes, version, onNavigate }: { nodes: Node[]; version: string; onNavigate: (id: string) => void }) {
+  const locale = useLocale()
+  const s = STRINGS[locale]
   const modules = nodes.filter(n => n.type === 'module').sort((a, b) => a.phase - b.phase)
 
-  const CARDS: { tag: string; title: string; sub: string; color: string; dest: string }[] = [
-    { tag: 'NEW HERE', title: 'Quick start', sub: 'Get the lay of the land in 5 minutes', color: 'var(--indigo)', dest: 'getting-started' },
-    { tag: 'USERS',    title: 'Using the system', sub: 'HR, Finance, Procurement, day-to-day ops', color: 'var(--teal)', dest: 'hr' },
-    { tag: 'TEAM',     title: 'Internal docs', sub: 'Architecture, Platform Core, ops and deploy', color: 'var(--amber)', dest: 'concepts-architecture' },
-  ]
+  const CARD_DESTS = ['getting-started', 'hr', 'concepts-architecture']
+  const CARD_COLORS = ['var(--indigo)', 'var(--teal)', 'var(--amber)']
 
   return (
     <div style={{ maxWidth: 860, padding: '40px 48px' }}>
       <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', letterSpacing: '0.6px', marginBottom: 12, textTransform: 'uppercase' }}>
-        Documentation · v{version}
+        {s.welcomeSuper} · v{version}
       </p>
       <h1 style={{ fontSize: 32, fontWeight: 800, color: 'var(--navy)', lineHeight: 1.2, marginBottom: 12, letterSpacing: '-0.5px' }}>
-        Welcome to Indonesia System
+        {s.welcomeTitle}
       </h1>
       <p style={{ fontSize: 15, color: 'var(--slate)', lineHeight: 1.65, marginBottom: 36, maxWidth: 600 }}>
-        A national corporate operating system for Indonesia — HR, Finance, Procurement, Sales, and Operations
-        in one platform, natively integrated with BPJS, CoreTax DJP, PrivyID, and QRIS.
+        {s.welcomeIntro}
       </p>
 
       {/* Quick start cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 44 }}>
-        {CARDS.map(card => (
-          <div key={card.tag} onClick={() => onNavigate(card.dest)} style={{
+        {s.quickStartCards.map((card, i) => (
+          <div key={card.tag} onClick={() => onNavigate(CARD_DESTS[i])} style={{
             borderRadius: 10, border: '1px solid var(--border)',
-            borderTop: `3px solid ${card.color}`, padding: '18px 20px 20px',
+            borderTop: `3px solid ${CARD_COLORS[i]}`, padding: '18px 20px 20px',
             cursor: 'pointer', background: 'var(--white)', transition: 'box-shadow 0.15s',
           }}
             onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.07)')}
             onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
           >
-            <p style={{ fontSize: 10, fontWeight: 700, color: card.color, letterSpacing: '0.7px', marginBottom: 8, textTransform: 'uppercase' }}>{card.tag}</p>
+            <p style={{ fontSize: 10, fontWeight: 700, color: CARD_COLORS[i], letterSpacing: '0.7px', marginBottom: 8, textTransform: 'uppercase' }}>{card.tag}</p>
             <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy)', marginBottom: 6 }}>{card.title}</h3>
             <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5, marginBottom: 14 }}>{card.sub}</p>
-            <span style={{ fontSize: 12, fontWeight: 600, color: card.color }}>Open →</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: CARD_COLORS[i] }}>{s.open}</span>
           </div>
         ))}
       </div>
 
       {/* Module grid */}
-      <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy)', marginBottom: 16 }}>Browse by module</h2>
+      <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy)', marginBottom: 16 }}>{s.browseByModule}</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 44 }}>
         {modules.map(mod => {
           const abbrev = ABBREV[mod.id] ?? mod.id.slice(0, 2).toUpperCase()
@@ -219,7 +218,7 @@ function WelcomePage({ nodes, version, onNavigate }: { nodes: Node[]; version: s
               }}>{abbrev}</div>
               <div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--navy)', lineHeight: 1.3 }}>{mod.label}</div>
-                <div style={{ fontSize: 11, color: 'var(--muted)' }}>Phase {mod.phase}</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)' }}>{s.phase} {mod.phase}</div>
               </div>
             </div>
           )
@@ -228,8 +227,8 @@ function WelcomePage({ nodes, version, onNavigate }: { nodes: Node[]; version: s
 
       {/* Recent updates */}
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy)' }}>Recent updates</h2>
-        <span onClick={() => onNavigate('changelog')} style={{ fontSize: 12, fontWeight: 600, color: 'var(--indigo)', cursor: 'pointer' }}>Changelog →</span>
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--navy)' }}>{s.recentUpdates}</h2>
+        <span onClick={() => onNavigate('changelog')} style={{ fontSize: 12, fontWeight: 600, color: 'var(--indigo)', cursor: 'pointer' }}>{s.changelogLink}</span>
       </div>
       {RECENT_UPDATES.map(u => (
         <div key={u.version} style={{ display: 'flex', gap: 14, padding: '10px 0', borderBottom: '1px solid var(--border)', alignItems: 'baseline' }}>

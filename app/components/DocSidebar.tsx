@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useLocale, STRINGS } from '../locale-context'
 
 export type DocId = string
 
@@ -107,12 +108,23 @@ const PHASE_COLORS: Record<number, string> = {
 type Props = { active: DocId; onChange: (id: DocId) => void }
 
 export default function DocSidebar({ active, onChange }: Props) {
+  const locale = useLocale()
+  const str = STRINGS[locale]
+
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(SECTIONS.map(s => [s.id, s.defaultOpen ?? true]))
   )
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
     concepts: true,
   })
+
+  // Phase section labels switch with locale
+  const sectionLabel = (section: Section): string => {
+    if (section.id === 'phase1') return str.phase1Label
+    if (section.id === 'phase2') return str.phase2Label
+    if (section.id === 'phase3') return str.phase3Label
+    return section.label
+  }
 
   const toggleSection = (id: string) =>
     setOpenSections(prev => ({ ...prev, [id]: !prev[id] }))
@@ -157,7 +169,7 @@ export default function DocSidebar({ active, onChange }: Props) {
                 fontSize: 10, fontWeight: 700, color: 'var(--muted)',
                 letterSpacing: '0.6px', textTransform: 'uppercase', flex: 1,
               }}>
-                {section.label}
+                {sectionLabel(section)}
               </span>
               {section.collapsible && (
                 <span style={{
