@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import ListView from './ListView'
 import MapView from './MapView'
 import DetailPanel from './DetailPanel'
@@ -8,6 +8,7 @@ import SearchFilterBar, { Filters } from './SearchFilterBar'
 import TopNav, { Page } from './TopNav'
 import DocsView from './DocsView'
 import LearnView from './LearnView'
+import SearchModal from './SearchModal'
 import type { Node } from '../types'
 
 export type { Node }
@@ -31,10 +32,37 @@ export default function RoadmapApp({ nodes, version }: Props) {
   const [selected, setSelected] = useState<Node | null>(null)
   const [filters, setFilters]   = useState<Filters>(DEFAULT_FILTERS)
   const [view, setView]         = useState<ViewMode>('list')
+  const [activeDoc, setActiveDoc] = useState('welcome')
+  const [searchOpen, setSearchOpen] = useState(false)
+
+  // ⌘K / Ctrl+K opens search
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchOpen(open => !open)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
+  const handleSearchNavigate = (kind: 'doc' | 'node', id: string) => {
+    setSearchOpen(false)
+    if (kind === 'doc') {
+      setPage('docs')
+      setActiveDoc(id)
+    } else {
+      // node result — go to roadmap list and select the node
+      setPage('roadmap')
+      const node = nodes.find(n => n.id === id) ?? null
+      setSelected(node)
+    }
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-      <TopNav page={page} onChange={setPage} version={version} />
+      <TopNav page={page} onChange={setPage} version={version} onOpenSearch={() => setSearchOpen(true)} />
 
       {page === 'roadmap' && (
         <RoadmapPage
@@ -48,8 +76,16 @@ export default function RoadmapApp({ nodes, version }: Props) {
         />
       )}
 
-      {page === 'docs'  && <DocsView nodes={nodes} version={version} />}
+      {page === 'docs'  && <DocsView nodes={nodes} version={version} activeDoc={activeDoc} onDocChange={setActiveDoc} />}
       {page === 'learn' && <LearnView />}
+
+      {searchOpen && (
+        <SearchModal
+          nodes={nodes}
+          onNavigate={handleSearchNavigate}
+          onClose={() => setSearchOpen(false)}
+        />
+      )}
     </div>
   )
 }

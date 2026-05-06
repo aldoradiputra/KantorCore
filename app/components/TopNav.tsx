@@ -8,6 +8,7 @@ type Props = {
   page: Page
   onChange: (page: Page) => void
   version: string
+  onOpenSearch: () => void
 }
 
 const TABS: { id: Page; label: string; icon: ReactNode }[] = [
@@ -42,7 +43,7 @@ const TABS: { id: Page; label: string; icon: ReactNode }[] = [
   },
 ]
 
-export default function TopNav({ page, onChange, version }: Props) {
+export default function TopNav({ page, onChange, version, onOpenSearch }: Props) {
   return (
     <header style={{
       display: 'flex',
@@ -117,18 +118,24 @@ export default function TopNav({ page, onChange, version }: Props) {
       <span style={{ flex: 1 }} />
 
       {/* Search */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        padding: '0 12px',
-        height: 34,
-        minWidth: 280,
-        border: '1px solid var(--border)',
-        background: 'var(--bg)',
-        borderRadius: 7,
-        color: 'var(--muted)',
-      }}>
+      <button
+        onClick={onOpenSearch}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '0 12px',
+          height: 34,
+          minWidth: 280,
+          border: '1px solid var(--border)',
+          background: 'var(--bg)',
+          borderRadius: 7,
+          color: 'var(--muted)',
+          cursor: 'pointer',
+          fontFamily: 'inherit',
+          textAlign: 'left',
+        }}
+      >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.3-4.3" />
@@ -137,7 +144,7 @@ export default function TopNav({ page, onChange, version }: Props) {
           {page === 'docs' ? 'Search docs…' : page === 'learn' ? 'Search lessons…' : 'Search roadmap…'}
         </span>
         <kbd style={shortcutStyle}>⌘K</kbd>
-      </div>
+      </button>
 
       {/* Locale */}
       <button style={iconButtonStyle}>

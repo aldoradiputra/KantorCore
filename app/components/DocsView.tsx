@@ -9,19 +9,20 @@ import type { Node } from '../types'
 type Props = {
   nodes: Node[]
   version: string
+  activeDoc: string
+  onDocChange: (id: string) => void
 }
 
-export default function DocsView({ nodes, version }: Props) {
-  const [activeDoc, setActiveDoc] = useState('welcome')
-  const [chatOpen, setChatOpen]   = useState(true)
+export default function DocsView({ nodes, version, activeDoc, onDocChange }: Props) {
+  const [chatOpen, setChatOpen] = useState(true)
 
   return (
     <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
       {/* Left sidebar */}
-      <DocSidebar active={activeDoc} onChange={setActiveDoc} />
+      <DocSidebar active={activeDoc} onChange={onDocChange} />
 
       {/* Main content */}
-      <DocContent active={activeDoc} nodes={nodes} version={version} onNavigate={setActiveDoc} />
+      <DocContent active={activeDoc} nodes={nodes} version={version} onNavigate={onDocChange} />
 
       {/* Ask Claude panel */}
       {chatOpen
