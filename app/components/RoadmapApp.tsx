@@ -8,20 +8,9 @@ import SearchFilterBar, { Filters } from './SearchFilterBar'
 import TopNav, { Page } from './TopNav'
 import DocsView from './DocsView'
 import LearnView from './LearnView'
+import type { Node } from '../types'
 
-export type Node = {
-  id: string
-  label: string
-  description: string
-  type: 'root' | 'module' | 'app' | 'feature' | 'infrastructure'
-  status: 'planned' | 'in-progress' | 'done'
-  phase: number
-  parent?: string
-  code?: string
-  milestone?: string
-  x?: number
-  y?: number
-}
+export type { Node }
 
 type Props = {
   nodes: Node[]
@@ -59,7 +48,7 @@ export default function RoadmapApp({ nodes, version }: Props) {
         />
       )}
 
-      {page === 'docs'  && <DocsView />}
+      {page === 'docs'  && <DocsView nodes={nodes} version={version} />}
       {page === 'learn' && <LearnView />}
     </div>
   )

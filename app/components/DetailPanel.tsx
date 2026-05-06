@@ -1,6 +1,6 @@
 'use client'
 
-import { Node } from './RoadmapApp'
+import type { Node } from '../types'
 
 const PHASE_LABELS: Record<number, string> = {
   0: 'Core',
