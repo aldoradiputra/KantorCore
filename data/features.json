@@ -1,5 +1,5 @@
 {
-  "version": "0.6",
+  "version": "0.7",
   "lastUpdated": "2026-05-03",
   "nodes": [
     {
@@ -5559,6 +5559,118 @@
       "parent": "plat-org",
       "code": "IS-PLAT-ORG-004",
       "milestone": "v1.0"
+    },
+    {
+      "id": "plat-schema-field-builder",
+      "label": "Field Builder",
+      "description": "LLM-powered field creation: describe a field in natural language, LLM outputs a typed field definition (key, type, validation, PII tag, mask), user confirms — no migration needed via JSONB overlay",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "plat-schema",
+      "code": "IS-PLAT-SCH-004",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "studio-model-builder",
+      "label": "Model Builder",
+      "description": "Q&A wizard to define a new data model: what are you tracking, identifier, relations to existing models, lifecycle/status, approval requirement — generates Drizzle-compatible schema definition",
+      "type": "feature",
+      "status": "planned",
+      "phase": 3,
+      "parent": "studio-apps",
+      "code": "IS-STUDIO-APP-001",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "studio-app-builder",
+      "label": "App Builder",
+      "description": "Build a complete app from intent: describe what you want, LLM scaffolds model + views + permissions + optional workflow; visual editor to refine the generated scaffold before publishing",
+      "type": "feature",
+      "status": "planned",
+      "phase": 3,
+      "parent": "studio-apps",
+      "code": "IS-STUDIO-APP-002",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "studio-app-ai-config",
+      "label": "AI Config Assistant",
+      "description": "Natural language → structured config: NL to workflow draft (IS-STUDIO-AI-001) and NL to form/view schema (IS-STUDIO-AI-002); generates inspectable, editable artifacts not black-box execution",
+      "type": "feature",
+      "status": "planned",
+      "phase": 3,
+      "parent": "studio-apps",
+      "code": "IS-STUDIO-APP-003",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "industry-templates",
+      "label": "Industry Templates",
+      "description": "Curated first-party industry packs: pre-built models, workflows, and views for vertical markets (healthcare, hospitality, education, construction, retail) — installable one-click per tenant",
+      "type": "module",
+      "status": "planned",
+      "phase": 3,
+      "parent": "core",
+      "code": "IS-IND",
+      "milestone": "v3.0",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": "ind-healthcare",
+      "label": "Healthcare Pack",
+      "description": "Queue management system, BPJS Kesehatan claims workflow, clinical service codes (ICD-10), patient data PII handling, multi-poli scheduling",
+      "type": "app",
+      "status": "planned",
+      "phase": 3,
+      "parent": "industry-templates",
+      "code": "IS-IND-HC",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "ind-hospitality",
+      "label": "Hospitality Pack",
+      "description": "Hotel property management: room inventory model, reservation lifecycle, F&B outlet integration, channel manager webhook receiver",
+      "type": "app",
+      "status": "planned",
+      "phase": 3,
+      "parent": "industry-templates",
+      "code": "IS-IND-HO",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "ind-education",
+      "label": "Education Pack",
+      "description": "Student records model, tuition billing with QRIS, academic calendar, teacher payroll supplement, BOS/Dana BOS budget tracking",
+      "type": "app",
+      "status": "planned",
+      "phase": 3,
+      "parent": "industry-templates",
+      "code": "IS-IND-ED",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "ind-construction",
+      "label": "Construction Pack",
+      "description": "Project-based costing, RAB (Rencana Anggaran Biaya) model, equipment tracking, sub-contractor payment schedule, progress billing (termin)",
+      "type": "app",
+      "status": "planned",
+      "phase": 3,
+      "parent": "industry-templates",
+      "code": "IS-IND-CON",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "ind-retail",
+      "label": "Retail Pack",
+      "description": "POS integration model, loyalty program, SKU-level promotions, omnichannel order routing, Shopee/Tokopedia connector via Marketplace SDK",
+      "type": "app",
+      "status": "planned",
+      "phase": 3,
+      "parent": "industry-templates",
+      "code": "IS-IND-RT",
+      "milestone": "v3.0"
     }
   ]
 }
