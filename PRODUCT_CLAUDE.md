@@ -392,6 +392,31 @@ Kamal handles: image build, push to registry, rolling deploy, health checks, SSL
 
 ---
 
+## Architectural Decisions
+
+Decisions we've made and the reasoning, so they don't get relitigated.
+
+### No "Commons" / shared capability layer between Platform Core and modules
+
+**Date:** 2026-05-07
+
+**Context:** Odoo couples capability and surface — to track stock you must install Inventory; to log approvals you must install the approval workflow module. This creates friction for customers with simple needs. We considered a "Commons" layer below modules holding shared primitives (`commons.stock`, `commons.approval`, etc.) so any module could use them without installing the full app.
+
+**Decision:** Don't build Commons. Each module that needs a "lite" version of an adjacent capability builds it inside itself, gated by a setting.
+
+Example: Sales gets a `Stock tracking: [Off | Simple | Full (requires Inventory)]` setting. "Simple" is a `qty_on_hand` column on product + one Tool Registry action, living entirely inside Sales. When the customer later installs Inventory, a one-time migration imports the data.
+
+**Why not Commons:**
+- Designing stable cross-module APIs before we understand the domain is a premature abstraction.
+- Any change to a `commons.*` signature would be a breaking change across multiple modules — API governance tax we can't afford pre-v1.0.
+- Isolated mess inside one module is recoverable; mess in a shared layer breaks everything that depends on it.
+
+**Rule for the future:** extract a shared primitive only after we see the same pattern appear in **3+ modules organically**. Not before. Revisit this decision after v1.0 ships.
+
+**Implication for pricing:** the value of paid modules (Inventory, CRM, Documents) is *advanced* features (multi-warehouse, lots, valuation; lifecycle, opportunities; folders, versioning, e-sign), not the basic capability. The basic capability ships with whatever module the customer is paying for.
+
+---
+
 ## What NOT to Build (avoid redundancy with ecosystem)
 
 | Area | Don't build | Use instead |
