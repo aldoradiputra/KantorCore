@@ -1,20 +1,21 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Node } from './RoadmapApp'
+import type { Node } from '../types'
 
+// Aligned with CSS variables in globals.css
 const PHASE_COLORS: Record<number, string> = {
-  0: '#1A2B5A',
-  1: '#3B4FC4',
-  2: '#0F7B6C',
-  3: '#B35A00',
+  0: '#1A2B5A',   // --navy
+  1: '#3B4FC4',   // --indigo
+  2: '#0F7B6C',   // --teal
+  3: '#B35A00',   // --amber
 }
 
 const PHASE_LIGHT: Record<number, string> = {
-  0: '#E8EBFA',
-  1: '#E8EBFA',
-  2: '#E0F4F1',
-  3: '#FEF3E2',
+  0: '#E8EBFA',   // --indigo-light
+  1: '#E8EBFA',   // --indigo-light
+  2: '#E0F4F1',   // --teal-light
+  3: '#FEF3E2',   // --amber-light
 }
 
 const PHASE_LABELS: Record<number, string> = {
@@ -348,11 +349,12 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
                 {/* Expand / collapse toggle below card */}
                 {hasKids && !isRoot && (
                   <g
-                    transform={`translate(0, ${h / 2 + 11})`}
+                    transform={`translate(0, ${h / 2 + 13})`}
                     onClick={e => { e.stopPropagation(); toggleExpand(node.id) }}
+                    style={{ cursor: 'pointer' }}
                   >
-                    <circle
-                      cx={0} cy={0} r={8}
+                    <rect
+                      x={-16} y={-9} width={32} height={18} rx={9}
                       fill={isExpanded ? color : 'white'}
                       stroke={color}
                       strokeWidth={1.5}
@@ -360,15 +362,15 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
                       style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.10))' }}
                     />
                     <text
-                      x={0} y={4}
+                      x={0} y={5}
                       textAnchor="middle"
-                      fontSize={13} fontWeight={700}
+                      fontSize={10} fontWeight={700}
                       fontFamily="-apple-system, sans-serif"
                       fill={isExpanded ? 'white' : color}
                       fillOpacity={strokeOpacity}
                       style={{ pointerEvents: 'none' }}
                     >
-                      {isExpanded ? '−' : '+'}
+                      {isExpanded ? '−' : `+${childCount.get(node.id) ?? ''}`}
                     </text>
                   </g>
                 )}

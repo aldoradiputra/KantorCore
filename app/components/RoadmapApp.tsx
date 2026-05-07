@@ -78,6 +78,7 @@ export default function RoadmapApp({ nodes, version }: Props) {
           setFilters={setFilters}
           view={view}
           setView={setView}
+          onViewDocs={(id) => { setPage('docs'); setActiveDoc(id) }}
         />
       )}
 
@@ -108,9 +109,10 @@ type RoadmapPageProps = {
   setFilters: (f: Filters) => void
   view: ViewMode
   setView: (v: ViewMode) => void
+  onViewDocs: (id: string) => void
 }
 
-function RoadmapPage({ nodes, selected, onSelect, filters, setFilters, view, setView }: RoadmapPageProps) {
+function RoadmapPage({ nodes, selected, onSelect, filters, setFilters, view, setView, onViewDocs }: RoadmapPageProps) {
   const displayable = nodes.filter(n => n.type !== 'root')
 
   const filtered = displayable.filter(n => {
@@ -213,7 +215,7 @@ function RoadmapPage({ nodes, selected, onSelect, filters, setFilters, view, set
             onSelect={onSelect}
           />
         )}
-        <DetailPanel node={selected} onClose={() => onSelect(null)} />
+        <DetailPanel node={selected} allNodes={nodes} onClose={() => onSelect(null)} onViewDocs={onViewDocs} />
       </div>
     </>
   )

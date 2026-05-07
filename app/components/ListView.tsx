@@ -1,32 +1,27 @@
 'use client'
 
+import { useState } from 'react'
 import type { Node } from '../types'
 
-const PHASE_COLORS: Record<number, string> = {
-  0: 'var(--navy)',
+const PHASE_COLOR: Record<number, string> = {
   1: 'var(--indigo)',
   2: 'var(--teal)',
   3: 'var(--amber)',
 }
-
 const PHASE_BG: Record<number, string> = {
-  0: 'var(--indigo-light)',
   1: 'var(--indigo-light)',
   2: 'var(--teal-light)',
   3: 'var(--amber-light)',
 }
-
-const PHASE_LABELS: Record<number, string> = {
-  0: 'Core',
-  1: 'Phase 1',
-  2: 'Phase 2',
-  3: 'Phase 3',
+const PHASE_META: Record<number, { label: string; milestone: string; timeline: string }> = {
+  1: { label: 'Foundation',  milestone: 'v1.0', timeline: '~12 months' },
+  2: { label: 'Expansion',   milestone: 'v2.0', timeline: '~24 months' },
+  3: { label: 'Scale',       milestone: 'v3.0', timeline: '~36 months' },
 }
-
-const STATUS_STYLES: Record<string, { background: string; color: string }> = {
-  'planned':     { background: 'var(--border)', color: 'var(--muted)' },
-  'in-progress': { background: 'var(--indigo-light)', color: 'var(--indigo)' },
-  'done':        { background: 'var(--teal-light)', color: 'var(--teal)' },
+const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
+  'planned':     { bg: 'var(--border)',       color: 'var(--muted)'   },
+  'in-progress': { bg: 'var(--indigo-light)', color: 'var(--indigo)'  },
+  'done':        { bg: 'var(--teal-light)',   color: 'var(--teal)'    },
 }
 
 type Props = {
@@ -37,16 +32,8 @@ type Props = {
   isFiltering: boolean
 }
 
-export default function ListView({ nodes, selected, onSelect, isFiltering }: Props) {
-  const nodeSet = new Set(nodes.map(n => n.id))
-  const byParent = (parentId: string, type?: string) =>
-    nodes.filter(n => n.parent === parentId && (type ? n.type === type : true))
-
-  const modules = nodes.filter(n => n.type === 'module' && n.parent === 'core')
-  const platformNodes = nodes.filter(n => n.parent === 'core' && n.type !== 'module' && n.type !== 'root')
-
-  const phaseOrder = [1, 2, 3]
-  const modulesByPhase = (phase: number) => modules.filter(m => m.phase === phase)
+export default function ListView({ nodes, allNodes, selected, onSelect, isFiltering }: Props) {
+  const [collapsed, setCollapsed] = useState<Record<number, boolean>>({ 2: true, 3: true })
 
   if (nodes.length === 0) {
     return (
@@ -56,216 +43,221 @@ export default function ListView({ nodes, selected, onSelect, isFiltering }: Pro
     )
   }
 
+  // Precompute child counts from allNodes
+  const appsByModule    = new Map<string, Node[]>()
+  const featuresByApp   = new Map<string, number>()
+  const directFeatures  = new Map<string, number>()
+
+  allNodes.forEach(n => {
+    if (n.type === 'app' && n.parent) {
+      const list = appsByModule.get(n.parent) ?? []
+      list.push(n)
+      appsByModule.set(n.parent, list)
+    }
+    if (n.type === 'feature' && n.parent) {
+      featuresByApp.set(n.parent, (featuresByApp.get(n.parent) ?? 0) + 1)
+    }
+  })
+  allNodes.forEach(n => {
+    if (n.type === 'feature' && n.parent) {
+      const parent = allNodes.find(x => x.id === n.parent)
+      if (parent?.type === 'module') {
+        directFeatures.set(n.parent, (directFeatures.get(n.parent) ?? 0) + 1)
+      }
+    }
+  })
+
+  function featureCount(moduleId: string): number {
+    const apps = appsByModule.get(moduleId) ?? []
+    if (apps.length > 0) {
+      return apps.reduce((sum, app) => sum + (featuresByApp.get(app.id) ?? 0), 0)
+    }
+    return directFeatures.get(moduleId) ?? 0
+  }
+  function appCount(moduleId: string): number {
+    return (appsByModule.get(moduleId) ?? []).length
+  }
+
+  // ── Filtered / search mode ───────────────────────────────────────────────
+  if (isFiltering) {
+    const byId = Object.fromEntries(allNodes.map(n => [n.id, n]))
+    const results = nodes.filter(n => n.type !== 'root')
+
+    return (
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 32px' }}>
+        <div style={{ marginBottom: 20, fontSize: 12, color: 'var(--muted)' }}>
+          {results.length} result{results.length !== 1 ? 's' : ''}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {results.map(n => {
+            const parent   = n.parent ? byId[n.parent] : null
+            const grandpa  = parent?.parent ? byId[parent.parent] : null
+            const color    = PHASE_COLOR[n.phase] ?? 'var(--muted)'
+            const isActive = selected?.id === n.id
+            const breadcrumb = [grandpa?.label, parent?.label].filter(Boolean).join(' › ')
+            return (
+              <button
+                key={n.id}
+                onClick={() => onSelect(n)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '9px 12px', border: 'none', borderRadius: 7,
+                  background: isActive ? 'var(--indigo-light)' : 'transparent',
+                  cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+                  borderLeft: `2px solid ${isActive ? color : 'transparent'}`,
+                  transition: 'background 0.1s',
+                }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--bg)' }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
+              >
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                <span style={{ flex: 1, fontSize: 13, fontWeight: n.type === 'module' ? 700 : 500, color: 'var(--navy)' }}>
+                  {n.label}
+                </span>
+                {breadcrumb && (
+                  <span style={{ fontSize: 11, color: 'var(--muted)' }}>{breadcrumb}</span>
+                )}
+                {n.code && (
+                  <span style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'monospace' }}>{n.code}</span>
+                )}
+                <StatusBadge status={n.status} />
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Normal mode: phase timeline ──────────────────────────────────────────
+  const modules = nodes.filter(n => n.type === 'module')
+
   return (
-    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }}>
-
-      {/* Platform section */}
-      {platformNodes.length > 0 && (
-        <section style={{ marginBottom: 40 }}>
-          <SectionHeader label="Platform" color="var(--navy)" />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {platformNodes.map(node => (
-              <FeatureRow key={node.id} node={node} selected={selected} onSelect={onSelect} indent={0} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Modules grouped by phase */}
-      {phaseOrder.map(phase => {
-        const phaseModules = modulesByPhase(phase)
+    <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px 48px' }}>
+      {([1, 2, 3] as const).map(phase => {
+        const phaseModules = modules.filter(m => m.phase === phase)
         if (phaseModules.length === 0) return null
+        const meta    = PHASE_META[phase]
+        const color   = PHASE_COLOR[phase]
+        const bg      = PHASE_BG[phase]
+        const isOpen  = !collapsed[phase]
+
         return (
-          <div key={phase}>
-            <div style={{
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: '1px',
-              textTransform: 'uppercase',
-              color: PHASE_COLORS[phase],
-              marginBottom: 16,
-              marginTop: phase > 1 ? 40 : 0,
-              paddingLeft: 2,
-            }}>
-              {PHASE_LABELS[phase]}
-            </div>
+          <section key={phase} style={{ marginBottom: 40 }}>
+            {/* Phase banner */}
+            <button
+              onClick={() => setCollapsed(c => ({ ...c, [phase]: !c[phase] }))}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                width: '100%', marginBottom: isOpen ? 20 : 0,
+                padding: '12px 16px',
+                background: bg, border: 'none',
+                borderLeft: `4px solid ${color}`, borderRadius: '0 8px 8px 0',
+                cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+                transition: 'margin 0.15s',
+              }}
+            >
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+              <span style={{ fontSize: 11, fontWeight: 800, color, letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+                Phase {phase} — {meta.label}
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 600, color, opacity: 0.7 }}>{meta.milestone}</span>
+              <span style={{ width: 1, height: 12, background: color, opacity: 0.25 }} />
+              <span style={{ fontSize: 11, color, opacity: 0.6 }}>{phaseModules.length} modules</span>
+              <span style={{ width: 1, height: 12, background: color, opacity: 0.25 }} />
+              <span style={{ fontSize: 11, color, opacity: 0.6 }}>{meta.timeline}</span>
+              <span style={{ flex: 1 }} />
+              <span style={{ fontSize: 12, color, opacity: 0.5, transform: isOpen ? 'rotate(90deg)' : 'none', display: 'inline-block', transition: 'transform 0.15s' }}>
+                ›
+              </span>
+            </button>
 
-            {phaseModules.map(module => {
-              const apps = byParent(module.id, 'app')
-              const directFeatures = nodes.filter(n => n.parent === module.id && n.type !== 'app')
+            {/* Module cards grid */}
+            {isOpen && (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))',
+                gap: 12,
+              }}>
+                {phaseModules.map(mod => {
+                  const apps     = appCount(mod.id)
+                  const features = featureCount(mod.id)
+                  const isActive = selected?.id === mod.id
 
-              return (
-                <section key={module.id} style={{ marginBottom: 28 }}>
-                  {/* Module header */}
-                  <button
-                    onClick={() => onSelect(module)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      width: '100%',
-                      background: selected?.id === module.id ? PHASE_BG[phase] : 'transparent',
-                      border: 'none',
-                      borderLeft: `3px solid ${PHASE_COLORS[phase]}`,
-                      borderRadius: '0 6px 6px 0',
-                      padding: '8px 12px',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      marginBottom: 8,
-                    }}
-                  >
-                    <span style={{ fontWeight: 700, fontSize: 14, color: PHASE_COLORS[phase], flex: 1 }}>
-                      {module.label}
-                    </span>
-                    {module.code && (
-                      <span style={{ fontSize: 10, color: PHASE_COLORS[phase], opacity: 0.7, fontFamily: 'monospace', marginRight: 4 }}>
-                        {module.code}
-                      </span>
-                    )}
-                    {module.milestone && (
-                      <span style={{ fontSize: 10, color: 'var(--muted)', marginRight: 6 }}>
-                        {module.milestone}
-                      </span>
-                    )}
-                    <StatusBadge status={module.status} />
-                  </button>
+                  return (
+                    <button
+                      key={mod.id}
+                      onClick={() => onSelect(mod)}
+                      style={{
+                        display: 'flex', flexDirection: 'column',
+                        padding: '14px 16px',
+                        border: `1px solid ${isActive ? color : 'var(--border)'}`,
+                        borderTop: `3px solid ${color}`,
+                        borderRadius: 8,
+                        background: isActive ? bg : 'var(--white)',
+                        cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+                        transition: 'border-color 0.12s, box-shadow 0.12s',
+                        boxShadow: isActive ? `0 0 0 2px ${bg}` : 'none',
+                      }}
+                      onMouseEnter={e => { if (!isActive) { e.currentTarget.style.borderColor = color; e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.07)' } }}
+                      onMouseLeave={e => { if (!isActive) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none' } }}
+                    >
+                      {/* Top row: code + status */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                        <span style={{ fontSize: 10, fontFamily: 'monospace', fontWeight: 700, color, letterSpacing: '0.3px' }}>
+                          {mod.code ?? mod.id.toUpperCase()}
+                        </span>
+                        <StatusBadge status={mod.status} />
+                      </div>
 
-                  {/* Apps and their features */}
-                  {apps.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingLeft: 16 }}>
-                      {apps.map(app => {
-                        const features = byParent(app.id)
-                        const visibleFeatures = features.filter(f => nodeSet.has(f.id))
-                        return (
-                          <div key={app.id}>
-                            {/* App row */}
-                            <button
-                              onClick={() => onSelect(app)}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 8,
-                                width: '100%',
-                                background: selected?.id === app.id ? PHASE_BG[app.phase] : 'transparent',
-                                border: 'none',
-                                padding: '5px 8px',
-                                borderRadius: 6,
-                                cursor: 'pointer',
-                                textAlign: 'left',
-                                marginBottom: 4,
-                              }}
-                            >
-                              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--slate)', flex: 1 }}>
-                                {app.label}
-                              </span>
-                              {app.code && (
-                                <span style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'monospace', marginRight: 4 }}>
-                                  {app.code}
-                                </span>
-                              )}
-                              <StatusBadge status={app.status} />
-                            </button>
+                      {/* Module name */}
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--navy)', marginBottom: 6, lineHeight: 1.3 }}>
+                        {mod.label}
+                      </div>
 
-                            {/* Feature rows */}
-                            {visibleFeatures.map(feature => (
-                              <FeatureRow key={feature.id} node={feature} selected={selected} onSelect={onSelect} indent={1} />
-                            ))}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
+                      {/* Description snippet */}
+                      <div style={{
+                        fontSize: 11, color: 'var(--muted)', lineHeight: 1.55,
+                        flex: 1, marginBottom: 12,
+                        display: '-webkit-box', WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                      }}>
+                        {mod.description}
+                      </div>
 
-                  {/* Direct features (no app parent) */}
-                  {directFeatures.map(feature => (
-                    <FeatureRow key={feature.id} node={feature} selected={selected} onSelect={onSelect} indent={0} />
-                  ))}
-                </section>
-              )
-            })}
-          </div>
+                      {/* Footer: counts + milestone */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        {mod.milestone && (
+                          <span style={{
+                            fontSize: 10, fontWeight: 700, padding: '2px 6px',
+                            background: bg, color, borderRadius: 4,
+                          }}>
+                            {mod.milestone}
+                          </span>
+                        )}
+                        <span style={{ fontSize: 10, color: 'var(--muted)' }}>
+                          {apps > 0 ? `${apps} apps · ` : ''}{features} features
+                        </span>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </section>
         )
       })}
     </div>
   )
 }
 
-function SectionHeader({ label, color }: { label: string; color: string }) {
-  return (
-    <div style={{
-      fontSize: 11,
-      fontWeight: 700,
-      letterSpacing: '1px',
-      textTransform: 'uppercase',
-      color,
-      marginBottom: 12,
-      paddingLeft: 2,
-    }}>
-      {label}
-    </div>
-  )
-}
-
-function FeatureRow({ node, selected, onSelect, indent }: {
-  node: Node
-  selected: Node | null
-  onSelect: (node: Node) => void
-  indent: number
-}) {
-  const isSelected = selected?.id === node.id
-  const phaseColor = PHASE_COLORS[node.phase]
-
-  return (
-    <button
-      onClick={() => onSelect(node)}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        width: '100%',
-        paddingLeft: 16 + indent * 16,
-        paddingRight: 8,
-        paddingTop: 5,
-        paddingBottom: 5,
-        background: isSelected ? 'var(--indigo-light)' : 'transparent',
-        border: 'none',
-        borderRadius: 6,
-        cursor: 'pointer',
-        textAlign: 'left',
-        marginBottom: 2,
-      }}
-    >
-      <span style={{
-        width: 6,
-        height: 6,
-        borderRadius: '50%',
-        background: phaseColor,
-        flexShrink: 0,
-        opacity: 0.6,
-      }} />
-      <span style={{ fontSize: 13, color: 'var(--slate)', flex: 1 }}>
-        {node.label}
-      </span>
-      {node.code && (
-        <span style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'monospace' }}>
-          {node.code}
-        </span>
-      )}
-      <StatusBadge status={node.status} />
-    </button>
-  )
-}
-
 function StatusBadge({ status }: { status: string }) {
-  const style = STATUS_STYLES[status] ?? STATUS_STYLES['planned']
+  const s = STATUS_STYLES[status] ?? STATUS_STYLES['planned']
   return (
     <span style={{
-      fontSize: 10,
-      fontWeight: 600,
-      padding: '2px 7px',
-      borderRadius: 4,
-      whiteSpace: 'nowrap',
-      ...style,
+      fontSize: 10, fontWeight: 600, padding: '2px 7px',
+      borderRadius: 4, whiteSpace: 'nowrap',
+      background: s.bg, color: s.color,
     }}>
       {status}
     </span>
