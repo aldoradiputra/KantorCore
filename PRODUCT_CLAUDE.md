@@ -415,6 +415,40 @@ Example: Sales gets a `Stock tracking: [Off | Simple | Full (requires Inventory)
 
 **Implication for pricing:** the value of paid modules (Inventory, CRM, Documents) is *advanced* features (multi-warehouse, lots, valuation; lifecycle, opportunities; folders, versioning, e-sign), not the basic capability. The basic capability ships with whatever module the customer is paying for.
 
+### Verticalization strategy: general + hyperlocal + configurable vertical modes
+
+**Date:** 2026-05-08
+
+**Context:** Indonesian mid-market clusters in a few specific industries (plantation/agriculture, FMCG distribution, labor-intensive manufacturing, F&B chains). Hot mid-market features include multi-entity consolidation accounting, iPaaS for legacy systems, sales-commission engines connecting to payroll/accounting, and yield-based payroll for plantations. We considered going wide with separate vertical apps (Odoo's path) vs. staying purely horizontal.
+
+**Decision:** Build a horizontal core with Indonesian compliance baked in, plus 2–3 named **vertical modes** delivered as configuration presets — not separate apps.
+
+A "vertical mode" is a named bundle of feature-flag defaults and module presets. It is *not* a new module tree. Example: enabling **Plantation mode** sets `Payroll.primary_unit = kg-yield`, exposes harvest-tracking fields on Inventory, and unlocks estate-management presets in HR.
+
+**Initial vertical modes (Phase 2+):**
+1. **Distribution / FMCG** — multi-warehouse, route planning, tiered sales commission
+2. **Plantation / Agriculture** — yield-based payroll, harvest tracking, estate management
+3. **Labor-intensive manufacturing** — piece-rate payroll, shift scheduling, quality checkpoints
+
+**Why not mass verticalization:**
+- Each vertical app demands its own domain experts, sales motion, onboarding, and test surface — N×M maintenance compound.
+- Quality dilutes fast. 40 mediocre modules is worse than 12 excellent ones.
+- Customers in holding companies span verticals; a single horizontal core with mode toggles fits their structure better than buying multiple verticalized SKUs.
+
+**Why not pure horizontal:**
+- Indonesia's mid-market concentration in a few industries is a real opportunity — owning plantation payroll + compliance is a defensible wedge.
+- Generic ERPs lose to specialists in regulated/operational verticals; configurable modes let us compete without forking.
+
+**Mapping the four hot features:**
+| Feature | Where it lives |
+|---|---|
+| Multi-entity / consolidation accounting | Phase 1 Accounting (horizontal core, not optional) |
+| iPaaS / legacy connectors | Extension of Tool Registry (IS-PLAT-TOOL) — Phase 1/2 |
+| Sales-commission engine (Sales → Payroll → Accounting) | Phase 2 cross-module workflow under Sales + Payroll |
+| Yield-based payroll | Phase 2 Payroll feature: configurable `primary_unit` (hours / days / kg-yield / piece-rate / trip) |
+
+**Rule for the future:** a feature only earns "vertical mode" status when ≥3 customers in that industry pay for it and ≥1 specialized module is required. Otherwise it stays a per-module setting.
+
 ---
 
 ## What NOT to Build (avoid redundancy with ecosystem)

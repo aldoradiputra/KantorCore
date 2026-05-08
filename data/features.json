@@ -275,6 +275,19 @@
       "milestone": "v1.0"
     },
     {
+      "id": "hr-payroll-units",
+      "label": "Configurable Pay Basis",
+      "description": "Switch payroll primary unit per company or worker group: hours, days, kg-yield (plantation), piece-rate (manufacturing), trip (logistics). Enables yield-based payroll for agriculture without forking the module",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "hr-payroll",
+      "x": 0,
+      "y": 0,
+      "code": "IS-HR-PAY-005",
+      "milestone": "v2.0"
+    },
+    {
       "id": "hr-attendance",
       "label": "Attendance",
       "description": "Time tracking, shift management, and leave policies",
@@ -454,6 +467,19 @@
       "x": 0,
       "y": 0,
       "code": "IS-FIN-ACC-004",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "finance-accounting-consolidation",
+      "label": "Multi-Entity Consolidation",
+      "description": "Holding-level consolidated reports across subsidiaries with intercompany elimination, currency translation, and per-entity drill-down. Built for Indonesian konglomerasi structures",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "finance-accounting",
+      "x": 0,
+      "y": 0,
+      "code": "IS-FIN-ACC-005",
       "milestone": "v1.0"
     },
     {
@@ -870,6 +896,45 @@
       "x": 0,
       "y": 0,
       "code": "IS-SALES-POS-004",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "sales-commission",
+      "label": "Commission Engine",
+      "description": "Configurable commission schemes (flat, tiered, split-hierarchy, product-mix) that flow from sales orders into Payroll runs and Accounting accruals. One engine, vertical presets for FMCG distribution, insurance, and property",
+      "type": "app",
+      "status": "planned",
+      "phase": 2,
+      "parent": "sales",
+      "x": 0,
+      "y": 0,
+      "code": "IS-SALES-COMM",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "sales-commission-rules",
+      "label": "Commission Rules",
+      "description": "Per-product, per-team, per-tier rule builder with effective-date versioning",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "sales-commission",
+      "x": 0,
+      "y": 0,
+      "code": "IS-SALES-COMM-001",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "sales-commission-payout",
+      "label": "Payroll & Accounting Sync",
+      "description": "Approved commission runs post as Payroll line items and Accounting accruals — no manual re-entry",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "sales-commission",
+      "x": 0,
+      "y": 0,
+      "code": "IS-SALES-COMM-002",
       "milestone": "v2.0"
     },
     {
@@ -4924,6 +4989,50 @@
       "parent": "plat-tool-registry",
       "code": "IS-PLAT-TOOL-003",
       "milestone": "v1.0"
+    },
+    {
+      "id": "plat-connectors",
+      "label": "Connector Framework (iPaaS)",
+      "description": "Integration layer for legacy systems: typed connectors, scheduled syncs, transformation pipelines, error retry, and observability. Pre-built connectors for SAP, Oracle EBS, Accurate, Jurnal, MYOB, and CSV/Excel ingestion",
+      "type": "app",
+      "status": "planned",
+      "phase": 2,
+      "parent": "platform-core",
+      "code": "IS-PLAT-CONN",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "plat-conn-runtime",
+      "label": "Connector Runtime",
+      "description": "Sandboxed execution of connector tasks with credential vault, scheduling, and event-bus emission",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "plat-connectors",
+      "code": "IS-PLAT-CONN-001",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "plat-conn-library",
+      "label": "Connector Library",
+      "description": "Catalogue of pre-built connectors maintained by Indonesia System for the most common Indonesian and global enterprise systems",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "plat-connectors",
+      "code": "IS-PLAT-CONN-002",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "plat-conn-mapper",
+      "label": "Field Mapper & Transformer",
+      "description": "No-code field mapping and transformation rules between external schema and IS canonical models",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "plat-connectors",
+      "code": "IS-PLAT-CONN-003",
+      "milestone": "v2.0"
     },
     {
       "id": "plat-audit",
