@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="id"><head>
+<meta charset="utf-8"><title>IS — PO-2026-0091</title>
+<link rel="icon" href="../../assets/favicon.svg">
+<link rel="stylesheet" href="shell.css">
+<style>
+  .po-head { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: start; padding: 20px 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; }
+  .po-num { font-family: var(--font-mono); font-size: 13px; color: var(--fg-3); }
+  .po-title { font-size: 22px; font-weight: 700; color: var(--fg-1); letter-spacing: -0.4px; margin-top: 4px; }
+  .po-meta { display: flex; gap: 22px; margin-top: 12px; font-size: 12px; color: var(--fg-2); }
+  .po-meta span b { color: var(--fg-1); font-weight: 600; }
+
+  /* workflow visualization */
+  .flow { padding: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; }
+  .flow-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .flow-title { font-size: 14px; font-weight: 600; color: var(--fg-1); }
+  .flow-sub { font-size: 11px; color: var(--fg-3); margin-top: 2px; }
+  .flow-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; align-items: start; position: relative; }
+  .step { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 12px; position: relative; }
+  .step::after { content: ""; position: absolute; top: 22px; left: calc(50% + 24px); right: calc(-50% + 24px); height: 2px; background: var(--border); }
+  .step:last-child::after { display: none; }
+  .step.done::after { background: var(--teal); }
+  .step.current::after { background: linear-gradient(90deg, var(--indigo), var(--border)); }
+  .step-circle { width: 44px; height: 44px; border-radius: 50%; background: var(--bg); border: 2px solid var(--border); display: grid; place-items: center; font-weight: 700; font-size: 14px; color: var(--fg-3); position: relative; z-index: 1; }
+  .step.done .step-circle { background: var(--teal); border-color: var(--teal); color: white; }
+  .step.current .step-circle { background: var(--indigo); border-color: var(--indigo); color: white; box-shadow: 0 0 0 4px var(--indigo-light); }
+  .step-label { font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--fg-3); margin-top: 12px; }
+  .step.done .step-label, .step.current .step-label { color: var(--fg-1); }
+  .step-name { font-size: 14px; font-weight: 600; color: var(--fg-1); margin-top: 4px; }
+  .step-role { font-size: 11px; color: var(--fg-3); margin-top: 2px; }
+  .step-time { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); margin-top: 8px; padding: 2px 7px; background: var(--bg); border-radius: 3px; }
+  .step.current .step-time { background: var(--indigo-light); color: var(--indigo); font-weight: 700; }
+  .step .av { width: 40px; height: 40px; font-size: 13px; margin-top: 10px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 380px; gap: 16px; align-items: start; }
+
+  .line-table { width: 100%; }
+  .line-table th, .line-table td { padding: 10px 14px; }
+  .line-table tfoot td { font-weight: 600; background: var(--bg); border-top: 2px solid var(--border-strong); }
+  .line-table tfoot tr:last-child td { background: var(--surface); border-bottom: 0; }
+</style></head>
+<body class="app">
+<div class="app-shell" data-screen-label="04 PO Approval">
+  <aside class="sidebar" data-sidebar data-active="procurement"></aside>
+  <header class="topbar" id="topbar"></header>
+  <main class="main">
+
+    <div class="page-head">
+      <div class="crumbs" style="font-size: 12px;">
+        <span>Procurement</span><span class="sep">/</span><span>Purchase Orders</span><span class="sep">/</span><b>PO-2026-0091</b>
+      </div>
+      <div class="page-actions">
+        <button class="btn ghost">Print</button>
+        <button class="btn secondary">Tolak</button>
+        <button class="btn primary">Setujui & lanjutkan</button>
+      </div>
+    </div>
+
+    <div class="po-head">
+      <div>
+        <div class="po-num">PO-2026-0091</div>
+        <div class="po-title">Pengadaan komputer & periferal kantor — Q2 2026</div>
+        <div class="po-meta">
+          <span>Vendor <b>PT Mitra Teknologi Indonesia</b></span>
+          <span>Departemen <b>Engineering</b></span>
+          <span>Diajukan <b>11 Mei 2026, 09:42</b></span>
+          <span>Anggaran sisa <b class="num">Rp 84.500.000</b></span>
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <div class="label-mini" style="margin-bottom: 4px;">Total nilai PO</div>
+        <div class="num" style="font-size: 24px; font-weight: 700;">Rp 12.450.000</div>
+        <div style="margin-top: 8px;"><span class="b indigo"><span class="bd"></span>Menunggu persetujuan Anda</span></div>
+      </div>
+    </div>
+
+    <!-- Workflow -->
+    <div class="flow">
+      <div class="flow-header">
+        <div>
+          <div class="flow-title">Alur persetujuan</div>
+          <div class="flow-sub">Aturan: PO &gt; Rp 10jt — Manager → Finance Lead → CFO. SLA 24 jam per langkah.</div>
+        </div>
+        <span class="b teal"><span class="bd"></span>Sesuai SLA</span>
+      </div>
+      <div class="flow-steps">
+        <div class="step done">
+          <div class="step-circle">✓</div>
+          <div class="step-label">1 · Pemohon</div>
+          <div class="step-name">Dewi Rahmawati</div>
+          <div class="step-role">Engineering Lead</div>
+          <div class="av amber">DR</div>
+          <div class="step-time">11 Mei · 09:42</div>
+        </div>
+        <div class="step done">
+          <div class="step-circle">✓</div>
+          <div class="step-label">2 · Manager</div>
+          <div class="step-name">Andi Wijaya</div>
+          <div class="step-role">VP Engineering</div>
+          <div class="av navy">AW</div>
+          <div class="step-time">11 Mei · 11:18</div>
+        </div>
+        <div class="step current">
+          <div class="step-circle">3</div>
+          <div class="step-label">3 · Finance Lead</div>
+          <div class="step-name">Rizky Hidayat</div>
+          <div class="step-role">Finance Manager</div>
+          <div class="av">RH</div>
+          <div class="step-time">Anda · sekarang</div>
+        </div>
+        <div class="step">
+          <div class="step-circle">4</div>
+          <div class="step-label">4 · CFO</div>
+          <div class="step-name">Lestari Putri</div>
+          <div class="step-role">Chief Financial Officer</div>
+          <div class="av teal">LP</div>
+          <div class="step-time">Menunggu</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-head"><h3>Item PO</h3><span class="meta">5 baris · PPN 11% inklusif</span></div>
+        <table class="tbl line-table">
+          <thead><tr>
+            <th style="width: 30px;">#</th>
+            <th>Deskripsi</th>
+            <th class="right">Qty</th>
+            <th class="right">Harga satuan</th>
+            <th class="right">Subtotal</th>
+          </tr></thead>
+          <tbody>
+            <tr><td class="muted">1</td><td>MacBook Air M4 13" — 16GB / 512GB <div class="muted" style="font-size:11px;">SKU: MBA-M4-13-512</div></td><td class="right num">2</td><td class="right num">Rp 22.500.000</td><td class="right num">Rp 45.000.000</td></tr>
+            <tr><td class="muted">2</td><td>Dell UltraSharp U2723QE 27" 4K <div class="muted" style="font-size:11px;">SKU: DELL-U2723QE</div></td><td class="right num">4</td><td class="right num">Rp 9.800.000</td><td class="right num">Rp 39.200.000</td></tr>
+            <tr><td class="muted">3</td><td>Logitech MX Keys + MX Master 3S bundle</td><td class="right num">4</td><td class="right num">Rp 3.150.000</td><td class="right num">Rp 12.600.000</td></tr>
+            <tr><td class="muted">4</td><td>Kabel & dock USB-C (Anker A8383)</td><td class="right num">4</td><td class="right num">Rp 1.450.000</td><td class="right num">Rp 5.800.000</td></tr>
+            <tr><td class="muted">5</td><td>Tas laptop kantor (Targus Cypress)</td><td class="right num">2</td><td class="right num">Rp 850.000</td><td class="right num">Rp 1.700.000</td></tr>
+          </tbody>
+          <tfoot>
+            <tr><td colspan="4" class="right muted">Subtotal</td><td class="right num">Rp 104.300.000</td></tr>
+            <tr><td colspan="4" class="right muted">Diskon vendor (12%)</td><td class="right num">−Rp 12.516.000</td></tr>
+            <tr><td colspan="4" class="right muted">PPN 11%</td><td class="right num">Rp 10.086.460</td></tr>
+            <tr><td colspan="4" class="right" style="font-weight: 700;">Total</td><td class="right num" style="font-size: 14px; font-weight: 700; color: var(--fg-1);">Rp 12.450.000</td></tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="card">
+          <div class="card-head"><h3>Diskusi</h3><span class="meta">3 komentar</span></div>
+          <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: grid; grid-template-columns: 28px 1fr; gap: 10px;">
+              <div class="av sm amber">DR</div>
+              <div>
+                <div style="font-size: 12px;"><b>Dewi Rahmawati</b> <span class="muted" style="font-size: 10px; font-family: var(--font-mono);">11 Mei, 09:43</span></div>
+                <div style="font-size: 12px; color: var(--fg-2); margin-top: 4px; line-height: 1.5;">Permintaan untuk 2 hire baru di tim mobile. Sudah dikoordinasikan dengan HR.</div>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 28px 1fr; gap: 10px;">
+              <div class="av sm navy">AW</div>
+              <div>
+                <div style="font-size: 12px;"><b>Andi Wijaya</b> <span class="muted" style="font-size: 10px; font-family: var(--font-mono);">11 Mei, 11:17</span></div>
+                <div style="font-size: 12px; color: var(--fg-2); margin-top: 4px; line-height: 1.5;">Disetujui. Pastikan gunakan vendor yang sama agar konsisten dengan inventaris kita.</div>
+              </div>
+            </div>
+            <textarea placeholder="Tulis komentar…" style="width: 100%; min-height: 60px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; resize: vertical; font-family: var(--font-sans); font-size: 12px; color: var(--fg-1);"></textarea>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Lampiran</h3><span class="meta">2 berkas</span></div>
+          <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
+              <div style="width: 32px; height: 32px; background: var(--red-light); color: var(--red); border-radius: 4px; display: grid; place-items: center; font-weight: 700; font-size: 10px;">PDF</div>
+              <div style="flex: 1; min-width: 0;"><div style="font-size: 12px; font-weight: 500; color: var(--fg-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Quotation-MitraTek-2026-0511.pdf</div><div class="muted" style="font-size: 10px; font-family: var(--font-mono);">2.4 MB · 11 Mei 09:42</div></div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
+              <div style="width: 32px; height: 32px; background: var(--teal-light); color: var(--teal); border-radius: 4px; display: grid; place-items: center; font-weight: 700; font-size: 10px;">XLS</div>
+              <div style="flex: 1; min-width: 0;"><div style="font-size: 12px; font-weight: 500; color: var(--fg-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Comparison-3vendors.xlsx</div><div class="muted" style="font-size: 10px; font-family: var(--font-mono);">88 KB · 11 Mei 09:42</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+<script src="sidebar.js"></script>
+<script>document.getElementById('topbar').innerHTML = window.Topbar({ crumbs: ['Procurement','Purchase Orders','PO-2026-0091'] });</script>
+</body></html>

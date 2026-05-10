@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="id"><head>
+<meta charset="utf-8"><title>IS — Finance</title>
+<link rel="icon" href="../../assets/favicon.svg">
+<link rel="stylesheet" href="shell.css">
+<style>
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); grid-auto-rows: 100px; gap: 12px; }
+  .w { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; position: relative; }
+  .w:hover { border-color: var(--border-strong); }
+  .w-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .w-title { font-size: 12px; font-weight: 700; letter-spacing: 0.4px; color: var(--fg-3); text-transform: uppercase; }
+  .w-handle { color: var(--fg-3); cursor: grab; opacity: 0; transition: opacity 0.15s; font-size: 11px; }
+  .w:hover .w-handle { opacity: 1; }
+  .w-value { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; color: var(--fg-1); font-family: var(--font-sans); font-feature-settings: "tnum" 1; margin-top: 4px; }
+  .w-delta { font-size: 11px; color: var(--teal); font-weight: 600; margin-top: 2px; }
+  .w-delta.down { color: var(--red); }
+
+  .add-widget {
+    display: grid; place-items: center;
+    border: 2px dashed var(--border-strong);
+    border-radius: 8px;
+    color: var(--fg-3);
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    background: transparent;
+  }
+  .add-widget:hover { background: var(--indigo-light); border-color: var(--indigo); color: var(--indigo); }
+
+  .module-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .mt { padding: 6px 12px; font-size: 12px; font-weight: 500; color: var(--fg-3); border-radius: 6px; cursor: pointer; }
+  .mt:hover { background: var(--bg); color: var(--fg-1); }
+  .mt.on { background: var(--indigo-light); color: var(--indigo); font-weight: 600; }
+</style></head>
+<body class="app">
+<div class="app-shell" data-screen-label="05 Finance Home">
+  <aside class="sidebar" data-sidebar data-active="finance"></aside>
+  <header class="topbar" id="topbar"></header>
+  <main class="main">
+
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Finance</h1>
+        <div class="lede">Periode aktif Mei 2026 · ditutup 31 Mei</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn ghost">Ekspor laporan</button>
+        <button class="btn secondary">Pilih periode</button>
+        <button class="btn primary">+ Faktur baru</button>
+      </div>
+    </div>
+
+    <div class="module-tabs">
+      <div class="mt on">Dasbor</div>
+      <div class="mt">AR</div>
+      <div class="mt">AP</div>
+      <div class="mt">Buku besar</div>
+      <div class="mt">Pajak (CoreTax)</div>
+      <div class="mt">Bank & Rekonsiliasi</div>
+      <div class="mt">Laporan</div>
+    </div>
+
+    <div class="grid">
+
+      <!-- Cash position chart - large -->
+      <div class="w" style="grid-column: span 7; grid-row: span 3;">
+        <div class="w-head">
+          <div><div class="w-title">Posisi kas</div><div class="w-value num">Rp 8.420.000.000</div><div class="w-delta">▲ Rp 240 jt vs minggu lalu</div></div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="live">Live</span>
+            <span class="w-handle">⋮⋮</span>
+          </div>
+        </div>
+        <svg viewBox="0 0 600 180" preserveAspectRatio="none" style="width: 100%; height: calc(100% - 60px); margin-top: 8px;">
+          <defs><linearGradient id="cg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#3B4FC4" stop-opacity="0.18"/><stop offset="1" stop-color="#3B4FC4" stop-opacity="0"/></linearGradient></defs>
+          <line x1="0" x2="600" y1="40" y2="40" stroke="#E5E7EB" stroke-dasharray="2 4"/>
+          <line x1="0" x2="600" y1="100" y2="100" stroke="#E5E7EB" stroke-dasharray="2 4"/>
+          <path d="M0,120 L40,110 L80,118 L120,98 L160,92 L200,108 L240,82 L280,72 L320,80 L360,58 L400,64 L440,48 L480,42 L520,52 L560,34 L600,26 L600,180 L0,180 Z" fill="url(#cg)"/>
+          <path d="M0,120 L40,110 L80,118 L120,98 L160,92 L200,108 L240,82 L280,72 L320,80 L360,58 L400,64 L440,48 L480,42 L520,52 L560,34 L600,26" fill="none" stroke="#3B4FC4" stroke-width="2"/>
+          <circle cx="600" cy="26" r="4" fill="#3B4FC4"/>
+        </svg>
+      </div>
+
+      <!-- AR aging -->
+      <div class="w" style="grid-column: span 5; grid-row: span 2;">
+        <div class="w-head"><div class="w-title">AR aging</div><span class="w-handle">⋮⋮</span></div>
+        <div style="display: flex; align-items: flex-end; gap: 10px; height: 120px; padding-top: 16px;">
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+            <span class="num" style="font-size: 11px; font-weight: 600; color: var(--fg-1);">Rp 184jt</span>
+            <div style="width: 100%; background: var(--indigo); border-radius: 3px 3px 0 0; height: 80px;"></div>
+            <span style="font-size: 10px; color: var(--fg-3); font-family: var(--font-mono);">0–30</span>
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+            <span class="num" style="font-size: 11px; font-weight: 600;">Rp 96jt</span>
+            <div style="width: 100%; background: var(--indigo); border-radius: 3px 3px 0 0; height: 50px; opacity: 0.75;"></div>
+            <span style="font-size: 10px; color: var(--fg-3); font-family: var(--font-mono);">31–60</span>
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+            <span class="num" style="font-size: 11px; font-weight: 600;">Rp 42jt</span>
+            <div style="width: 100%; background: var(--amber); border-radius: 3px 3px 0 0; height: 32px;"></div>
+            <span style="font-size: 10px; color: var(--fg-3); font-family: var(--font-mono);">61–90</span>
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+            <span class="num" style="font-size: 11px; font-weight: 600;">Rp 28jt</span>
+            <div style="width: 100%; background: var(--red); border-radius: 3px 3px 0 0; height: 22px;"></div>
+            <span style="font-size: 10px; color: var(--fg-3); font-family: var(--font-mono);">90+</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AP due -->
+      <div class="w" style="grid-column: span 5; grid-row: span 1;">
+        <div class="w-head"><div class="w-title">AP jatuh tempo 7 hari</div><span class="w-handle">⋮⋮</span></div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px;">
+          <div class="w-value num" style="font-size: 22px;">Rp 142.380.000</div>
+          <span style="font-size: 11px; color: var(--fg-3);">9 vendor</span>
+        </div>
+      </div>
+
+      <!-- Recent transactions list -->
+      <div class="w" style="grid-column: span 6; grid-row: span 3; padding: 0;">
+        <div style="padding: 14px 16px 8px; display: flex; justify-content: space-between; align-items: center;">
+          <div class="w-title">Transaksi terbaru</div>
+          <a href="#" style="color: var(--indigo); font-size: 11px; font-weight: 600; text-decoration: none;">Lihat semua →</a>
+        </div>
+        <div>
+          <div style="display: grid; grid-template-columns: 32px 1fr auto; gap: 10px; padding: 9px 16px; border-top: 1px solid var(--border); align-items: center;">
+            <div style="width: 28px; height: 28px; border-radius: 6px; background: var(--teal-light); color: var(--teal); display: grid; place-items: center; font-size: 11px; font-weight: 700;">↓</div>
+            <div><div style="font-size: 12px; font-weight: 500;">PT Maju Bersama Sejahtera</div><div style="font-size: 10px; color: var(--fg-3); font-family: var(--font-mono);">INV-2026-0177 · BCA · 11 Mei 13:42</div></div>
+            <div class="num" style="font-size: 13px; font-weight: 600; color: var(--teal);">+Rp 178.000.000</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 32px 1fr auto; gap: 10px; padding: 9px 16px; border-top: 1px solid var(--border); align-items: center;">
+            <div style="width: 28px; height: 28px; border-radius: 6px; background: var(--red-light); color: var(--red); display: grid; place-items: center; font-size: 11px; font-weight: 700;">↑</div>
+            <div><div style="font-size: 12px; font-weight: 500;">PT Mitra Logistik</div><div style="font-size: 10px; color: var(--fg-3); font-family: var(--font-mono);">AP-2026-0044 · Mandiri · 11 Mei 11:08</div></div>
+            <div class="num" style="font-size: 13px; font-weight: 600;">−Rp 42.500.000</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 32px 1fr auto; gap: 10px; padding: 9px 16px; border-top: 1px solid var(--border); align-items: center;">
+            <div style="width: 28px; height: 28px; border-radius: 6px; background: var(--teal-light); color: var(--teal); display: grid; place-items: center; font-size: 11px; font-weight: 700;">↓</div>
+            <div><div style="font-size: 12px; font-weight: 500;">CV Bintang Timur</div><div style="font-size: 10px; color: var(--fg-3); font-family: var(--font-mono);">INV-2026-0173 · BNI · 10 Mei 15:21</div></div>
+            <div class="num" style="font-size: 13px; font-weight: 600; color: var(--teal);">+Rp 18.250.000</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 32px 1fr auto; gap: 10px; padding: 9px 16px; border-top: 1px solid var(--border); align-items: center;">
+            <div style="width: 28px; height: 28px; border-radius: 6px; background: var(--red-light); color: var(--red); display: grid; place-items: center; font-size: 11px; font-weight: 700;">↑</div>
+            <div><div style="font-size: 12px; font-weight: 500;">Bayar gaji — Apr 2026</div><div style="font-size: 10px; color: var(--fg-3); font-family: var(--font-mono);">PAY-2026-04 · 218 karyawan · 30 Apr</div></div>
+            <div class="num" style="font-size: 13px; font-weight: 600;">−Rp 2.418.500.000</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 32px 1fr auto; gap: 10px; padding: 9px 16px; border-top: 1px solid var(--border); align-items: center;">
+            <div style="width: 28px; height: 28px; border-radius: 6px; background: var(--amber-light); color: var(--amber); display: grid; place-items: center; font-size: 11px; font-weight: 700;">𝟫</div>
+            <div><div style="font-size: 12px; font-weight: 500;">CoreTax DJP — PPh 21</div><div style="font-size: 10px; color: var(--fg-3); font-family: var(--font-mono);">TAX-2026-04 · disetor 30 Apr</div></div>
+            <div class="num" style="font-size: 13px; font-weight: 600;">−Rp 142.300.000</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top customers -->
+      <div class="w" style="grid-column: span 6; grid-row: span 3;">
+        <div class="w-head"><div class="w-title">Pelanggan terbesar · YTD</div><span class="w-handle">⋮⋮</span></div>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px;">
+          <div><div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;"><span style="font-weight: 500;">PT Maju Bersama Sejahtera</span><span class="num" style="font-weight: 600;">Rp 1,24 mi</span></div><div style="height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden;"><div style="background: var(--indigo); height: 100%; width: 100%;"></div></div></div>
+          <div><div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;"><span style="font-weight: 500;">PT Acme Indonesia</span><span class="num" style="font-weight: 600;">Rp 980 jt</span></div><div style="height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden;"><div style="background: var(--indigo); height: 100%; width: 79%;"></div></div></div>
+          <div><div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;"><span style="font-weight: 500;">PT Sumber Rejeki Mandiri</span><span class="num" style="font-weight: 600;">Rp 642 jt</span></div><div style="height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden;"><div style="background: var(--indigo); height: 100%; width: 52%;"></div></div></div>
+          <div><div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;"><span style="font-weight: 500;">CV Bintang Timur</span><span class="num" style="font-weight: 600;">Rp 418 jt</span></div><div style="height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden;"><div style="background: var(--indigo); height: 100%; width: 34%;"></div></div></div>
+          <div><div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;"><span style="font-weight: 500;">PT Andalan Niaga</span><span class="num" style="font-weight: 600;">Rp 316 jt</span></div><div style="height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden;"><div style="background: var(--indigo); height: 100%; width: 25%;"></div></div></div>
+        </div>
+      </div>
+
+      <!-- Add widget affordance -->
+      <button class="add-widget" style="grid-column: span 12; grid-row: span 1;">
+        <span style="display: inline-flex; align-items: center; gap: 6px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Tambah widget
+        </span>
+      </button>
+    </div>
+
+  </main>
+</div>
+<script src="sidebar.js"></script>
+<script>document.getElementById('topbar').innerHTML = window.Topbar({ crumbs: ['Finance','Dasbor'] });</script>
+</body></html>

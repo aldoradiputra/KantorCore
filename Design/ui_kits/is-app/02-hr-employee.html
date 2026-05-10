@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="id"><head>
+<meta charset="utf-8"><title>IS — Karyawan · Budi Santoso</title>
+<link rel="icon" href="../../assets/favicon.svg">
+<link rel="stylesheet" href="shell.css">
+<style>
+  .emp-head { display: grid; grid-template-columns: 80px 1fr auto; gap: 20px; align-items: center; padding: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; }
+  .emp-photo { width: 80px; height: 80px; border-radius: 12px; background: linear-gradient(135deg, var(--indigo-light), var(--teal-light)); display: grid; place-items: center; font-size: 28px; font-weight: 700; color: var(--navy); }
+  .emp-name { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; color: var(--fg-1); }
+  .emp-role { color: var(--fg-3); font-size: 13px; margin-top: 2px; }
+  .emp-meta { display: flex; gap: 18px; margin-top: 10px; font-size: 12px; color: var(--fg-2); }
+  .emp-meta span { display: inline-flex; align-items: center; gap: 5px; }
+  .emp-meta b { color: var(--fg-1); font-weight: 600; }
+  .nik { font-family: var(--font-mono); letter-spacing: 0.5px; }
+
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; padding: 0 4px; }
+  .tab { padding: 10px 14px; font-size: 13px; font-weight: 500; color: var(--fg-3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab:hover { color: var(--fg-1); }
+  .tab.on { color: var(--indigo); border-bottom-color: var(--indigo); font-weight: 600; }
+  .tab .ct { font-size: 10px; padding: 1px 5px; border-radius: 3px; background: var(--bg); margin-left: 5px; color: var(--fg-3); font-weight: 700; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
+
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .field { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .field:nth-child(odd) { border-right: 1px solid var(--border); }
+  .field-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-3); margin-bottom: 4px; }
+  .field-value { font-size: 13px; color: var(--fg-1); }
+  .field-value.mono { font-family: var(--font-mono); }
+  .field.custom { background: rgba(255, 220, 130, 0.08); position: relative; }
+  .field.custom::before { content: "Custom"; position: absolute; top: 6px; right: 10px; font-size: 9px; color: var(--amber); background: var(--amber-light); padding: 1px 5px; border-radius: 3px; font-weight: 700; letter-spacing: 0.5px; }
+
+  .audit-row { display: grid; grid-template-columns: 24px 1fr; gap: 10px; padding: 10px 14px; font-size: 12px; border-bottom: 1px solid var(--border); }
+  .audit-row:last-child { border-bottom: 0; }
+  .audit-row .who { font-weight: 600; color: var(--fg-1); }
+  .audit-row .when { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); margin-top: 1px; }
+  .audit-row .what { color: var(--fg-2); margin-top: 4px; line-height: 1.5; }
+  .audit-row .what code { font-family: var(--font-mono); font-size: 11px; background: var(--bg); padding: 0 4px; border-radius: 3px; }
+  .audit-row .av { width: 24px; height: 24px; font-size: 9px; }
+</style></head>
+<body class="app">
+<div class="app-shell" data-screen-label="02 HR Employee">
+  <aside class="sidebar" data-sidebar data-active="hr"></aside>
+  <header class="topbar" id="topbar"></header>
+  <main class="main">
+
+    <div class="page-head" style="margin-bottom: 16px;">
+      <div class="crumbs" style="font-size: 12px;">
+        <span>HR</span><span class="sep">/</span><span>Karyawan</span><span class="sep">/</span><b>Budi Santoso</b>
+      </div>
+      <div class="page-actions">
+        <button class="btn ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v6M5.6 8.6l4.2 4.2M2 14h6M5.6 19.4l4.2-4.2M12 22v-6M18.4 19.4l-4.2-4.2M22 14h-6M18.4 8.6l-4.2 4.2"/></svg></button>
+        <button class="btn secondary">Edit</button>
+        <button class="btn primary">Tindakan ▾</button>
+      </div>
+    </div>
+
+    <div class="emp-head">
+      <div class="emp-photo">BS</div>
+      <div>
+        <div class="emp-name">Budi Santoso <span class="b teal" style="vertical-align: middle; margin-left: 8px;"><span class="bd"></span>Aktif</span></div>
+        <div class="emp-role">Senior Software Engineer · Engineering · Jakarta HQ</div>
+        <div class="emp-meta">
+          <span>NIK <b class="nik">317•••••••••3456</b></span>
+          <span>EMP-0142</span>
+          <span>Mulai bekerja <b>14 Sep 2023</b></span>
+          <span>Manager <b>Andi Wijaya</b></span>
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <div class="label-mini" style="margin-bottom: 4px;">Take-home (Apr 2026)</div>
+        <div class="num" style="font-size: 20px; font-weight: 700; color: var(--fg-1);">Rp 18.500.000</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab on">Personal</div>
+      <div class="tab">Pekerjaan</div>
+      <div class="tab">Penggajian <span class="ct">12</span></div>
+      <div class="tab">Dokumen <span class="ct">8</span></div>
+      <div class="tab">Cuti & Kehadiran</div>
+      <div class="tab">BPJS</div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-head"><h3>Data pribadi</h3><span class="meta">Disinkronkan dengan Dukcapil · 2 hari lalu</span></div>
+        <div class="field-grid">
+          <div class="field"><div class="field-label">Nama lengkap</div><div class="field-value">Budi Santoso</div></div>
+          <div class="field"><div class="field-label">NIK</div><div class="field-value mono">317•••••••••3456 <button class="btn ghost sm" style="height: 20px; padding: 0 6px; margin-left: 6px; font-size: 10px;">Reveal</button></div></div>
+          <div class="field"><div class="field-label">Tanggal lahir</div><div class="field-value">12 Maret 1992 <span class="muted">· 34 tahun</span></div></div>
+          <div class="field"><div class="field-label">Jenis kelamin</div><div class="field-value">Laki-laki</div></div>
+          <div class="field"><div class="field-label">Status pernikahan</div><div class="field-value">Menikah · K/2</div></div>
+          <div class="field"><div class="field-label">Agama</div><div class="field-value">Islam</div></div>
+          <div class="field"><div class="field-label">Alamat KTP</div><div class="field-value" style="font-size: 12px; line-height: 1.5;">Jl. Kemang Selatan No. 42, RT 04 / RW 09, Bangka, Mampang Prapatan, Jakarta Selatan 12730</div></div>
+          <div class="field"><div class="field-label">Nomor HP</div><div class="field-value mono">+62 812 3456 7890</div></div>
+          <div class="field custom"><div class="field-label">Golongan darah</div><div class="field-value">B+</div></div>
+          <div class="field custom"><div class="field-label">Kontak darurat</div><div class="field-value">Sri Santoso (istri) · 0813-2233-1144</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Aktivitas</h3><span class="live">Live</span></div>
+        <div class="audit-row">
+          <div class="av sm">AW</div>
+          <div>
+            <div class="who">Andi Wijaya <span class="when" style="display: inline-block; margin-left: 4px;">2 jam lalu</span></div>
+            <div class="what">Mengubah <code>job_title</code> dari "Software Engineer" menjadi <b>"Senior Software Engineer"</b>.</div>
+          </div>
+        </div>
+        <div class="audit-row">
+          <div class="av sm teal">SY</div>
+          <div>
+            <div class="who">Sistem <span class="when" style="display: inline-block; margin-left: 4px;">06 Mei 09:14</span></div>
+            <div class="what">Sinkronisasi BPJS Kesehatan berhasil. Status: <b>Aktif</b>, kelas 1.</div>
+          </div>
+        </div>
+        <div class="audit-row">
+          <div class="av sm">BS</div>
+          <div>
+            <div class="who">Budi Santoso <span class="when" style="display: inline-block; margin-left: 4px;">02 Mei 14:32</span></div>
+            <div class="what">Mengunggah dokumen <code>NPWP-2026.pdf</code>.</div>
+          </div>
+        </div>
+        <div class="audit-row">
+          <div class="av sm amber">DR</div>
+          <div>
+            <div class="who">Dewi Rahmawati <span class="when" style="display: inline-block; margin-left: 4px;">28 Apr 11:08</span></div>
+            <div class="what">Menyetujui kenaikan gaji efektif <b>1 Mei 2026</b>.</div>
+          </div>
+        </div>
+        <div class="audit-row">
+          <div class="av sm">SY</div>
+          <div>
+            <div class="who">Sistem <span class="when" style="display: inline-block; margin-left: 4px;">14 Sep 2023</span></div>
+            <div class="what">Karyawan dibuat. Status onboarding selesai.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+<script src="sidebar.js"></script>
+<script>document.getElementById('topbar').innerHTML = window.Topbar({ crumbs: ['HR','Karyawan','Budi Santoso'] });</script>
+</body></html>

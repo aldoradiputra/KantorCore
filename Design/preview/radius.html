@@ -1,0 +1,29 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css"><title>Radius</title>
+<style>
+  body { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .demo { background: var(--surface); border: 1px solid var(--border); height: 90px; display: grid; place-items: center; }
+  .name { font-weight: 600; font-size: 12px; color: var(--fg-1); margin-top: 10px; }
+  .desc { font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); margin-top: 2px; }
+</style></head>
+<body><div class="card">
+  <div class="label" style="margin-bottom: 16px;">Radius — three sizes only</div>
+  <div class="grid">
+    <div>
+      <div class="demo" style="border-radius: 4px"><span style="background:var(--indigo); color:white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">BADGE</span></div>
+      <div class="name">--r-sm · 4px</div>
+      <div class="desc">badges, pills, status chips</div>
+    </div>
+    <div>
+      <div class="demo" style="border-radius: 8px"><div style="background:var(--indigo); color:white; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;">Save</div></div>
+      <div class="name">--r-md · 8px</div>
+      <div class="desc">inputs, buttons, cards</div>
+    </div>
+    <div>
+      <div class="demo" style="border-radius: 12px; background: var(--surface); box-shadow: 0 16px 40px rgba(15,23,42,0.12);"><span style="font-size: 11px; color: var(--fg-3); font-family: var(--font-mono);">MODAL</span></div>
+      <div class="name">--r-lg · 12px</div>
+      <div class="desc">modals, popovers</div>
+    </div>
+  </div>
+</div></body></html>

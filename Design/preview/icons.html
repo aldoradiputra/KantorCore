@@ -1,0 +1,38 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { background: var(--surface); padding: 24px; font-family: var(--font-sans); }
+  .grid { display: grid; grid-template-columns: repeat(9, 1fr); gap: 12px; }
+  .icon-cell { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; }
+  .icon-cell .glyph { width: 28px; height: 28px; color: var(--navy); }
+  .name { font-size: 11px; font-weight: 600; color: var(--fg-1); }
+  .role { font-size: 9px; color: var(--fg-3); font-family: var(--font-mono); letter-spacing: 0.4px; text-transform: uppercase; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; padding: 12px 14px; margin-top: 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-size: 11px; color: var(--fg-3); }
+  .legend b { color: var(--fg-1); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="grid">
+  <div class="icon-cell"><svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 5-6 8-6s7 2 8 6"/></svg><span class="name">HR</span><span class="role">karyawan</span></div>
+  <div class="icon-cell"><svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h2"/></svg><span class="name">Finance</span><span class="role">keuangan</span></div>
+  <div class="icon-cell"><svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18l5-5 4 4 8-9"/><path d="M14 8h6v6"/></svg><span class="name">Sales</span><span class="role">penjualan</span></div>
+  <div class="icon-cell"><svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5"/><circle cx="17" cy="7" r="2"/><path d="M15 13c2.5 0 4 1.5 4 4"/></svg><span class="name">CRM</span><span class="role">pelanggan</span></div>
+  <div class="icon-cell"><svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 12h6M9 16h4"/></svg><span class="name">Procurement</span><span class="role">pengadaan</span></div>
+  <div class="icon-cell"><svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4M3 17l9 4 9-4"/></svg><span class="name">Inventory</span><span class="role">stok</span></div>
+  <div class="icon-cell"><svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h7M4 12h11M4 18h6"/><circle cx="17" cy="6" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="14" cy="18" r="2"/></svg><span class="name">Projects</span><span class="role">proyek</span></div>
+  <div class="icon-cell"><svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 14h6M9 18h4"/></svg><span class="name">Documents</span><span class="role">dokumen</span></div>
+  <div class="icon-cell"><svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></svg><span class="name">Chat</span><span class="role">obrolan</span></div>
+</div>
+
+<div class="legend">
+  <span><b>Source</b> Lucide</span>
+  <span><b>Stroke</b> 1.5px</span>
+  <span><b>Grid</b> 24×24</span>
+  <span><b>Color</b> currentColor (inherits text)</span>
+  <span><b>Linejoin</b> round · linecap round</span>
+</div>
+
+</body></html>

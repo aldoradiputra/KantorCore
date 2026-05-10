@@ -1,0 +1,26 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css"><title>Logo</title>
+<style>
+  body { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+  .card { padding: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: center; }
+  .swatch { display: flex; align-items: center; justify-content: center; height: 120px; border-radius: var(--r-md); border: 1px solid var(--border); }
+  .swatch.dark { background: var(--navy); border-color: var(--navy); }
+  .meta { display: flex; flex-direction: column; gap: 6px; }
+  .name { font-weight: 700; color: var(--fg-1); font-size: 14px; }
+  .desc { font-size: 12px; color: var(--fg-3); }
+</style></head>
+<body>
+  <div class="card">
+    <div class="swatch"><img src="../assets/logo-wordmark.svg" alt="" height="40"/></div>
+    <div class="meta"><div class="name">Wordmark — primary</div><div class="desc">Navy mark + Inter 700, used in chrome, footers, signatures.</div></div>
+
+    <div class="swatch dark"><img src="../assets/logo-wordmark-on-dark.svg" alt="" height="40"/></div>
+    <div class="meta"><div class="name">Wordmark — on dark</div><div class="desc">For navy backgrounds and dark hero panels.</div></div>
+
+    <div class="swatch"><img src="../assets/logo-mark.svg" alt="" width="56" height="56"/></div>
+    <div class="meta"><div class="name">Monogram — IS</div><div class="desc">App icon, favicon, sidebar collapsed state. The indigo hairline at midpoint is the equator.</div></div>
+
+    <div class="swatch"><img src="../assets/logo-mark-mono.svg" alt="" width="56" height="56"/></div>
+    <div class="meta"><div class="name">Monogram — single-color</div><div class="desc">For rubber stamps, contracts, embossed materials. Black or any single ink.</div></div>
+  </div>
+</body></html>

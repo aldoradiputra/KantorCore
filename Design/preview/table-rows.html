@@ -1,0 +1,43 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css"><title>Table rows</title>
+<style>
+  body { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+  .card { padding: 0; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-3); text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--bg); }
+  th.right, td.right { text-align: right; }
+  td { padding: 10px 16px; font-size: 13px; color: var(--fg-1); border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: 0; }
+  tr.hover { background: var(--indigo-light); }
+  tr.selected { background: rgba(59, 79, 196, 0.06); box-shadow: inset 3px 0 0 var(--indigo); }
+  tr.expanded td { padding-bottom: 0; border-bottom: 0; }
+  .expand { padding: 0 16px 16px; }
+  .expand-inner { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; font-size: 12px; }
+  .num { font-family: var(--font-mono); font-feature-settings: "tnum" 1; }
+  .check { display: inline-block; width: 14px; height: 14px; border: 1.5px solid var(--border-strong); border-radius: 3px; vertical-align: middle; }
+  .check.on { background: var(--indigo); border-color: var(--indigo); position: relative; }
+  .check.on::after { content: ""; position: absolute; left: 3px; top: 1px; width: 4px; height: 7px; border: 1.5px solid #fff; border-top: 0; border-left: 0; transform: rotate(45deg); }
+  .b { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+  .b.draft { background: var(--bg); color: var(--muted); border: 1px dashed var(--border-strong); }
+  .b.overdue { background: var(--red-light); color: var(--red); }
+  .input-inline { border: 1px solid var(--indigo); border-radius: 6px; padding: 4px 8px; font-family: var(--font-mono); font-size: 12px; box-shadow: 0 0 0 3px var(--indigo-light); }
+</style></head>
+<body><div class="card">
+  <table>
+    <thead><tr>
+      <th style="width: 24px"></th>
+      <th>Customer</th>
+      <th>Invoice</th>
+      <th>Status</th>
+      <th class="right">Amount</th>
+      <th class="right">Due</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><span class="check"></span></td><td>PT Acme Indonesia</td><td class="num">INV-2026-0181</td><td><span class="b">Sent</span></td><td class="right num">Rp 12.450.000</td><td class="right num">12/05/2026</td></tr>
+      <tr class="hover"><td><span class="check"></span></td><td>CV Bahari Sentosa</td><td class="num">INV-2026-0180</td><td><span class="b draft">Draft</span></td><td class="right num">Rp 1.250.000</td><td class="right num">15/05/2026</td></tr>
+      <tr class="selected"><td><span class="check on"></span></td><td>Toko Sumber Rejeki</td><td class="num">INV-2026-0179</td><td><span class="b overdue">Overdue · 42 d</span></td><td class="right num">Rp 8.900.500</td><td class="right num">25/03/2026</td></tr>
+      <tr class="expanded"><td><span class="check"></span></td><td>PT Cakrawala Mandiri</td><td class="num">INV-2026-0178</td><td><span class="b">Sent</span></td><td class="right"><span class="input-inline">Rp 145.000.000</span></td><td class="right num">11/05/2026</td></tr>
+      <tr><td colspan="6" class="expand"><div class="expand-inner"><span class="t-micro" style="color:var(--indigo)">Editing</span><span style="color: var(--fg-3);">Amount changed from Rp 140.000.000 → Rp 145.000.000. Press ⌘↵ to save.</span><span class="num" style="color:var(--fg-3); font-size: 11px;">Andi · just now</span></div></td></tr>
+    </tbody>
+  </table>
+</div></body></html>

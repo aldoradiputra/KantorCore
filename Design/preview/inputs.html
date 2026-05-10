@@ -1,0 +1,48 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css"><title>Inputs</title>
+<style>
+  body { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--fg-2); margin-bottom: 6px; }
+  .input { display: flex; align-items: center; height: 36px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); font-family: var(--font-sans); font-size: 13px; color: var(--fg-1); gap: 8px; }
+  .input.focus { border-color: var(--indigo); box-shadow: 0 0 0 3px var(--indigo-light); }
+  .input.error { border-color: var(--red); box-shadow: 0 0 0 3px var(--red-light); }
+  .input.disabled { background: var(--bg); color: var(--fg-3); }
+  .prefix { color: var(--fg-3); font-family: var(--font-mono); font-size: 12px; }
+  .input input { flex: 1; border: 0; outline: 0; background: transparent; font: inherit; color: inherit; padding: 0; }
+  .num { font-family: var(--font-mono); font-feature-settings: "tnum" 1, "lnum" 1; }
+  .err { color: var(--red); font-size: 11px; margin-top: 4px; }
+  .help { color: var(--fg-3); font-size: 11px; margin-top: 4px; }
+  .caret { color: var(--fg-3); margin-left: auto; }
+</style></head>
+<body><div class="card">
+  <div class="grid">
+    <div class="field"><label>Nama Karyawan</label>
+      <div class="input"><input value="Budi Santoso"/></div>
+    </div>
+    <div class="field"><label>Email</label>
+      <div class="input focus"><input value="budi@acme.id"/></div>
+      <div class="help">Focus state · 3px indigo halo</div>
+    </div>
+    <div class="field"><label>Jumlah Tagihan</label>
+      <div class="input"><span class="prefix">Rp</span><input class="num" value="1.250.000"/></div>
+    </div>
+    <div class="field"><label>Tanggal</label>
+      <div class="input"><input class="num" value="06/05/2026"/><span class="caret">▾</span></div>
+    </div>
+    <div class="field"><label>NIK</label>
+      <div class="input"><input class="num" value="317•••••••••3456"/></div>
+    </div>
+    <div class="field"><label>Status Pajak</label>
+      <div class="input"><input value="PKP — Pengusaha Kena Pajak"/><span class="caret">▾</span></div>
+    </div>
+    <div class="field"><label>Nomor Telepon</label>
+      <div class="input error"><span class="prefix">+62</span><input class="num" value="0812"/></div>
+      <div class="err">Nomor telepon kurang lengkap</div>
+    </div>
+    <div class="field"><label>Cabang</label>
+      <div class="input disabled"><input value="Jakarta Pusat" disabled/></div>
+      <div class="help">Disabled · inherited from organisation</div>
+    </div>
+  </div>
+</div></body></html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css"><title>Modal & sheet</title>
+<style>
+  body { display: grid; place-items: center; min-height: 100vh; padding: 24px; background: var(--bg); }
+  .card { padding: 0; overflow: hidden; }
+  .stage { background: linear-gradient(0deg, rgba(15,23,42,0.4), rgba(15,23,42,0.4)), var(--bg); padding: 24px; display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: stretch; min-height: 280px; }
+  .modal { background: var(--surface); border-radius: 12px; box-shadow: 0 16px 40px rgba(15,23,42,0.18); padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .modal h4 { font-size: 16px; font-weight: 700; color: var(--fg-1); }
+  .modal p { font-size: 13px; color: var(--fg-2); line-height: 1.55; }
+  .modal .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+  .btn { height: 32px; padding: 0 12px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid transparent; cursor: pointer; }
+  .btn.p { background: var(--indigo); color: white; }
+  .btn.s { background: var(--surface); color: var(--fg-1); border-color: var(--border-strong); }
+  .btn.d { background: var(--red); color: white; }
+
+  .sheet { background: var(--surface); border-radius: 8px 0 0 8px; box-shadow: -16px 0 40px rgba(15,23,42,0.12); display: flex; flex-direction: column; }
+  .sheet-head { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .sheet-head h5 { font-size: 14px; font-weight: 700; color: var(--fg-1); }
+  .sheet-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field-label { font-size: 11px; font-weight: 500; color: var(--fg-3); }
+  .field-value { font-size: 13px; color: var(--fg-1); font-weight: 500; }
+  .field-value.num { font-family: var(--font-mono); }
+</style></head>
+<body><div class="card">
+  <div class="stage">
+    <div class="modal">
+      <h4>Hapus faktur ini?</h4>
+      <p>INV-2026-0179 untuk Toko Sumber Rejeki akan dihapus permanen. Anda tidak dapat mengembalikannya.</p>
+      <div class="actions">
+        <button class="btn s">Batal</button>
+        <button class="btn d">Hapus faktur</button>
+      </div>
+    </div>
+    <div class="sheet">
+      <div class="sheet-head">
+        <h5>SO-2026-0341</h5>
+        <span style="font-size: 18px; color: var(--fg-3); cursor: pointer;">×</span>
+      </div>
+      <div class="sheet-body">
+        <div class="field"><span class="field-label">Customer</span><span class="field-value">PT Acme Indonesia</span></div>
+        <div class="field"><span class="field-label">Total</span><span class="field-value num">Rp 27.800.000</span></div>
+        <div class="field"><span class="field-label">Status</span><span class="field-value" style="color: var(--teal)">Active</span></div>
+      </div>
+    </div>
+  </div>
+</div></body></html>

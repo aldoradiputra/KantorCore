@@ -1,0 +1,35 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css"><title>Toast & notification</title>
+<style>
+  body { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+  .stack { display: flex; flex-direction: column; gap: 12px; }
+  .toast { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--navy-2); color: #fff; border-radius: 8px; font-size: 13px; font-weight: 500; box-shadow: 0 16px 40px rgba(15,23,42,0.18); }
+  .toast .ic { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 50%; font-size: 11px; font-weight: 700; }
+  .toast.success .ic { background: var(--teal); }
+  .toast.error { background: #2A0F0E; }
+  .toast.error .ic { background: var(--red); }
+  .toast.info .ic { background: var(--indigo); }
+  .toast .action { margin-left: 12px; color: #B0BCFF; font-weight: 600; cursor: pointer; }
+  .toast .meta { color: #9aa1af; font-family: var(--font-mono); font-size: 11px; margin-left: auto; }
+
+  .inline { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; background: var(--indigo-light); border: 1px solid #C7CDF0; border-radius: 8px; }
+  .inline.warn { background: var(--amber-light); border-color: #F2D49B; }
+  .inline .ic { color: var(--indigo); margin-top: 1px; flex-shrink: 0; }
+  .inline.warn .ic { color: var(--amber); }
+  .inline .body { font-size: 13px; color: var(--slate-2); line-height: 1.55; }
+  .inline .body b { color: var(--fg-1); font-weight: 600; }
+</style></head>
+<body><div class="card stack">
+  <div class="toast success"><span class="ic">✓</span>Faktur disetujui.<span class="action">Lihat</span><span class="meta">2s</span></div>
+  <div class="toast error"><span class="ic">!</span>Couldn't save your changes. <span class="action">Coba lagi</span></div>
+  <div class="toast info"><span class="ic">i</span>3 karyawan baru disinkronkan dari BPJS Ketenagakerjaan.<span class="meta">14:02</span></div>
+
+  <div class="inline">
+    <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
+    <div class="body"><b>2 faktur memerlukan persetujuan Anda.</b> Tinjau di tab Approvals — paling lama menunggu 3 hari.</div>
+  </div>
+  <div class="inline warn">
+    <svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l10 18H2z"/><path d="M12 10v5"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>
+    <div class="body"><b>SPT Masa PPN jatuh tempo dalam 4 hari.</b> CoreTax DJP akan disinkronkan otomatis pada 30 Mei 2026.</div>
+  </div>
+</div></body></html>

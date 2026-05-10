@@ -1,0 +1,23 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css"><title>Semantic palette</title>
+<style>
+  body { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .sw { display: flex; flex-direction: column; gap: 8px; }
+  .chip { height: 72px; border-radius: var(--r-md); border: 1px solid var(--border); }
+  .name { font-weight: 600; font-size: 12px; color: var(--fg-1); }
+  .hex { font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); }
+</style></head>
+<body><div class="card">
+  <div class="label" style="margin-bottom: 16px;">Semantic · status & phase</div>
+  <div class="grid">
+    <div class="sw"><div class="chip" style="background:#0F7B6C"></div><div class="name">Teal · success / Phase 2</div><div class="hex">#0F7B6C</div></div>
+    <div class="sw"><div class="chip" style="background:#E0F4F1"></div><div class="name">Teal Light</div><div class="hex">#E0F4F1</div></div>
+    <div class="sw"><div class="chip" style="background:#B35A00"></div><div class="name">Amber · warn / Phase 3</div><div class="hex">#B35A00</div></div>
+    <div class="sw"><div class="chip" style="background:#FEF3E2"></div><div class="name">Amber Light</div><div class="hex">#FEF3E2</div></div>
+    <div class="sw"><div class="chip" style="background:#B42318"></div><div class="name">Red · danger</div><div class="hex">#B42318</div></div>
+    <div class="sw"><div class="chip" style="background:#FEE4E2"></div><div class="name">Red Light</div><div class="hex">#FEE4E2</div></div>
+    <div class="sw"><div class="chip" style="background:#1A2B5A"></div><div class="name">Navy · core / Phase 0</div><div class="hex">#1A2B5A</div></div>
+    <div class="sw"><div class="chip" style="background:#3B4FC4"></div><div class="name">Indigo · Phase 1</div><div class="hex">#3B4FC4</div></div>
+  </div>
+</div></body></html>

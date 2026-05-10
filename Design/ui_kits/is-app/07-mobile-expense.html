@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="id"><head>
+<meta charset="utf-8"><title>IS — Expense Capture</title>
+<link rel="icon" href="../../assets/favicon.svg">
+<link rel="stylesheet" href="shell.css">
+<style>
+  body { background: #11142a; min-height: 100vh; display: grid; place-items: center; padding: 40px 0; }
+  #root { width: 100%; }
+  .stage { display: flex; justify-content: center; align-items: flex-start; gap: 48px; padding: 24px; flex-wrap: wrap; }
+  .caption { color: rgba(255,255,255,0.55); font-size: 12px; font-family: var(--font-mono); letter-spacing: 0.5px; text-transform: uppercase; margin-top: 18px; text-align: center; }
+
+  /* ----- mobile screen content ----- */
+  .m-shell { background: var(--bg); width: 100%; height: 100%; display: flex; flex-direction: column; font-family: var(--font-sans); color: var(--fg-1); position: relative; }
+  .m-top { padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .m-top .back { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 6px; color: var(--fg-2); }
+  .m-title { font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
+
+  .receipt-area { padding: 14px 16px; }
+  .receipt-card { position: relative; border-radius: 12px; overflow: hidden; background: linear-gradient(180deg, #fff8e8 0%, #fcf0d4 100%); box-shadow: 0 4px 16px rgba(15, 22, 42, 0.08); border: 1px solid rgba(0,0,0,0.04); }
+  .receipt-img { aspect-ratio: 3/4; display: flex; flex-direction: column; padding: 20px 22px; font-family: 'Courier New', monospace; color: #4a3a20; font-size: 11px; line-height: 1.55; position: relative; }
+  .receipt-img::before { content: ""; position: absolute; inset: 0; background-image: repeating-linear-gradient(0deg, transparent 0 30px, rgba(0,0,0,0.025) 30px 31px); pointer-events: none; }
+  .receipt-img h4 { font-family: 'Courier New', monospace; font-size: 16px; font-weight: 800; text-align: center; margin: 4px 0 12px; letter-spacing: 1px; color: #2b2010; }
+  .receipt-img .center { text-align: center; }
+  .receipt-img .row { display: flex; justify-content: space-between; }
+  .receipt-img hr { border: 0; border-top: 1px dashed rgba(0,0,0,0.3); margin: 8px 0; }
+
+  /* OCR highlight boxes */
+  .ocr-box {
+    position: absolute;
+    border: 2px solid var(--indigo);
+    background: rgba(59, 79, 196, 0.12);
+    border-radius: 4px;
+    pointer-events: none;
+  }
+  .ocr-tag {
+    position: absolute;
+    background: var(--indigo);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    font-family: var(--font-sans);
+  }
+
+  /* extracted fields list */
+  .extracted { margin: 16px 14px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .ex-head { padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .ex-head .t { font-size: 12px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--fg-3); }
+  .ex-row { display: grid; grid-template-columns: 110px 1fr 18px; gap: 8px; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--border); }
+  .ex-row:last-child { border-bottom: 0; }
+  .ex-row .k { font-size: 11px; color: var(--fg-3); }
+  .ex-row .v { font-size: 14px; font-weight: 600; color: var(--fg-1); }
+  .ex-row .v.mono { font-family: var(--font-mono); }
+  .ex-row .ck { color: var(--teal); }
+  .ex-row .v .conf { font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: 6px; vertical-align: middle; }
+  .ex-row .v .conf.high { background: var(--teal-light); color: var(--teal); }
+  .ex-row .v .conf.med { background: var(--amber-light); color: var(--amber); }
+
+  .m-foot { margin-top: auto; padding: 14px 16px 22px; background: var(--surface); border-top: 1px solid var(--border); display: flex; gap: 8px; }
+  .m-foot button { flex: 1; height: 44px; border-radius: 10px; border: 0; font-family: var(--font-sans); font-size: 14px; font-weight: 700; cursor: pointer; }
+  .m-foot .secondary { background: var(--bg); color: var(--fg-1); border: 1px solid var(--border-strong); }
+  .m-foot .primary { background: var(--indigo); color: white; }
+
+  /* ----- second phone (review screen) ----- */
+  .form-card { margin: 14px 14px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .field-m { display: flex; flex-direction: column; gap: 5px; }
+  .field-m .lbl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--fg-3); text-transform: uppercase; }
+  .field-m .input { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 14px; font-weight: 600; color: var(--fg-1); display: flex; align-items: center; gap: 8px; }
+  .field-m .input.with-prefix .pre { font-size: 12px; color: var(--fg-3); }
+
+  .toast {
+    position: absolute; bottom: 96px; left: 50%; transform: translateX(-50%);
+    background: var(--navy); color: white;
+    padding: 10px 16px; border-radius: 8px;
+    font-size: 12px; font-weight: 500;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .toast .ck { color: var(--teal); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <div>
+    <div id="phone1"></div>
+    <div class="caption">Capture · OCR fields highlighted</div>
+  </div>
+
+  <div>
+    <div id="phone2"></div>
+    <div class="caption">Review · submit</div>
+  </div>
+
+</div>
+
+<template id="screen-1">
+  <div class="m-shell">
+    <div class="m-top">
+      <div class="back">←</div>
+      <div class="m-title">Reimburse baru</div>
+      <div style="width: 30px;"></div>
+    </div>
+
+    <div class="receipt-area">
+      <div class="receipt-card">
+        <div class="receipt-img">
+          <h4>WARUNG SEDERHANA</h4>
+          <div class="center" style="font-size: 10px;">Jl. Sabang No. 42, Jakarta Pusat</div>
+          <div class="center" style="font-size: 10px;">NPWP: 01.234.567.8-073.000</div>
+          <hr>
+          <div class="row"><span>06/05/2026</span><span>12:48</span></div>
+          <div class="row"><span>Kasir: Sari</span><span>#0142</span></div>
+          <hr>
+          <div class="row"><span>Nasi Padang Komplit ×2</span><span>62.000</span></div>
+          <div class="row"><span>Es Teh Manis ×2</span><span>14.000</span></div>
+          <div class="row"><span>Kerupuk</span><span>9.000</span></div>
+          <hr>
+          <div class="row"><span>Subtotal</span><span>85.000</span></div>
+          <div class="row"><span>PPN inkl.</span><span>—</span></div>
+          <div class="row" style="font-weight: 800; font-size: 13px; margin-top: 4px;"><span>TOTAL</span><span>Rp 85.000</span></div>
+          <hr>
+          <div class="center" style="font-size: 10px; margin-top: 6px;">Terima kasih · QRIS · BCA</div>
+        </div>
+
+        <!-- OCR overlays - position in % of card -->
+        <div class="ocr-box" style="top: 5%; left: 8%; width: 84%; height: 9%;"></div>
+        <div class="ocr-tag"   style="top: 4%; right: 4%; background: var(--teal);">Merchant ✓</div>
+
+        <div class="ocr-box" style="top: 22%; left: 8%; width: 38%; height: 5%;"></div>
+        <div class="ocr-tag"   style="top: 22%; left: 47%;">Date</div>
+
+        <div class="ocr-box" style="top: 70%; left: 8%; width: 84%; height: 7%; border-color: var(--teal); background: rgba(15, 123, 108, 0.12);"></div>
+        <div class="ocr-tag"   style="top: 69%; right: 4%; background: var(--teal);">Total ✓</div>
+      </div>
+    </div>
+
+    <div class="extracted">
+      <div class="ex-head">
+        <span class="t">Diekstrak otomatis</span>
+        <span class="ck" style="font-size: 11px; font-weight: 600;">3 dari 3 ✓</span>
+      </div>
+      <div class="ex-row"><span class="k">Pedagang</span><span class="v">Warung Sederhana <span class="conf high">98%</span></span><span class="ck">✓</span></div>
+      <div class="ex-row"><span class="k">Tanggal</span><span class="v mono">06/05/2026 <span class="conf high">96%</span></span><span class="ck">✓</span></div>
+      <div class="ex-row"><span class="k">Jumlah</span><span class="v num">Rp 85.000 <span class="conf high">99%</span></span><span class="ck">✓</span></div>
+      <div class="ex-row"><span class="k">Kategori</span><span class="v">Makan & minum <span class="conf med">disarankan</span></span><span class="ck" style="color: var(--amber);">↻</span></div>
+    </div>
+
+    <div class="m-foot">
+      <button class="secondary">Foto ulang</button>
+      <button class="primary">Lanjut →</button>
+    </div>
+  </div>
+</template>
+
+<template id="screen-2">
+  <div class="m-shell">
+    <div class="m-top">
+      <div class="back">←</div>
+      <div class="m-title">Tinjau & kirim</div>
+      <div style="width: 30px; color: var(--indigo); font-size: 13px; font-weight: 600;">Simpan</div>
+    </div>
+
+    <div class="form-card">
+      <div class="field-m">
+        <div class="lbl">Pedagang</div>
+        <div class="input">Warung Sederhana</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="field-m">
+          <div class="lbl">Tanggal</div>
+          <div class="input num">06/05/2026</div>
+        </div>
+        <div class="field-m">
+          <div class="lbl">Jumlah</div>
+          <div class="input with-prefix"><span class="pre">Rp</span><span class="num" style="margin-left: auto; color: var(--fg-1);">85.000</span></div>
+        </div>
+      </div>
+      <div class="field-m">
+        <div class="lbl">Kategori</div>
+        <div class="input">Makan & minum <span style="margin-left: auto; color: var(--fg-3);">▾</span></div>
+      </div>
+      <div class="field-m">
+        <div class="lbl">Catatan</div>
+        <div class="input" style="min-height: 64px; align-items: flex-start; font-weight: 400; font-size: 13px; color: var(--fg-2);">Makan siang dengan klien PT Maju Bersama (Bu Sinta).</div>
+      </div>
+      <div class="field-m">
+        <div class="lbl">Proyek / cost center</div>
+        <div class="input">Sales · Region DKI</div>
+      </div>
+    </div>
+
+    <div style="margin: 14px 14px 0; background: var(--indigo-light); border-radius: 10px; padding: 12px 14px; font-size: 12px; color: var(--indigo); display: flex; align-items: flex-start; gap: 8px;">
+      <span style="flex-shrink: 0; font-weight: 800;">i</span>
+      <span style="line-height: 1.5;">Reimburse akan dikirim ke <b>Andi Wijaya</b> untuk persetujuan. Anda akan mendapat notifikasi setelah disetujui.</span>
+    </div>
+
+    <div class="m-foot">
+      <button class="secondary">Simpan draft</button>
+      <button class="primary">Kirim untuk disetujui</button>
+    </div>
+
+    <div class="toast"><span class="ck">✓</span> Disimpan otomatis · 14:02</div>
+  </div>
+</template>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel">
+  const { IOSFrame } = window;
+  const tpl1 = document.getElementById('screen-1').innerHTML;
+  const tpl2 = document.getElementById('screen-2').innerHTML;
+
+  ReactDOM.createRoot(document.getElementById('phone1')).render(
+    <IOSFrame statusBar="dark" time="14:02"><div dangerouslySetInnerHTML={{ __html: tpl1 }} style={{ height: '100%' }} /></IOSFrame>
+  );
+  ReactDOM.createRoot(document.getElementById('phone2')).render(
+    <IOSFrame statusBar="dark" time="14:02"><div dangerouslySetInnerHTML={{ __html: tpl2 }} style={{ height: '100%' }} /></IOSFrame>
+  );
+</script>
+</body></html>

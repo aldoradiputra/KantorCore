@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="id"><head>
+<meta charset="utf-8"><title>IS — SO-2026-0218</title>
+<link rel="icon" href="../../assets/favicon.svg">
+<link rel="stylesheet" href="shell.css">
+<style>
+  /* dimmed list behind */
+  .so-list { padding: 0; opacity: 0.55; pointer-events: none; }
+  .scrim { position: absolute; inset: 0; background: rgba(15, 22, 42, 0.32); z-index: 5; }
+
+  /* slide-out panel */
+  .panel {
+    position: absolute;
+    top: 0; right: 0;
+    width: 580px;
+    height: 100%;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    box-shadow: -8px 0 28px rgba(15, 22, 42, 0.08);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-eyebrow { font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); }
+  .panel-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; color: var(--fg-1); margin-top: 2px; }
+  .presence-strip { display: flex; align-items: center; gap: 10px; padding: 10px 20px; background: linear-gradient(0deg, rgba(15, 123, 108, 0.06), rgba(15, 123, 108, 0.06)); border-bottom: 1px solid var(--border); }
+  .presence-stack { display: flex; }
+  .presence-stack .av { width: 26px; height: 26px; font-size: 10px; border: 2px solid var(--surface); margin-left: -6px; }
+  .presence-stack .av:first-child { margin-left: 0; }
+  .presence-text { font-size: 12px; color: var(--fg-2); }
+  .presence-text b { color: var(--fg-1); font-weight: 600; }
+  .editing-pulse {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--teal-light); color: var(--teal);
+    font-size: 11px; font-weight: 600;
+    padding: 2px 8px; border-radius: 10px;
+  }
+  .editing-pulse::before { content: ""; width: 6px; height: 6px; background: var(--teal); border-radius: 50%; animation: livepulse 1.4s var(--ease) infinite; }
+
+  .panel-body { flex: 1; overflow: auto; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+
+  .field-pair { display: grid; grid-template-columns: 140px 1fr; gap: 16px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .field-pair:last-child { border-bottom: 0; }
+  .field-pair .lbl { font-size: 12px; color: var(--fg-3); font-weight: 500; }
+  .field-pair .val { font-size: 13px; color: var(--fg-1); font-weight: 500; }
+  .field-pair .val.editing { background: var(--indigo-light); border: 1px solid var(--indigo); border-radius: 6px; padding: 5px 8px; position: relative; }
+  .field-pair .val.editing::after { content: "Andi"; position: absolute; top: -8px; left: 8px; background: var(--indigo); color: white; font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 8px; letter-spacing: 0.5px; }
+
+  .so-line { display: grid; grid-template-columns: 1fr 60px 100px 110px; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); align-items: center; font-size: 12px; }
+  .so-line:last-child { border-bottom: 0; }
+  .so-line .nm { color: var(--fg-1); font-weight: 500; }
+  .so-line .qt { font-family: var(--font-mono); color: var(--fg-3); text-align: right; }
+  .so-line .pr, .so-line .tt { font-family: var(--font-mono); text-align: right; color: var(--fg-1); }
+
+  .panel-foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; align-items: center; background: var(--surface); }
+
+  /* fake list rows */
+  .fake-row { display: grid; grid-template-columns: 140px 1.4fr 1fr 1fr 110px 130px; gap: 12px; padding: 11px 16px; border-bottom: 1px solid var(--border); font-size: 13px; align-items: center; }
+  .fake-row.hl { background: var(--indigo-light); }
+</style></head>
+<body class="app">
+<div class="app-shell" data-screen-label="06 Detail Panel + Presence" style="position: relative;">
+  <aside class="sidebar" data-sidebar data-active="sales"></aside>
+  <header class="topbar" id="topbar"></header>
+  <main class="main so-list" style="position: relative;">
+
+    <div class="page-head">
+      <div><h1 class="page-title">Sales Orders</h1><div class="lede">42 aktif · Mei 2026</div></div>
+      <div class="page-actions"><button class="btn primary">+ Order baru</button></div>
+    </div>
+
+    <div class="card" style="overflow: hidden;">
+      <div style="display: grid; grid-template-columns: 140px 1.4fr 1fr 1fr 110px 130px; gap: 12px; padding: 10px 16px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-3);"><span>SO #</span><span>Pelanggan</span><span>Sales rep</span><span>Tanggal</span><span>Status</span><span style="text-align: right;">Total</span></div>
+      <div class="fake-row"><span class="num">SO-2026-0224</span><span>PT Sumber Rejeki Mandiri</span><span>Fitri Nurhaliza</span><span class="num">11 Mei 2026</span><span><span class="b indigo"><span class="bd"></span>Confirmed</span></span><span class="num" style="text-align: right;">Rp 86.420.000</span></div>
+      <div class="fake-row"><span class="num">SO-2026-0220</span><span>CV Bintang Timur</span><span>Hadi Pranoto</span><span class="num">10 Mei 2026</span><span><span class="b amber"><span class="bd"></span>Draft</span></span><span class="num" style="text-align: right;">Rp 18.250.000</span></div>
+      <div class="fake-row hl"><span class="num"><b>SO-2026-0218</b></span><span><b>PT Maju Bersama Sejahtera</b></span><span>Fitri Nurhaliza</span><span class="num">10 Mei 2026</span><span><span class="b indigo"><span class="bd"></span>Confirmed</span></span><span class="num" style="text-align: right;">Rp 178.000.000</span></div>
+      <div class="fake-row"><span class="num">SO-2026-0214</span><span>PT Andalan Niaga</span><span>Hadi Pranoto</span><span class="num">09 Mei 2026</span><span><span class="b teal"><span class="bd"></span>Shipped</span></span><span class="num" style="text-align: right;">Rp 56.000.000</span></div>
+      <div class="fake-row"><span class="num">SO-2026-0211</span><span>PT Karya Cipta Mandiri</span><span>Fitri Nurhaliza</span><span class="num">08 Mei 2026</span><span><span class="b teal"><span class="bd"></span>Shipped</span></span><span class="num" style="text-align: right;">Rp 42.180.000</span></div>
+    </div>
+
+  </main>
+  <div class="scrim"></div>
+
+  <!-- slide-out detail -->
+  <aside class="panel" role="dialog" aria-label="Sales order detail">
+    <div class="panel-head">
+      <div>
+        <div class="panel-eyebrow">SO-2026-0218 · 10 Mei 2026</div>
+        <div class="panel-title">PT Maju Bersama Sejahtera</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <button class="btn ghost icon" title="Buka penuh"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/></svg></button>
+        <button class="btn ghost icon" title="Tutup"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 6l12 12M6 18L18 6"/></svg></button>
+      </div>
+    </div>
+
+    <div class="presence-strip">
+      <div class="presence-stack">
+        <div class="av navy">AW</div>
+        <div class="av amber">DR</div>
+      </div>
+      <div class="presence-text">
+        <b>Andi</b> dan <b>Dewi</b> sedang melihat — <span class="editing-pulse">Andi sedang mengedit</span>
+      </div>
+    </div>
+
+    <div class="panel-body">
+      <div>
+        <div class="label-mini" style="margin-bottom: 6px;">Detail order</div>
+        <div class="field-pair"><span class="lbl">Status</span><span class="val"><span class="b indigo"><span class="bd"></span>Confirmed</span></span></div>
+        <div class="field-pair"><span class="lbl">Sales rep</span><span class="val">Fitri Nurhaliza</span></div>
+        <div class="field-pair"><span class="lbl">PO pelanggan</span><span class="val num">PO-MBS/2026/V/0118</span></div>
+        <div class="field-pair"><span class="lbl">Termin pembayaran</span><span class="val editing">Net 30 → Net 45</span></div>
+        <div class="field-pair"><span class="lbl">Tanggal kirim</span><span class="val num">18 Mei 2026</span></div>
+        <div class="field-pair"><span class="lbl">Alamat kirim</span><span class="val">Gudang MBS Cikarang, Bekasi</span></div>
+      </div>
+
+      <div>
+        <div class="label-mini" style="margin-bottom: 6px;">Item (3)</div>
+        <div class="so-line"><span class="nm">Modul training "Operations Excellence" — 3 hari</span><span class="qt">2</span><span class="pr">Rp 25.000.000</span><span class="tt">Rp 50.000.000</span></div>
+        <div class="so-line"><span class="nm">Lisensi software internal — annual, 50 users</span><span class="qt">1</span><span class="pr">Rp 96.000.000</span><span class="tt">Rp 96.000.000</span></div>
+        <div class="so-line"><span class="nm">Implementation & support 90 hari</span><span class="qt">1</span><span class="pr">Rp 32.000.000</span><span class="tt">Rp 32.000.000</span></div>
+      </div>
+
+      <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px;">
+        <div style="display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; color: var(--fg-2);"><span>Subtotal</span><span class="num">Rp 178.000.000</span></div>
+        <div style="display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; color: var(--fg-2);"><span>PPN 11%</span><span class="num">Rp 19.580.000</span></div>
+        <div style="display: flex; justify-content: space-between; padding: 6px 0 0; border-top: 1px solid var(--border); margin-top: 4px; font-weight: 700; font-size: 14px;"><span>Total</span><span class="num">Rp 197.580.000</span></div>
+      </div>
+    </div>
+
+    <div class="panel-foot">
+      <button class="btn ghost">Buka penuh ↗</button>
+      <div style="flex: 1;"></div>
+      <button class="btn secondary">Cetak</button>
+      <button class="btn primary">Simpan perubahan</button>
+    </div>
+  </aside>
+
+</div>
+<script src="sidebar.js"></script>
+<script>document.getElementById('topbar').innerHTML = window.Topbar({ crumbs: ['Sales','Orders','SO-2026-0218'] });</script>
+</body></html>

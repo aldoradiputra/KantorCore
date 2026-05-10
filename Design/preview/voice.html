@@ -1,0 +1,20 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css"><title>Voice</title>
+<style>
+  body { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+  .stack { display: flex; flex-direction: column; gap: 14px; }
+  .pair { display: grid; grid-template-columns: 110px 1fr 1fr; gap: 12px; align-items: start; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .pair:last-child { border-bottom: 0; }
+  .ctx { font-size: 11px; color: var(--fg-3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; padding-top: 2px; }
+  .id, .en { font-size: 13px; color: var(--fg-1); }
+  .id::before, .en::before { content: attr(data-lang); display: inline-block; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; background: var(--bg); color: var(--fg-3); margin-right: 6px; vertical-align: middle; letter-spacing: 0.5px; }
+</style></head>
+<body><div class="card stack">
+  <div class="label">Voice — calm · direct · confident · helpful · professional</div>
+  <div class="pair"><span class="ctx">Empty</span><span class="id" data-lang="ID">Belum ada faktur.</span><span class="en" data-lang="EN">No invoices yet.</span></div>
+  <div class="pair"><span class="ctx">Confirm</span><span class="id" data-lang="ID">Hapus faktur ini?</span><span class="en" data-lang="EN">Delete this invoice?</span></div>
+  <div class="pair"><span class="ctx">Success</span><span class="id" data-lang="ID">Faktur disetujui.</span><span class="en" data-lang="EN">Invoice approved.</span></div>
+  <div class="pair"><span class="ctx">Error</span><span class="id" data-lang="ID">Perubahan gagal disimpan.</span><span class="en" data-lang="EN">Couldn't save your changes.</span></div>
+  <div class="pair"><span class="ctx">Loading</span><span class="id" data-lang="ID">Memuat…</span><span class="en" data-lang="EN">Loading…</span></div>
+  <div class="pair"><span class="ctx">Onboarding</span><span class="id" data-lang="ID">Mulai dengan menambah karyawan pertama.</span><span class="en" data-lang="EN">Start by adding your first employee.</span></div>
+</div></body></html>

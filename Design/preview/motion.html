@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css"><title>Motion</title>
+<style>
+  body { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+  .stack { display: flex; flex-direction: column; gap: 14px; }
+  .row { display: grid; grid-template-columns: 90px 90px 1fr; gap: 12px; align-items: center; }
+  .name { font-family: var(--font-mono); font-size: 11px; color: var(--fg-1); font-weight: 600; }
+  .ms { font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); }
+  .track { height: 8px; background: var(--border); border-radius: 4px; position: relative; overflow: hidden; }
+  .pip { position: absolute; top: 0; bottom: 0; width: 24px; background: var(--indigo); border-radius: 4px; left: 0; animation: pip var(--dur, 220ms) cubic-bezier(0.2, 0, 0, 1) infinite alternate; }
+  @keyframes pip { to { left: calc(100% - 24px); } }
+  .easing { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); margin-top: 8px; }
+</style></head>
+<body><div class="card stack">
+  <div class="label">Duration scale</div>
+  <div class="row"><span class="name">instant</span><span class="ms">80ms</span><div class="track"><div class="pip" style="--dur:80ms"></div></div></div>
+  <div class="row"><span class="name">fast</span><span class="ms">150ms</span><div class="track"><div class="pip" style="--dur:150ms"></div></div></div>
+  <div class="row"><span class="name">base</span><span class="ms">220ms</span><div class="track"><div class="pip" style="--dur:220ms"></div></div></div>
+  <div class="row"><span class="name">slow</span><span class="ms">350ms</span><div class="track"><div class="pip" style="--dur:350ms"></div></div></div>
+  <div class="easing">--ease cubic-bezier(0.2, 0, 0, 1) · default · --spring cubic-bezier(0.34, 1.56, 0.64, 1) · success only</div>
+</div></body></html>

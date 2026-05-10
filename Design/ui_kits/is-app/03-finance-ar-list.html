@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="id"><head>
+<meta charset="utf-8"><title>IS — Faktur AR</title>
+<link rel="icon" href="../../assets/favicon.svg">
+<link rel="stylesheet" href="shell.css">
+<style>
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--border); border-radius: 8px; background: var(--surface); margin-bottom: 16px; overflow: hidden; }
+  .sm-cell { padding: 14px 18px; border-right: 1px solid var(--border); }
+  .sm-cell:last-child { border-right: 0; }
+  .sm-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-3); margin-bottom: 4px; }
+  .sm-value { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; color: var(--fg-1); font-family: var(--font-sans); font-feature-settings: "tnum" 1; }
+  .sm-sub { font-size: 11px; color: var(--fg-3); margin-top: 2px; }
+
+  .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 14px; font-size: 12px; font-weight: 500; background: var(--surface); border: 1px solid var(--border-strong); color: var(--fg-2); cursor: pointer; }
+  .chip.on { background: var(--indigo-light); border-color: var(--indigo); color: var(--indigo); }
+  .chip .x { color: var(--fg-3); margin-left: 4px; }
+  .toolbar .gap { flex: 1; }
+
+  .row.expanded > td { background: rgba(59, 79, 196, 0.04); border-bottom: 0; }
+  .expand-cell { background: rgba(59, 79, 196, 0.04); padding: 0 !important; border-bottom: 1px solid var(--border) !important; }
+  .expand-body { padding: 16px 24px 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; border-left: 3px solid var(--indigo); }
+  .ex-section h4 { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-3); margin: 0 0 10px; }
+  .ex-line { display: flex; justify-content: space-between; padding: 5px 0; font-size: 12px; border-bottom: 1px dashed var(--border); }
+  .ex-line:last-child { border-bottom: 0; }
+  .ex-line .ll { color: var(--fg-2); }
+  .ex-line .vv { font-family: var(--font-mono); color: var(--fg-1); font-weight: 500; }
+  .inline-edit { display: flex; gap: 6px; align-items: center; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--indigo); background: var(--surface); font-family: var(--font-mono); font-size: 13px; color: var(--fg-1); width: 160px; }
+  .inline-edit .currency { color: var(--fg-3); }
+</style></head>
+<body class="app">
+<div class="app-shell" data-screen-label="03 AR Invoice List">
+  <aside class="sidebar" data-sidebar data-active="finance"></aside>
+  <header class="topbar" id="topbar"></header>
+  <main class="main">
+
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Faktur AR</h1>
+        <div class="lede">186 faktur aktif · diperbarui 14:02</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn ghost"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Export</button>
+        <button class="btn secondary">Kirim reminder</button>
+        <button class="btn primary">+ Faktur baru</button>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="sm-cell">
+        <div class="sm-label">Total AR</div>
+        <div class="sm-value num">Rp 350.420.000</div>
+        <div class="sm-sub">186 faktur · 42 pelanggan</div>
+      </div>
+      <div class="sm-cell">
+        <div class="sm-label">Jatuh tempo &lt; 7 hari</div>
+        <div class="sm-value num" style="color: var(--amber);">Rp 86.200.000</div>
+        <div class="sm-sub">14 faktur</div>
+      </div>
+      <div class="sm-cell">
+        <div class="sm-label">Overdue</div>
+        <div class="sm-value num" style="color: var(--red);">Rp 70.180.000</div>
+        <div class="sm-sub">23 faktur · 12% dari total</div>
+      </div>
+      <div class="sm-cell">
+        <div class="sm-label">Avg. aging</div>
+        <div class="sm-value num">38 hari</div>
+        <div class="sm-sub">DSO bulan ini, ▼ 4 hari</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="chip on"><span class="bd" style="width:6px;height:6px;border-radius:50%;background:var(--amber);"></span>Status: Overdue<span class="x">×</span></div>
+      <div class="chip on">Jatuh tempo &lt; 30 hari<span class="x">×</span></div>
+      <div class="chip">+ Filter</div>
+      <div class="gap"></div>
+      <div class="search" style="height: 30px; width: 240px; flex: none; max-width: none;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <span>Cari faktur, pelanggan…</span>
+      </div>
+      <button class="btn ghost sm"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12h18M6 6h12M9 18h6"/></svg></button>
+    </div>
+
+    <div class="card" style="overflow: hidden;">
+      <table class="tbl">
+        <thead><tr>
+          <th style="width: 32px;"><input type="checkbox"></th>
+          <th>Nomor faktur</th>
+          <th>Pelanggan</th>
+          <th>Diterbitkan</th>
+          <th>Jatuh tempo</th>
+          <th>Status</th>
+          <th class="right">Jumlah</th>
+          <th style="width: 32px;"></th>
+        </tr></thead>
+        <tbody>
+          <tr class="row"><td><input type="checkbox"></td><td class="num">INV-2026-0184</td><td>PT Maju Bersama Sejahtera</td><td class="num">28 Apr 2026</td><td class="num">28 Mei 2026</td><td><span class="b indigo"><span class="bd"></span>Sent</span></td><td class="right num">Rp 24.500.000</td><td>⋯</td></tr>
+
+          <tr class="row expanded"><td><input type="checkbox" checked></td><td class="num"><b>INV-2026-0179</b></td><td>PT Acme Indonesia</td><td class="num">12 Apr 2026</td><td class="num"><span style="color:var(--red);">12 Mei 2026</span></td><td><span class="b red"><span class="bd" style="background:var(--red);"></span>Overdue 3d</span></td><td class="right"><div class="inline-edit"><span class="currency">Rp</span><span style="flex:1; text-align:right;">145.000.000</span></div></td><td>⋯</td></tr>
+          <tr><td colspan="8" class="expand-cell"><div class="expand-body">
+            <div class="ex-section">
+              <h4>Detail faktur</h4>
+              <div class="ex-line"><span class="ll">Nomor PO</span><span class="vv">PO-2026-0044</span></div>
+              <div class="ex-line"><span class="ll">PIC pelanggan</span><span class="vv">Ibu Sinta · 0812-1144-5566</span></div>
+              <div class="ex-line"><span class="ll">Termin</span><span class="vv">Net 30</span></div>
+              <div class="ex-line"><span class="ll">PPN 11%</span><span class="vv">Rp 14.369.369</span></div>
+              <div class="ex-line"><span class="ll">Total</span><span class="vv" style="color: var(--fg-1); font-weight: 700;">Rp 145.000.000</span></div>
+            </div>
+            <div class="ex-section">
+              <h4>Pengingat terkirim</h4>
+              <div class="ex-line"><span class="ll">12 Mei · email</span><span class="vv">Sinta · dibaca</span></div>
+              <div class="ex-line"><span class="ll">10 Mei · email</span><span class="vv">Sinta · dibaca</span></div>
+              <div class="ex-line"><span class="ll">05 Mei · WhatsApp</span><span class="vv muted">Tidak terbaca</span></div>
+              <div style="margin-top: 12px;"><button class="btn primary sm">Kirim reminder</button> <button class="btn secondary sm">Buka percakapan</button></div>
+            </div>
+            <div class="ex-section">
+              <h4>Catatan internal</h4>
+              <div style="font-size: 12px; color: var(--fg-2); padding: 8px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; line-height: 1.55;">
+                Pelanggan minta perpanjangan termin sampai akhir Mei. Sedang dievaluasi oleh Rizky. <span class="muted">— Andi, 09 Mei</span>
+              </div>
+              <div style="margin-top: 10px;"><span class="b amber"><span class="bd"></span>Sedang diedit oleh Andi</span></div>
+            </div>
+          </div></td></tr>
+
+          <tr class="row"><td><input type="checkbox"></td><td class="num">INV-2026-0173</td><td>CV Bintang Timur</td><td class="num">02 Apr 2026</td><td class="num"><span style="color:var(--red);">02 Mei 2026</span></td><td><span class="b red"><span class="bd" style="background:var(--red);"></span>Overdue 9d</span></td><td class="right num">Rp 18.250.000</td><td>⋯</td></tr>
+          <tr class="row"><td><input type="checkbox"></td><td class="num">INV-2026-0168</td><td>PT Sumber Rejeki Mandiri</td><td class="num">30 Mar 2026</td><td class="num">29 Apr 2026</td><td><span class="b red"><span class="bd" style="background:var(--red);"></span>Overdue 12d</span></td><td class="right num">Rp 8.430.000</td><td>⋯</td></tr>
+          <tr class="row"><td><input type="checkbox"></td><td class="num">INV-2026-0162</td><td>PT Andalan Niaga</td><td class="num">22 Mar 2026</td><td class="num">21 Apr 2026</td><td><span class="b red"><span class="bd" style="background:var(--red);"></span>Overdue 20d</span></td><td class="right num">Rp 56.000.000</td><td>⋯</td></tr>
+          <tr class="row"><td><input type="checkbox"></td><td class="num">INV-2026-0155</td><td>UD Sinar Jaya</td><td class="num">10 Mar 2026</td><td class="num">09 Apr 2026</td><td><span class="b red"><span class="bd" style="background:var(--red);"></span>Overdue 32d</span></td><td class="right num">Rp 4.890.000</td><td>⋯</td></tr>
+          <tr class="row"><td><input type="checkbox"></td><td class="num">INV-2026-0148</td><td>PT Karya Cipta Mandiri</td><td class="num">28 Feb 2026</td><td class="num">30 Mar 2026</td><td><span class="b red"><span class="bd" style="background:var(--red);"></span>Overdue 42d</span></td><td class="right num">Rp 12.110.000</td><td>⋯</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-size: 12px; color: var(--fg-3);">
+      <div>1 dari 23 dipilih · <a href="#" style="color: var(--indigo); font-weight: 600;">Pilih semua 23</a></div>
+      <div>Halaman 1 dari 4 · <button class="btn ghost sm">‹</button> <button class="btn ghost sm">›</button></div>
+    </div>
+
+  </main>
+</div>
+<script src="sidebar.js"></script>
+<script>document.getElementById('topbar').innerHTML = window.Topbar({ crumbs: ['Finance','Faktur AR'] });</script>
+</body></html>

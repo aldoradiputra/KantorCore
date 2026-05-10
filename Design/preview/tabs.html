@@ -1,0 +1,32 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css"><title>Tabs</title>
+<style>
+  body { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+  .stack { display: flex; flex-direction: column; gap: 24px; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); }
+  .tab { padding: 10px 14px; font-size: 13px; font-weight: 500; color: var(--fg-3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: var(--fg-1); border-bottom-color: var(--indigo); font-weight: 600; }
+  .tab:hover:not(.active) { color: var(--fg-1); }
+  .tab .count { display: inline-block; margin-left: 6px; font-size: 10px; padding: 1px 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--fg-3); font-weight: 600; }
+
+  .seg { display: inline-flex; padding: 3px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; }
+  .seg .opt { padding: 5px 12px; font-size: 12px; font-weight: 500; color: var(--fg-2); border-radius: 6px; cursor: pointer; }
+  .seg .opt.active { background: var(--surface); color: var(--fg-1); font-weight: 600; box-shadow: 0 1px 2px rgba(15,23,42,0.04); }
+</style></head>
+<body><div class="card stack">
+  <div class="label">Top tabs · primary navigation within a record</div>
+  <div class="tabs">
+    <div class="tab active">Personal</div>
+    <div class="tab">Job<span class="count">2</span></div>
+    <div class="tab">Payroll</div>
+    <div class="tab">Documents<span class="count">8</span></div>
+    <div class="tab">Audit trail</div>
+  </div>
+
+  <div class="label">Segmented control · view switch / small filter</div>
+  <div style="display: flex; gap: 16px; align-items: center;">
+    <div class="seg"><div class="opt active">List</div><div class="opt">Map</div></div>
+    <div class="seg"><div class="opt">All</div><div class="opt active">Active</div><div class="opt">Closed</div></div>
+    <div class="seg"><div class="opt active">Hari ini</div><div class="opt">Minggu ini</div><div class="opt">Bulan ini</div></div>
+  </div>
+</div></body></html>

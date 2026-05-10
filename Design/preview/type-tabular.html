@@ -1,0 +1,26 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css"><title>Tabular numerals</title>
+<style>
+  body { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { padding: 8px 12px; text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { font-size: 11px; font-weight: 600; color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 1px solid var(--border); }
+  tbody tr { border-bottom: 1px solid var(--border); }
+  td.num { font-family: var(--font-mono); font-feature-settings: "tnum" 1, "lnum" 1; color: var(--fg-1); font-weight: 500; }
+  td.nik { font-family: var(--font-mono); color: var(--fg-2); font-size: 13px; }
+  caption { caption-side: top; text-align: left; padding-bottom: 12px; font-weight: 700; color: var(--fg-1); font-size: 14px; }
+  .sub { font-weight: 400; color: var(--fg-3); font-size: 12px; margin-left: 8px; }
+</style></head>
+<body><div class="card">
+  <table>
+    <caption>Tabular figures<span class="sub">JetBrains Mono · tnum + lnum at all column sizes</span></caption>
+    <thead><tr><th>Customer</th><th>NIK</th><th>Outstanding</th><th>Aging</th></tr></thead>
+    <tbody>
+      <tr><td>PT Acme Indonesia</td><td class="nik">317•••••••••3456</td><td class="num">Rp 12.450.000</td><td class="num">14 d</td></tr>
+      <tr><td>CV Bahari Sentosa</td><td class="nik">317•••••••••0921</td><td class="num">Rp 1.250.000</td><td class="num">3 d</td></tr>
+      <tr><td>Toko Sumber Rejeki</td><td class="nik">317•••••••••8814</td><td class="num">Rp 8.900.500</td><td class="num">42 d</td></tr>
+      <tr><td>PT Cakrawala Mandiri</td><td class="nik">317•••••••••5503</td><td class="num">Rp 145.000.000</td><td class="num">7 d</td></tr>
+    </tbody>
+  </table>
+</div></body></html>

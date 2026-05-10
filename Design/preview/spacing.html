@@ -1,0 +1,20 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css"><title>Spacing scale</title>
+<style>
+  body { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+  .row { display: flex; align-items: center; gap: 16px; padding: 6px 0; }
+  .name { width: 64px; font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); }
+  .px { width: 56px; font-family: var(--font-mono); font-size: 12px; color: var(--fg-1); }
+  .bar { background: var(--indigo); height: 8px; border-radius: 2px; }
+</style></head>
+<body><div class="card">
+  <div class="label" style="margin-bottom: 16px;">Spacing — 4px base</div>
+  <div class="row"><span class="name">--s-1</span><span class="px">4px</span><span class="bar" style="width:4px"></span></div>
+  <div class="row"><span class="name">--s-2</span><span class="px">8px</span><span class="bar" style="width:8px"></span></div>
+  <div class="row"><span class="name">--s-3</span><span class="px">12px</span><span class="bar" style="width:12px"></span></div>
+  <div class="row"><span class="name">--s-4</span><span class="px">16px</span><span class="bar" style="width:16px"></span></div>
+  <div class="row"><span class="name">--s-5</span><span class="px">24px</span><span class="bar" style="width:24px"></span></div>
+  <div class="row"><span class="name">--s-6</span><span class="px">32px</span><span class="bar" style="width:32px"></span></div>
+  <div class="row"><span class="name">--s-7</span><span class="px">48px</span><span class="bar" style="width:48px"></span></div>
+  <div class="row"><span class="name">--s-8</span><span class="px">64px</span><span class="bar" style="width:64px"></span></div>
+</div></body></html>

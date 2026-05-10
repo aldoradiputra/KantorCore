@@ -1,0 +1,40 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css"><title>Avatars + presence</title>
+<style>
+  body { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+  .row { display: flex; align-items: center; gap: 24px; }
+  .av { width: 36px; height: 36px; border-radius: 50%; background: var(--indigo-light); color: var(--indigo); display: grid; place-items: center; font-weight: 700; font-size: 13px; position: relative; }
+  .av.lg { width: 56px; height: 56px; font-size: 18px; }
+  .av.amber { background: var(--amber-light); color: var(--amber); }
+  .av.teal { background: var(--teal-light); color: var(--teal); }
+  .av .presence { position: absolute; right: -2px; bottom: -2px; width: 12px; height: 12px; border-radius: 50%; background: var(--teal); border: 2px solid var(--surface); }
+  .av .presence.away { background: var(--amber); }
+  .group { display: flex; }
+  .group .av { border: 2px solid var(--surface); margin-right: -8px; }
+  .group .more { background: var(--surface); border: 1px solid var(--border-strong); color: var(--fg-3); font-size: 11px; }
+  .meta { display: flex; flex-direction: column; gap: 4px; }
+  .name { font-weight: 600; font-size: 13px; color: var(--fg-1); }
+  .role { font-size: 11px; color: var(--fg-3); }
+  .sub { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); margin-top: 4px; }
+</style></head>
+<body><div class="card" style="display: flex; flex-direction: column; gap: 20px;">
+  <div class="row">
+    <div class="av lg">BS<span class="presence" title="online"></span></div>
+    <div class="meta"><span class="name">Budi Santoso</span><span class="role">Finance Manager · online</span></div>
+  </div>
+  <div class="row">
+    <div class="av">SM<span class="presence away"></span></div>
+    <div class="av amber">DP</div>
+    <div class="av teal">AW<span class="presence"></span></div>
+    <div class="meta"><span class="name">Single avatars</span><span class="sub">Initials in phase-tinted bg · 36px default</span></div>
+  </div>
+  <div class="row">
+    <div class="group">
+      <div class="av">BS</div>
+      <div class="av amber">DP</div>
+      <div class="av teal">AW</div>
+      <div class="av more">+4</div>
+    </div>
+    <div class="meta"><span class="name">Group · approvers</span><span class="role">7 reviewers on this PO</span></div>
+  </div>
+</div></body></html>

@@ -1,0 +1,38 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_card.css"><title>Badges</title>
+<style>
+  body { display: grid; place-items: center; min-height: 100vh; padding: 24px; }
+  .stack { display: flex; flex-direction: column; gap: 18px; }
+  .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .row > .label { width: 100px; flex-shrink: 0; }
+  .b { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; line-height: 1.4; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .planned { background: var(--border); color: var(--slate); }
+  .planned .dot { background: var(--muted); }
+  .progress { background: var(--indigo-light); color: var(--indigo); }
+  .progress .dot { background: var(--indigo); animation: pulse 1.6s var(--ease) infinite; }
+  .done { background: var(--teal-light); color: var(--teal); }
+  .done .dot { background: var(--teal); }
+  .draft { background: var(--bg); color: var(--muted); border: 1px dashed var(--border-strong); }
+  .active { background: var(--teal-light); color: var(--teal); }
+  .closed { background: #ECEEF2; color: var(--muted); }
+  .overdue { background: var(--red-light); color: var(--red); }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+</style></head>
+<body><div class="card stack">
+  <div class="row"><span class="label">TASK STATE</span>
+    <span class="b planned"><span class="dot"></span>Planned</span>
+    <span class="b progress"><span class="dot"></span>In progress</span>
+    <span class="b done"><span class="dot"></span>Done</span>
+  </div>
+  <div class="row"><span class="label">RECORD STATE</span>
+    <span class="b draft">Draft</span>
+    <span class="b active">Active</span>
+    <span class="b closed">Closed</span>
+  </div>
+  <div class="row"><span class="label">SEMANTIC</span>
+    <span class="b done"><span class="dot"></span>Approved</span>
+    <span class="b progress"><span class="dot"></span>Pending review</span>
+    <span class="b overdue">Overdue · 14 d</span>
+  </div>
+</div></body></html>

@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="id"><head>
+<meta charset="utf-8">
+<title>Indonesia System — Brandbook</title>
+<link rel="icon" href="assets/favicon.svg">
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+  body { background: var(--bg); color: var(--fg-2); }
+  .page { max-width: 980px; margin: 0 auto; padding: 80px 56px; }
+  .cover { min-height: 100vh; background: var(--navy); color: white; display: flex; flex-direction: column; justify-content: space-between; padding: 64px; position: relative; overflow: hidden; }
+  .cover::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--indigo); opacity: 0.6; }
+  .cover-top { display: flex; align-items: center; gap: 16px; }
+  .cover-mark { width: 64px; height: 64px; }
+  .cover h1 { color: white; font-size: 96px; font-weight: 800; letter-spacing: -2.5px; line-height: 1.0; max-width: 14ch; }
+  .cover h1 em { font-style: normal; color: var(--indigo-light); }
+  .cover-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.15); font-size: 12px; color: rgba(255,255,255,0.7); }
+  .cover-meta b { display: block; color: white; font-weight: 600; margin-bottom: 4px; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+  section { border-top: 1px solid var(--border); padding: 80px 0; }
+  section:first-of-type { border-top: 0; }
+  section h2.section-num { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--indigo); margin-bottom: 8px; }
+  section h2.section-title { font-size: 40px; font-weight: 800; letter-spacing: -1px; color: var(--navy); margin-bottom: 24px; }
+  section .section-lede { font-size: 18px; color: var(--fg-2); max-width: 60ch; line-height: 1.55; margin-bottom: 48px; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 32px; margin-bottom: 16px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .principle { padding: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+  .principle .num { font-family: var(--font-mono); font-size: 12px; color: var(--indigo); font-weight: 600; margin-bottom: 6px; }
+  .principle h4 { font-size: 16px; font-weight: 700; color: var(--fg-1); margin-bottom: 6px; }
+  .principle p { font-size: 13px; color: var(--fg-2); line-height: 1.55; }
+  .swatch { display: flex; flex-direction: column; gap: 8px; }
+  .swatch .chip { height: 100px; border-radius: 8px; border: 1px solid var(--border); }
+  .swatch .name { font-weight: 600; font-size: 13px; color: var(--fg-1); }
+  .swatch .hex { font-family: var(--font-mono); font-size: 12px; color: var(--fg-3); }
+  .swatch .use { font-size: 11px; color: var(--fg-3); margin-top: 2px; }
+  iframe { width: 100%; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+  .iframe-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .donts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .dont { padding: 16px; border: 1px solid var(--red-light); background: #FEF7F6; border-radius: 8px; font-size: 12px; color: var(--red); }
+  .dont b { display: block; color: var(--red); margin-bottom: 4px; font-weight: 700; }
+  .never { padding: 16px; border: 1px solid var(--border); background: var(--bg); border-radius: 8px; }
+  .never b { display: block; color: var(--fg-1); margin-bottom: 4px; font-weight: 700; font-size: 12px; }
+  .never-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .never-list span { font-size: 11px; padding: 3px 8px; border-radius: 4px; background: var(--surface); border: 1px solid var(--border); color: var(--fg-2); text-decoration: line-through; text-decoration-color: var(--red); }
+  table.scale { width: 100%; border-collapse: collapse; }
+  table.scale th { text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-3); padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  table.scale td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: baseline; }
+  table.scale td.role { font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); width: 110px; }
+  table.scale td.specs { font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); width: 200px; }
+  .voice-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .voice-table th { text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--fg-3); padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .voice-table td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .voice-table td:first-child { color: var(--fg-3); font-weight: 600; width: 130px; }
+  .voice-table .id { color: var(--fg-1); }
+  .voice-table .en { color: var(--fg-2); font-style: italic; }
+  .toc { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 24px; padding: 24px 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+  .toc a { display: flex; gap: 12px; padding: 6px 0; color: var(--fg-1); text-decoration: none; font-size: 14px; border-bottom: 1px solid transparent; }
+  .toc a:hover { color: var(--indigo); }
+  .toc a span { font-family: var(--font-mono); font-size: 12px; color: var(--fg-3); width: 32px; }
+  footer { padding: 48px 56px; border-top: 1px solid var(--border); text-align: center; color: var(--fg-3); font-size: 12px; background: var(--surface); }
+</style>
+</head>
+<body>
+
+<!-- Cover -->
+<section class="cover" data-screen-label="01 Cover">
+  <div class="cover-top">
+    <img src="assets/logo-mark.svg" class="cover-mark" alt="">
+    <span style="font-size: 13px; letter-spacing: 1px; color: rgba(255,255,255,0.7); text-transform: uppercase;">Brandbook · v1.0 · Mei 2026</span>
+  </div>
+  <h1>Honest software<br>for Indonesian<br><em>operations.</em></h1>
+  <div class="cover-meta">
+    <div><b>Product</b>Indonesia System</div>
+    <div><b>Audience</b>Mid-market · 50–500 employees</div>
+    <div><b>Markets</b>Indonesia first · regional next</div>
+    <div><b>Languages</b>Bahasa Indonesia · English</div>
+  </div>
+</section>
+
+<!-- TOC + Foundations -->
+<div class="page">
+
+<section data-screen-label="02 Contents">
+  <h2 class="section-num">00 · Contents</h2>
+  <h2 class="section-title">What's inside</h2>
+  <p class="section-lede">A brandbook is a contract between people who will never meet — designers in Bandung, engineers in Surabaya, marketers in Jakarta. This book is short on purpose.</p>
+  <div class="toc">
+    <a href="#foundation"><span>01</span>Foundation</a>
+    <a href="#logo"><span>02</span>Logo system</a>
+    <a href="#color"><span>03</span>Color</a>
+    <a href="#type"><span>04</span>Typography</a>
+    <a href="#icons"><span>05</span>Iconography</a>
+    <a href="#components"><span>06</span>UI components</a>
+    <a href="#screens"><span>07</span>Screen illustrations</a>
+    <a href="#motion"><span>08</span>Motion</a>
+    <a href="#voice"><span>09</span>Voice &amp; microcopy</a>
+    <a href="#dont"><span>10</span>Don'ts</a>
+  </div>
+</section>
+
+<section id="foundation" data-screen-label="03 Foundation">
+  <h2 class="section-num">01 · Foundation</h2>
+  <h2 class="section-title">Six principles</h2>
+  <p class="section-lede">Indonesia System is software that 50,000 people will use for eight hours a day. Every decision in this book serves that fact.</p>
+  <div class="grid-3">
+    <div class="principle"><div class="num">01</div><h4>Calm density</h4><p>Show a lot of information without feeling overwhelming. Tables and forms are first-class citizens, not last-resort.</p></div>
+    <div class="principle"><div class="num">02</div><h4>Honest, unornamented</h4><p>No gradients-as-decoration, no glassmorphism, no AI-shimmer. If a pixel doesn't earn its place, it leaves.</p></div>
+    <div class="principle"><div class="num">03</div><h4>Confident typography</h4><p>One family does the work. Hierarchy comes from weight and size, not from a second display face.</p></div>
+    <div class="principle"><div class="num">04</div><h4>Indonesian-rooted, internationally credible</h4><p>At home in Jakarta, believable in any boardroom. The Indonesian-ness comes from craft, not ornament.</p></div>
+    <div class="principle"><div class="num">05</div><h4>Built for long sessions</h4><p>Eyes don't tire. Contrast is calibrated; whitespace is generous; movement is rare.</p></div>
+    <div class="principle"><div class="num">06</div><h4>Live, not static</h4><p>Subtle indicators of real-time activity — presence, updates, syncs — baked into the design without taking over.</p></div>
+  </div>
+</section>
+
+<section id="logo" data-screen-label="04 Logo">
+  <h2 class="section-num">02 · Logo system</h2>
+  <h2 class="section-title">A mark that holds the equator</h2>
+  <p class="section-lede">Three directions were explored. We committed to the architectural mark: a square monogram of stacked bars, crossed by a single indigo hairline — a quiet reference to the equator, which Indonesia straddles. The mark is built from the same primitives as a spreadsheet row. That is the point.</p>
+
+  <div class="panel">
+    <div class="grid-3" style="align-items: center;">
+      <div style="text-align: center;"><img src="assets/logo-mark.svg" width="120" alt=""><div class="t-caption" style="margin-top: 12px;">A · the chosen direction · architectural bars + equator</div></div>
+      <div style="text-align: center; opacity: 0.6;">
+        <svg width="120" height="120" viewBox="0 0 64 64"><rect width="64" height="64" rx="10" fill="#1A2B5A"/><text x="32" y="42" text-anchor="middle" font-family="Inter" font-weight="800" font-size="32" fill="white" letter-spacing="-1">IS</text></svg>
+        <div class="t-caption" style="margin-top: 12px;">B · explored · bold typographic monogram (rejected: too many products use this)</div>
+      </div>
+      <div style="text-align: center; opacity: 0.6;">
+        <svg width="120" height="120" viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="none" stroke="#1A2B5A" stroke-width="3"/><circle cx="32" cy="32" r="14" fill="#3B4FC4"/><line x1="4" y1="32" x2="60" y2="32" stroke="#1A2B5A" stroke-width="1.5"/></svg>
+        <div class="t-caption" style="margin-top: 12px;">C · explored · seal/coin (rejected: reads governmental, not corporate)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="iframe-row" style="margin-top: 16px;">
+    <iframe src="preview/logo.html" style="height: 380px;"></iframe>
+    <div class="panel">
+      <h3 style="margin-bottom: 10px;">Clear space &amp; minimum size</h3>
+      <p style="font-size: 13px; line-height: 1.6;">Clear space around the wordmark equals the height of the "I" stem on all sides — measured against the mark itself, not against the type. Minimum sizes: <b>16px</b> for the monogram (favicon), <b>120px</b> for the wordmark (so "Indonesia System" stays readable). On dark surfaces, use the on-dark variant — the equator hairline keeps its indigo color.</p>
+    </div>
+  </div>
+</section>
+
+<section id="color" data-screen-label="05 Color">
+  <h2 class="section-num">03 · Color</h2>
+  <h2 class="section-title">Navy anchors. Indigo acts. Teal &amp; amber whisper.</h2>
+  <p class="section-lede">A locked palette of seven colors plus neutrals. Treat the palette like a single sentence: navy is the subject, indigo is the verb, teal and amber are punctuation.</p>
+
+  <div class="panel">
+    <div class="grid-4">
+      <div class="swatch"><div class="chip" style="background:#1A2B5A"></div><div class="name">Navy</div><div class="hex">#1A2B5A</div><div class="use">Brand anchor · headings · hero · logo</div></div>
+      <div class="swatch"><div class="chip" style="background:#3B4FC4"></div><div class="name">Indigo</div><div class="hex">#3B4FC4</div><div class="use">Primary action · links · Phase 1 modules</div></div>
+      <div class="swatch"><div class="chip" style="background:#0F7B6C"></div><div class="name">Teal</div><div class="hex">#0F7B6C</div><div class="use">Success · Phase 2 modules</div></div>
+      <div class="swatch"><div class="chip" style="background:#B35A00"></div><div class="name">Amber</div><div class="hex">#B35A00</div><div class="use">Warning · Phase 3 modules</div></div>
+    </div>
+  </div>
+
+  <div class="iframe-row" style="margin-top: 16px;">
+    <iframe src="preview/colors-semantic.html" style="height: 320px;"></iframe>
+    <iframe src="preview/colors-neutrals.html" style="height: 200px;"></iframe>
+  </div>
+
+  <div class="panel" style="margin-top: 16px;">
+    <h3 style="margin-bottom: 12px;">Usage rules</h3>
+    <ul style="font-size: 13px; line-height: 1.7; color: var(--fg-2); padding-left: 18px;">
+      <li>Never combine more than two phase colors in a single screen region.</li>
+      <li>Indigo is the dominant interactive color. Teal and amber appear only as semantic status — success, warning. Never as decoration.</li>
+      <li>Background is off-white <code class="mono">#F8F9FB</code>. Surfaces are pure white. There are no tinted card backgrounds.</li>
+      <li>Hover states are computed darker, not from a separate token. Press states darken further and translate 1px down.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="type" data-screen-label="06 Type">
+  <h2 class="section-num">04 · Typography</h2>
+  <h2 class="section-title">One family. Everything.</h2>
+  <p class="section-lede">Inter for the entire system. JetBrains Mono only where numbers must align — tables, code, NIK, timestamps. Every size carries tabular numerals. The result is a product where columns add up.</p>
+
+  <div class="panel">
+    <table class="scale">
+      <thead><tr><th>Role</th><th>Specs</th><th>Sample</th></tr></thead>
+      <tbody>
+        <tr><td class="role">display</td><td class="specs">Inter 800 · 56/1.05 · -1.4</td><td><span class="t-display" style="font-size: 36px;">Honest software.</span></td></tr>
+        <tr><td class="role">h1</td><td class="specs">Inter 700 · 32/1.15 · -0.6</td><td><span class="t-h1">Cash position is healthy</span></td></tr>
+        <tr><td class="role">h2</td><td class="specs">Inter 700 · 24/1.25 · -0.4</td><td><span class="t-h2">Pending approvals</span></td></tr>
+        <tr><td class="role">h3</td><td class="specs">Inter 600 · 18/1.35 · -0.2</td><td><span class="t-h3">Recent transactions</span></td></tr>
+        <tr><td class="role">body L</td><td class="specs">Inter 400 · 16/1.55</td><td><span class="t-body-l">Karyawan baru ditambahkan ke modul HR.</span></td></tr>
+        <tr><td class="role">body M</td><td class="specs">Inter 400 · 14/1.55</td><td><span class="t-body">Setiap pengguna dapat menyesuaikan beranda.</span></td></tr>
+        <tr><td class="role">body S</td><td class="specs">Inter 400 · 13/1.5</td><td><span class="t-body-s">Last edited 2 minutes ago by Andi Wijaya.</span></td></tr>
+        <tr><td class="role">label</td><td class="specs">Inter 500 · 12/1.4</td><td><span class="t-label">Nomor Faktur</span></td></tr>
+        <tr><td class="role">micro</td><td class="specs">Inter 700 · 10/1.3 · UC · +1.2</td><td><span class="t-micro">Phase 1 · In Progress</span></td></tr>
+        <tr><td class="role">tabular</td><td class="specs">JetBrains Mono · tnum + lnum</td><td><span class="t-mono">Rp 12.450.000 · 06/05/2026 · 317•••••••••3456</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <iframe src="preview/type-tabular.html" style="height: 240px; margin-top: 16px;"></iframe>
+</section>
+
+<section id="icons" data-screen-label="07 Icons">
+  <h2 class="section-num">05 · Iconography</h2>
+  <h2 class="section-title">Lucide. 1.5px. 24×24.</h2>
+  <p class="section-lede">A single icon system, drawn at one weight, on one grid. We use Lucide because it's open, comprehensive, and quietly geometric. Icons inherit text color via <code class="mono">currentColor</code>.</p>
+  <iframe src="preview/icons.html" style="height: 220px;"></iframe>
+</section>
+
+<section id="components" data-screen-label="08 Components">
+  <h2 class="section-num">06 · UI components</h2>
+  <h2 class="section-title">The shape of the work</h2>
+  <p class="section-lede">Every component below is illustrated in its real states. Default first; hover, focus, disabled, error where the component supports them.</p>
+  <div class="iframe-row">
+    <iframe src="preview/buttons.html" style="height: 280px;"></iframe>
+    <iframe src="preview/inputs.html" style="height: 380px;"></iframe>
+    <iframe src="preview/badges.html" style="height: 240px;"></iframe>
+    <iframe src="preview/avatars.html" style="height: 280px;"></iframe>
+    <iframe src="preview/table-rows.html" style="height: 320px;"></iframe>
+    <iframe src="preview/sidebar.html" style="height: 240px;"></iframe>
+    <iframe src="preview/tabs.html" style="height: 220px;"></iframe>
+    <iframe src="preview/modal-sheet.html" style="height: 340px;"></iframe>
+    <iframe src="preview/toast.html" style="height: 320px;"></iframe>
+    <iframe src="preview/skeleton-empty.html" style="height: 240px;"></iframe>
+  </div>
+</section>
+
+<section id="screens" data-screen-label="09 Screens">
+  <h2 class="section-num">07 · Screen illustrations</h2>
+  <h2 class="section-title">The system, applied</h2>
+  <p class="section-lede">Eight screens that demonstrate every token, every component, every voice rule under real working conditions.</p>
+  <p style="font-size: 14px; color: var(--fg-2); margin-bottom: 24px;">Open the live UI kit: <a href="ui_kits/is-app/index.html" style="color: var(--indigo); font-weight: 600;">ui_kits/is-app/index.html →</a></p>
+  <iframe src="ui_kits/is-app/index.html" style="height: 900px;"></iframe>
+</section>
+
+<section id="motion" data-screen-label="10 Motion">
+  <h2 class="section-num">08 · Motion</h2>
+  <h2 class="section-title">Short, confident, rare.</h2>
+  <p class="section-lede">Animation in IS is a system-status signal, not entertainment. Four durations, two curves, a short list of what animates and an even shorter list of what does not.</p>
+
+  <div class="iframe-row">
+    <iframe src="preview/motion.html" style="height: 240px;"></iframe>
+    <div class="panel">
+      <h3 style="margin-bottom: 10px;">What animates</h3>
+      <ul style="font-size: 13px; line-height: 1.7; color: var(--fg-2); padding-left: 18px; margin-bottom: 16px;">
+        <li>Panel and modal entrance/exit (220ms · ease)</li>
+        <li>Hover scale on cards · max 1.02</li>
+        <li>Real-time data pulses · single 600ms opacity dip</li>
+        <li>Loading skeletons · 2.4s opacity pulse, no shimmer</li>
+      </ul>
+      <h3 style="margin-bottom: 10px;">What does not</h3>
+      <ul style="font-size: 13px; line-height: 1.7; color: var(--fg-2); padding-left: 18px;">
+        <li>Text content. Numbers don't count up; words don't type.</li>
+        <li>Table-row reorders during data refresh.</li>
+        <li>Anything for longer than 350ms.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="voice" data-screen-label="11 Voice">
+  <h2 class="section-num">09 · Voice &amp; microcopy</h2>
+  <h2 class="section-title">Calm. Direct. Confident. Helpful. Professional.</h2>
+  <p class="section-lede">Bahasa Indonesia is primary. English is shipped in parallel by the same author at the same time — never translated after the fact.</p>
+
+  <div class="panel">
+    <table class="voice-table">
+      <thead><tr><th>Context</th><th>Bahasa Indonesia</th><th>English</th></tr></thead>
+      <tbody>
+        <tr><td>Empty state</td><td class="id">Belum ada faktur.</td><td class="en">No invoices yet.</td></tr>
+        <tr><td>Confirm delete</td><td class="id">Hapus faktur ini?</td><td class="en">Delete this invoice?</td></tr>
+        <tr><td>Success toast</td><td class="id">Faktur disetujui.</td><td class="en">Invoice approved.</td></tr>
+        <tr><td>Error</td><td class="id">Perubahan gagal disimpan.</td><td class="en">Couldn't save your changes.</td></tr>
+        <tr><td>Loading</td><td class="id">Memuat…</td><td class="en">Loading…</td></tr>
+        <tr><td>Onboarding</td><td class="id">Mulai dengan menambah karyawan pertama.</td><td class="en">Start by adding your first employee.</td></tr>
+        <tr><td>Sync</td><td class="id">Disinkronkan dengan CoreTax DJP.</td><td class="en">Synced with CoreTax DJP.</td></tr>
+        <tr><td>Inline help</td><td class="id">NIK akan disamarkan secara otomatis.</td><td class="en">NIK is masked automatically.</td></tr>
+        <tr><td>Permission</td><td class="id">Anda hanya dapat melihat data ini.</td><td class="en">You have view-only access.</td></tr>
+        <tr><td>Save state</td><td class="id">Tersimpan otomatis · pukul 14:02</td><td class="en">Auto-saved · 14:02</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="never" style="margin-top: 16px;">
+    <b>Words to never use</b>
+    <p style="font-size: 12px; color: var(--fg-3); margin-bottom: 4px;">In any surface — UI, marketing, contracts.</p>
+    <div class="never-list">
+      <span>amazing</span><span>delight</span><span>synergy</span><span>robust</span><span>leverage</span><span>seamless</span><span>effortlessly</span><span>revolutionary</span>
+    </div>
+  </div>
+</section>
+
+<section id="dont" data-screen-label="12 Don'ts">
+  <h2 class="section-num">10 · Don'ts</h2>
+  <h2 class="section-title">A short list of bright lines</h2>
+  <p class="section-lede">Most rules in this book are described as positives. These are the negatives.</p>
+  <div class="donts">
+    <div class="dont"><b>Don't recolor the logo.</b>The mark is navy with an indigo equator. Single-color black or white only — never green, never red, never tinted.</div>
+    <div class="dont"><b>Don't add a second display font.</b>Inter does the entire job. Adding a serif headline face breaks the architectural feel.</div>
+    <div class="dont"><b>Don't decorate with gradients.</b>No background fades, no shimmering buttons, no glass. Flat colors only.</div>
+    <div class="dont"><b>Don't add accent borders to cards.</b>The colored-left-border treatment is a SaaS template cliché. Status lives in badges, not borders.</div>
+    <div class="dont"><b>Don't use Indonesian visual clichés.</b>No batik patterns, no Garuda, no red-and-white flag motifs, no Pancasila references. Indonesian-ness comes from the work.</div>
+    <div class="dont"><b>Don't animate text.</b>Numbers never count up; words never type out. Skeletons are for loading; animation is for state transitions.</div>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  Indonesia System · Brandbook v1.0 · Mei 2026 · For internal use across product, design, marketing, and partner teams.
+</footer>
+
+</body></html>
