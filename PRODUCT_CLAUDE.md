@@ -449,6 +449,130 @@ A "vertical mode" is a named bundle of feature-flag defaults and module presets.
 
 **Rule for the future:** a feature only earns "vertical mode" status when ≥3 customers in that industry pay for it and ≥1 specialized module is required. Otherwise it stays a per-module setting.
 
+### Localization architecture: locale-agnostic core + country packs
+
+**Date:** 2026-05-10
+
+**Context:** Indonesia is the launchpad, but the long-term plan is regional/international expansion (SG, MY, PH, VN). If Indonesian compliance leaks into the core (PPh 21 hardcoded into payroll, Rupiah assumed in Money math, Bahasa strings inline in components), internationalization later costs 3x more and risks regression of a working ID compliance surface. We studied how SAP, Salesforce, and Dynamics handle this.
+
+**What the big three do:**
+| Vendor | Pattern |
+|---|---|
+| **SAP** | "Country Versions" — 50+ pre-built localizations as add-ons to S/4HANA core. Globalization Services owns top markets; Localization Toolkit lets partners build long-tail. |
+| **Salesforce** | Locale-agnostic core. AppExchange hosts country apps (e-Faktur, Avalara). User locale = profile setting. Compliance is buyer-assembled. |
+| **Dynamics 365** | "Localization Portal" — 40+ country packs in two tiers: Microsoft-owned (top markets) + partner-built (long tail). Feature flags toggle per tenant. |
+
+**The pattern they all agree on:**
+1. Core platform is locale-agnostic — never assumes a country
+2. Country packs are first-class — same release process as core, versioned independently
+3. Multi-entity multinational — one tenant, multiple legal entities, each with its own locale stack
+4. User locale ≠ entity locale — display preference is separate from legal entity setting
+5. Translation ≠ compliance — language strings ship separately from tax/reporting logic
+6. Reference data as templates — chart of accounts, tax codes shipped as seedable templates, not migrations
+7. Per-country versioning — when ID tax law changes, only `l10n-id` ships an update
+
+**Decision:** Adopt a locale-agnostic core + country pack architecture from day one. Indonesia ships as `l10n-id`, even though it is the only pack at launch.
+
+**Package layout:**
+```
+packages/
+  core/                          # universal, locale-agnostic
+    domain/
+      money.ts                   # currency-aware Money value object (no IDR default)
+      period.ts                  # fiscal period (configurable, not Jan-Dec)
+      tax-engine/                # pluggable rules registry (interface, no rules)
+      chart-of-accounts/         # template-driven (no Indonesian COA seeded)
+      employee/, invoice/, ...
+  l10n-id/                       # Indonesia (Phase 1)
+    manifest.ts                  # country, langs, currency, fiscal_year_default
+    tax/                         # PPh 21 TER, BPJS Kesehatan + Ketenagakerjaan, PPN
+    accounting/                  # PSAK COA template, dual-book depreciation
+    reporting/                   # SPT formats, e-Faktur / NSFP, CoreTax DJP
+    banking/                     # BCA, Mandiri, BRI, BNI connectors
+    formatters/                  # Rupiah, NIK mask, Indonesian date
+    translations/id.json         # Bahasa Indonesia strings
+  l10n-sg/                       # Singapore (international expansion)
+  l10n-my/                       # Malaysia (international expansion)
+  l10n-ph/                       # Philippines (international expansion)
+```
+
+**Tax engine as plugin (the key abstraction):**
+```ts
+interface TaxRule {
+  code: string;              // "ID.PPh21.TER"
+  jurisdiction: string;      // "ID"
+  effective_from: Date;
+  effective_to: Date | null; // historical accuracy preserved
+  applies_to(ctx: TaxContext): boolean;
+  compute(ctx: TaxContext): TaxResult;
+}
+```
+Old rules stay registered for historical re-runs and audit re-computation. Adding SG = registering SG TaxRule implementations; core never changes.
+
+**Multi-entity multinational support (required from v1.0):**
+A holding company with PT Subsidiary (ID) + Pte Ltd (SG) runs in the same tenant. ID users see IDR/Bahasa in PT Subsidiary, English/SGD in Pte Ltd. Consolidation rolls up to parent in chosen reporting currency. This is a non-negotiable requirement for the multi-entity feature already in `IS-FIN-ACC-005`.
+
+**Core invariants (enforced at code review):**
+- No `IDR` literal in `core/`
+- No Indonesian language string in `core/`
+- No `pph21`, `bpjs`, `nik`, `npwp` symbol in `core/`
+- All currency math goes through `Money` value object with explicit currency
+- All user-facing strings externalized to i18n keys, even in Phase 1 ID-only release
+- Fiscal year is per-entity setting, not assumed Jan–Dec
+
+**Why not "ship Indonesia-only now, refactor later":**
+- Refactoring Indonesian assumptions out of mature code = months of work + regression risk on a working compliance surface
+- The architectural cost of doing it right on day one is small (~10% extra design effort); the cost of doing it later is 3x
+
+**Implication for partner ecosystem:** The `l10n-*` interface becomes our "Localization Toolkit" equivalent. After v1.0, regional partners can ship their own packs (e.g., `l10n-th` by a Thai partner) without our involvement.
+
+### AI agent actions on the Event Bus
+
+**Date:** 2026-05-10
+
+**Context:** The Tool Registry decision establishes that all mutations flow through typed tools, called by UI, API, workflows, or AI agents. The event bus emits an event for every mutation with an `Actor` field identifying who performed it. AI agents acting on behalf of users must be a first-class actor type — not flattened into "user" — for audit, rollback, permission scoping, and explainability.
+
+**Decision:** Extend the `Actor` discriminated union with an `ai_agent` variant. Every event emitted by an AI-agent-initiated tool call carries this actor.
+
+```ts
+type Actor =
+  | { type: "user";     id: UserId }
+  | { type: "system";   subsystem: string }
+  | { type: "workflow"; id: WorkflowId; stepId: string }
+  | { type: "api_key";  keyId: string; label: string }
+  | { type: "ai_agent";
+      agentId:    string;       // logical agent identity, e.g. "agent.payroll-assistant"
+      sessionId:  string;       // groups all events from one agent session
+      onBehalfOf: UserId;       // delegating user — required, no autonomous agents
+      toolCallId: string;       // links event to specific tool call in the trace
+      model:      string;       // "claude-opus-4-7" — for audit when models change
+      promptHash: string;       // sha256 of the user prompt (privacy-preserving)
+    }
+```
+
+**Why each field is required:**
+| Field | Reason |
+|---|---|
+| `agentId` | Identifies *which* agent did this (different agents have different scopes) |
+| `sessionId` | Enables session-level rollback if an agent misbehaves — pull every event from one session |
+| `onBehalfOf` | Enforces non-autonomy — every agent action traces to a human delegator |
+| `toolCallId` | Links event to the exact tool call in the agent trace for explainability |
+| `model` | Audit trail when model behavior changes between versions |
+| `promptHash` | Reconstruct *why* without storing PII-laden prompts in the event log |
+
+**Permission Fabric rule:** an AI agent's effective permissions = `intersection(user.permissions, agent.granted_scope)`. Agents cannot escalate beyond the user who delegated. Same model as OAuth scopes — agents get a downscoped token, not the full user token. The agent definition declares its scope; the user grants the agent the right to act for them; the runtime enforces the intersection.
+
+**UI / audit log requirement:** every UI surface displaying event history must visually distinguish AI agent actions from human actions (small bot icon + agent name). Compliance teams need this to answer SOC 2 / ISO 27001 questions like "which mutations were made autonomously vs. by humans?"
+
+**Rollback semantics:** the event store must support "rollback all events with `actor.type === 'ai_agent'` and `actor.sessionId === X`." This is a required feature, not a nice-to-have, because LLM agents will occasionally make systematic mistakes that need bulk reversal.
+
+**Why not "treat AI agents as just another user":**
+- Compliance teams need to answer "what did AI do vs. what did humans do?" — flattening loses this
+- Bulk rollback of an agent session is qualitatively different from rolling back a user — different UX, different blast radius
+- Permission semantics differ — agents have *additional* scope constraints beyond the delegating user
+
+**Implication for IS-PLAT-AUDIT (audit log) and IS-PLAT-PERM (permissions):** both must implement these rules from v1.0. This is not deferrable to Phase 2.
+
 ---
 
 ## What NOT to Build (avoid redundancy with ecosystem)
