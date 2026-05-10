@@ -641,7 +641,7 @@
     {
       "id": "finance-assets",
       "label": "Fixed Assets",
-      "description": "Asset register with automatic depreciation and accounting entries",
+      "description": "Asset register with dual-book depreciation (PSAK + fiscal), disposal P&L, and a structured onboarding workflow: acquisition → physical tagging → commissioning → maintenance schedule hand-off to IS-MAINT (Phase 2)",
       "type": "app",
       "status": "planned",
       "phase": 1,
@@ -4991,47 +4991,47 @@
       "milestone": "v1.0"
     },
     {
-      "id": "plat-connectors",
-      "label": "Connector Framework (iPaaS)",
-      "description": "Integration layer for legacy systems: typed connectors, scheduled syncs, transformation pipelines, error retry, and observability. Pre-built connectors for SAP, Oracle EBS, Accurate, Jurnal, MYOB, and CSV/Excel ingestion",
+      "id": "plat-ipaas",
+      "label": "iPaaS — Legacy Integration",
+      "description": "Integration layer for legacy enterprise systems: typed connectors, scheduled syncs, transformation pipelines, error retry, and observability. Pre-built connectors for SAP, Oracle EBS, Accurate, Jurnal, MYOB, and CSV/Excel ingestion",
       "type": "app",
       "status": "planned",
       "phase": 2,
       "parent": "platform-core",
-      "code": "IS-PLAT-CONN",
+      "code": "IS-PLAT-IPAAS",
       "milestone": "v2.0"
     },
     {
-      "id": "plat-conn-runtime",
+      "id": "plat-ipaas-runtime",
       "label": "Connector Runtime",
       "description": "Sandboxed execution of connector tasks with credential vault, scheduling, and event-bus emission",
       "type": "feature",
       "status": "planned",
       "phase": 2,
-      "parent": "plat-connectors",
-      "code": "IS-PLAT-CONN-001",
+      "parent": "plat-ipaas",
+      "code": "IS-PLAT-IPAAS-001",
       "milestone": "v2.0"
     },
     {
-      "id": "plat-conn-library",
+      "id": "plat-ipaas-library",
       "label": "Connector Library",
-      "description": "Catalogue of pre-built connectors maintained by Indonesia System for the most common Indonesian and global enterprise systems",
+      "description": "Catalogue of pre-built connectors for common Indonesian and global enterprise systems",
       "type": "feature",
       "status": "planned",
       "phase": 2,
-      "parent": "plat-connectors",
-      "code": "IS-PLAT-CONN-002",
+      "parent": "plat-ipaas",
+      "code": "IS-PLAT-IPAAS-002",
       "milestone": "v2.0"
     },
     {
-      "id": "plat-conn-mapper",
+      "id": "plat-ipaas-mapper",
       "label": "Field Mapper & Transformer",
       "description": "No-code field mapping and transformation rules between external schema and IS canonical models",
       "type": "feature",
       "status": "planned",
       "phase": 2,
-      "parent": "plat-connectors",
-      "code": "IS-PLAT-CONN-003",
+      "parent": "plat-ipaas",
+      "code": "IS-PLAT-IPAAS-003",
       "milestone": "v2.0"
     },
     {
@@ -5308,6 +5308,50 @@
       "parent": "plat-connectors",
       "code": "IS-PLAT-CON-003",
       "milestone": "v1.0"
+    },
+    {
+      "id": "plat-share",
+      "label": "Tokenized Share Links",
+      "description": "Any record can be shared via a signed, expiring URL — no login required. Customer views and e-signs a quotation, downloads their own e-Faktur, or approves a PO via a one-time link. Token encodes permissions, record reference, expiry, and optional OTP requirement",
+      "type": "app",
+      "status": "planned",
+      "phase": 1,
+      "parent": "platform-core",
+      "code": "IS-PLAT-SHARE",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "plat-share-token",
+      "label": "Token Generator",
+      "description": "HMAC-signed tokens with configurable expiry, single-use flag, and scoped permission set (view, sign, pay, comment)",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "plat-share",
+      "code": "IS-PLAT-SHARE-001",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "plat-share-access-log",
+      "label": "Share Access Log",
+      "description": "Every external access via a share link is recorded in the audit log: who accessed (IP, device), when, what action was taken",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "plat-share",
+      "code": "IS-PLAT-SHARE-002",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "plat-embed",
+      "label": "External Embed Primitive",
+      "description": "Sandboxed iframe embed for third-party widgets (Looker Studio dashboards, Google Sheets, Loom, weather, BPS data). Domain allowlist per workspace, strict CSP sandbox attributes",
+      "type": "app",
+      "status": "planned",
+      "phase": 2,
+      "parent": "platform-core",
+      "code": "IS-PLAT-EMBED",
+      "milestone": "v2.0"
     },
     {
       "id": "mobile-pwa",
@@ -5879,6 +5923,109 @@
       "parent": "studio-apps",
       "code": "IS-STUDIO-APP-005",
       "milestone": "v3.0"
+    },
+    {
+      "id": "maintenance",
+      "label": "Asset Maintenance",
+      "description": "Preventive and corrective maintenance lifecycle for physical assets. Receives hand-off from IS-FIN-AST on asset commissioning, generates scheduled work orders (calendar, usage-based, condition-based), tracks technician assignment, parts consumption, and feeds maintenance costs back to Accounting",
+      "type": "module",
+      "status": "planned",
+      "phase": 2,
+      "parent": "core",
+      "code": "IS-MAINT",
+      "milestone": "v2.0",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": "maint-schedules",
+      "label": "Maintenance Schedules",
+      "description": "Recurrence rules per asset: calendar interval (every 30 days), usage-based (every 5,000 km / 250 run-hours), seasonal. Auto-generates work orders ahead of due date",
+      "type": "app",
+      "status": "planned",
+      "phase": 2,
+      "parent": "maintenance",
+      "code": "IS-MAINT-SCH",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "maint-workorders",
+      "label": "Work Orders",
+      "description": "Corrective and preventive work orders: assignee (internal technician or external vendor), checklist steps, parts requested from Inventory, completion photo, downtime log",
+      "type": "app",
+      "status": "planned",
+      "phase": 2,
+      "parent": "maintenance",
+      "code": "IS-MAINT-WO",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "maint-costs",
+      "label": "Maintenance Cost Tracking",
+      "description": "Parts consumed deducted from Inventory, labor cost from internal HR or vendor PO; total cost posted to Accounting under the asset's cost center",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "maint-workorders",
+      "code": "IS-MAINT-WO-001",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "maint-history",
+      "label": "Asset Maintenance History",
+      "description": "Full timeline of all work orders per asset: what was done, by whom, parts used, cost, downtime. Linked to asset record in IS-FIN-AST",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "maint-workorders",
+      "code": "IS-MAINT-WO-002",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "portal",
+      "label": "Portals",
+      "description": "External-facing views for customers and vendors — no internal user license required. Customers download e-Faktur, view order status, accept quotations, and pay invoices. Vendors view POs, confirm delivery, and upload bills. Built on the same React app with a branded subdomain shell and external auth (magic link / OTP)",
+      "type": "module",
+      "status": "planned",
+      "phase": 2,
+      "parent": "core",
+      "code": "IS-PORTAL",
+      "milestone": "v2.0",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": "portal-customer",
+      "label": "Customer Portal",
+      "description": "Branded self-service portal per workspace (acme.is.id): invoice download (PDF + e-Faktur), order tracking, quotation acceptance + e-sign, online payment via QRIS/virtual account, support ticket submission",
+      "type": "app",
+      "status": "planned",
+      "phase": 2,
+      "parent": "portal",
+      "code": "IS-PORTAL-CUST",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "portal-vendor",
+      "label": "Vendor Portal",
+      "description": "Vendors view their POs, confirm delivery schedules, upload bills for three-way match, and check payment status — eliminating 'kapan dibayar?' WhatsApp messages to Procurement teams",
+      "type": "app",
+      "status": "planned",
+      "phase": 2,
+      "parent": "portal",
+      "code": "IS-PORTAL-VND",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "portal-employee",
+      "label": "Employee Self-Service",
+      "description": "Employees access payslips, leave balance, attendance records, expense status, and company announcements without an internal user seat. Ships as part of Mobile PWA (IS-MOB) in Phase 1; promoted to branded portal in Phase 2",
+      "type": "app",
+      "status": "planned",
+      "phase": 2,
+      "parent": "portal",
+      "code": "IS-PORTAL-EMP",
+      "milestone": "v2.0"
     }
   ]
 }
