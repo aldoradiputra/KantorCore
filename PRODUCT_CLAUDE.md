@@ -449,90 +449,215 @@ A "vertical mode" is a named bundle of feature-flag defaults and module presets.
 
 **Rule for the future:** a feature only earns "vertical mode" status when ≥3 customers in that industry pay for it and ≥1 specialized module is required. Otherwise it stays a per-module setting.
 
+### Distribution model: internal-centric, no partner ecosystem
+
+**Date:** 2026-05-10
+
+**Context:** Considered two distribution strategies: (1) internal-centric — strong internal dev, delivery, and sales teams own all customer touchpoints; (2) partner-centric — regional/industry partners build packs, implement, and sell. SAP, Salesforce, and Dynamics all leaned heavily on partners. Evaluated trade-offs.
+
+**Decision:** Internal-centric distribution, permanently. No partner-built modules, no plugin marketplace.
+
+**Trade-off table:**
+
+| | Internal-centric (chosen) | Partner-centric (rejected) |
+|---|---|---|
+| Quality | End-to-end ownership; single brand standard across every customer | Variable; partner quality directly impacts brand |
+| Compliance liability | Owned entirely — but fully controlled | Distributed across partners; messy in regulated workflows |
+| Customer relationship | Direct — full context, faster iteration | Mediated — slower feedback loop |
+| Margin | High per-customer | Lower (partner takes cut) |
+| Geographic expansion | Bound by internal hiring rate | Faster but with quality risk |
+| Moat | Strong — integration depth competitors can't replicate easily | Weaker — partners can switch ERPs |
+
+**Why not partner-centric:** quality dilutes fast across a partner network. An implementation partner's mistake in an Indonesian payroll run is a brand failure, not a partner failure. In regulated domains (tax, BPJS, e-Faktur) the liability and brand risk outweigh the distribution speed.
+
+**On app marketplace:** three things are often conflated under "marketplace" — separate verdicts:
+
+| What | Decision | Reason |
+|---|---|---|
+| **Plugin marketplace** (third-party code extensions) | No — indefinitely | Inconsistent with internal-centric strategy. Security review burden. Unclear monetization. Liability tail in regulated workflows. |
+| **Module catalog** (in-app UI to enable/disable first-party modules) | Yes — ships with v1.0 | This is just product discoverability, not a marketplace. Customers toggle modules on/off. |
+| **Configuration template sharing** (customers share COA / workflow templates) | Defer to Phase 3+, evaluate then | Low risk (configuration, not code). No obvious value before customer base reaches critical mass. |
+
+**Geographic expansion model:** each new country (SG, MY, PH) requires hiring local domain experts and legal advisors internally — not partnering with local consultancies. Expansion pace is bound by hiring, not by partner pipeline. This is the Workday model, not the SAP/Salesforce model.
+
+**Implication for localization packs:** the `LocalizationPack` interface is an internal engineering contract — it exists for code organization and parallel team workflows, not for adversarial isolation. Security boundary is TypeScript module visibility + code review, not worker-level sandboxing (overkill without external contributors).
+
+---
+
+### Pricing model: unlimited-user, revenue + headcount tiers per industry
+
+**Date:** 2026-05-10
+
+**Context:** Standard B2B SaaS pricing (Odoo, SAP, Dynamics, Salesforce) is per-user, which creates friction as companies scale, incentivizes minimizing user count, and doesn't reflect actual value delivered. Indonesian mid-market companies span a wide range of financial scale within the same headcount band depending on industry.
+
+**Decision:** Unlimited-user pricing, tiered by **revenue band × headcount band × industry**, country-adjusted. One contract covers the entire company; every employee can be a user.
+
+**Why this model:**
+- Removes user-count friction — every employee onboards without incremental cost negotiation
+- Captures value proportional to company scale, not user licenses
+- Per-industry calibration reflects real purchasing power (a 100-person plantation has very different revenue and pricing tolerance than a 100-person SaaS company)
+- Country-adjusted pricing respects local purchasing power parity (Indonesia vs. Singapore vs. Malaysia)
+
+**The "reasonable" constraint is a hard product principle:**
+Pricing must always stay within a defined band (target: X% of customer's trailing-12-month revenue, or Y% of total payroll cost). Even if the tier formula would suggest a higher number, the cap holds. This is the brand promise: never punishing customers for growing.
+
+**Architectural implications (non-negotiable from v1.0):**
+
+| Implication | Detail |
+|---|---|
+| Headcount as billing input | HR module active-employee count feeds billing tier. Accuracy is now revenue-critical, not just operational. |
+| Revenue as billing input | Accounting module trailing-12-month revenue (per PSAK 72 measure) feeds billing tier. Accounting module correctness is revenue-critical. |
+| Annual true-up, not real-time | Tier snapshots at contract anniversary, not at every employee hire. Growth mid-cycle is tracked but not billed until renewal. |
+| Industry as immutable tenant attribute | Set at signup. Determines tier table, default module presets, vertical modes available. Changing industry = re-pricing event, not a casual setting. |
+| Multi-entity = consolidated tier | A holding with 5 subsidiaries is one customer relationship: consolidated revenue + headcount. If entities span countries, pricing is per-entity then aggregated to one invoice. |
+| Vertical modes are tier-gated | Horizontal core (HR, Finance, Inventory, etc.) included at every tier. Vertical modes (Plantation, Distribution, Manufacturing presets) gated to higher tiers — this is the primary value-capture lever for specialized customers. |
+
+**What "country-adjusted" means in practice:**
+- Indonesia: base pricing (local currency, local purchasing power)
+- Singapore: ~2–2.5× Indonesia base (higher wages, higher software spend norms)
+- Malaysia: ~1.3–1.5× Indonesia base
+- Tier labels and thresholds differ by country (a "mid-market" company is defined differently per market)
+
+---
+
 ### Localization architecture: locale-agnostic core + country packs
 
 **Date:** 2026-05-10
 
-**Context:** Indonesia is the launchpad, but the long-term plan is regional/international expansion (SG, MY, PH, VN). If Indonesian compliance leaks into the core (PPh 21 hardcoded into payroll, Rupiah assumed in Money math, Bahasa strings inline in components), internationalization later costs 3x more and risks regression of a working ID compliance surface. We studied how SAP, Salesforce, and Dynamics handle this.
+**Context:** Indonesia is the launchpad, but the long-term plan is regional/international growth (SG, MY, PH, VN). Distribution is internal-only — no partner ecosystem (see Distribution decision). If Indonesian compliance leaks into the core (PPh 21 hardcoded into payroll, Rupiah assumed in Money, Bahasa strings inline), internationalization later costs 3× more and risks regression of a working compliance surface. We studied SAP, Salesforce, and Dynamics.
 
 **What the big three do:**
 | Vendor | Pattern |
 |---|---|
-| **SAP** | "Country Versions" — 50+ pre-built localizations as add-ons to S/4HANA core. Globalization Services owns top markets; Localization Toolkit lets partners build long-tail. |
-| **Salesforce** | Locale-agnostic core. AppExchange hosts country apps (e-Faktur, Avalara). User locale = profile setting. Compliance is buyer-assembled. |
-| **Dynamics 365** | "Localization Portal" — 40+ country packs in two tiers: Microsoft-owned (top markets) + partner-built (long tail). Feature flags toggle per tenant. |
+| **SAP** | "Country Versions" — 50+ pre-built localizations as add-ons to S/4HANA. Internal Globalization Services team owns top markets; partners handle long tail. |
+| **Salesforce** | Locale-agnostic core. AppExchange hosts country compliance apps. User locale = profile setting. Compliance is buyer-assembled — too fragmented for mid-market. |
+| **Dynamics 365** | "Localization Portal" — 40+ packs in two tiers: Microsoft-owned (top markets), partner-built (long tail). Feature flags per tenant. Closest to our model. |
 
-**The pattern they all agree on:**
-1. Core platform is locale-agnostic — never assumes a country
-2. Country packs are first-class — same release process as core, versioned independently
-3. Multi-entity multinational — one tenant, multiple legal entities, each with its own locale stack
-4. User locale ≠ entity locale — display preference is separate from legal entity setting
-5. Translation ≠ compliance — language strings ship separately from tax/reporting logic
-6. Reference data as templates — chart of accounts, tax codes shipped as seedable templates, not migrations
+**The pattern all three agree on:**
+1. Core is locale-agnostic — never assumes a country
+2. Country packs are first-class — versioned and released independently from core
+3. Multi-entity multinational: one tenant, multiple legal entities, each with its own locale stack
+4. User locale ≠ entity locale — display preference is separate from legal entity compliance setting
+5. Translation ≠ compliance — language strings and tax rules ship and version independently
+6. Reference data as seedable templates — COA, tax codes are not baked into migrations
 7. Per-country versioning — when ID tax law changes, only `l10n-id` ships an update
 
-**Decision:** Adopt a locale-agnostic core + country pack architecture from day one. Indonesia ships as `l10n-id`, even though it is the only pack at launch.
+**Decision:** Locale-agnostic core + `LocalizationPack` contract. Indonesia ships as `l10n-id` at v1.0. All future country packs built by internal teams follow the same contract.
+
+**`LocalizationPack` interface contract:**
+
+```ts
+// packages/core/src/localization/pack-contract.ts
+
+interface LocalizationPack {
+  // Identity
+  readonly id:        `l10n-${Lowercase<CountryCode>}`;
+  readonly version:   string;            // semver
+  readonly country:   CountryCode;       // ISO 3166-1 alpha-2
+  readonly languages: LanguageCode[];    // primary first; e.g. ["id", "en"]
+  readonly currency:  CurrencyCode;      // ISO 4217; e.g. "IDR"
+  readonly timeZones: TimeZoneId[];      // ID has three: WIB, WITA, WIT
+
+  // Defaults applied when an entity is created with this country
+  readonly fiscalYearDefault:  FiscalYearConfig;
+  readonly numberFormatDefault: NumberFormatConfig;
+  readonly dateFormatDefault:   DateFormatConfig;
+
+  // Registration — pack adds capabilities; never modifies existing ones
+  registerTaxRules(registry: TaxRuleRegistry): void;
+  registerCOATemplates(registry: COATemplateRegistry): void;
+  registerReportTemplates(registry: ReportTemplateRegistry): void;
+  registerBankConnectors(registry: BankConnectorRegistry): void;
+  registerGovConnectors(registry: GovConnectorRegistry): void;
+  registerFormatters(registry: FormatterRegistry): void;
+  registerTranslations(registry: I18nRegistry): void;
+  registerVerticalPresets?(registry: VerticalPresetRegistry): void;
+
+  onLoad?(ctx: PackContext): Promise<void>;
+}
+```
+
+Forbidden in any `l10n-*` package (enforced by code review + CI lint rules):
+- Cannot import from `packages/core/internal/*` — only public contract types
+- Cannot register Tool Registry actions (domain modules own those)
+- Cannot modify another pack's registered rules
+- Cannot add database migrations (use core's schema extensibility)
+- Cannot mutate core domain models (Employee, Invoice, Account, etc.)
+- All registered items must include `effective_from` / `effective_to`
+
+**Tax rule with versioning (the most fragile concern in localization):**
+
+```ts
+interface TaxRule {
+  code:           string;          // "ID.PPh21.TER"
+  jurisdiction:   CountryCode;
+  category:       "income" | "vat" | "withholding" | "social";
+  effective_from: Date;
+  effective_to:   Date | null;     // null = currently active
+  applies_to(ctx: TaxContext): boolean;
+  compute(ctx: TaxContext): TaxResult;
+}
+// Deprecation = register a new version with effective_from set to changeover date
+// Never UPDATE an existing rule row — always INSERT a new version
+```
 
 **Package layout:**
 ```
 packages/
   core/                          # universal, locale-agnostic
     domain/
-      money.ts                   # currency-aware Money value object (no IDR default)
-      period.ts                  # fiscal period (configurable, not Jan-Dec)
-      tax-engine/                # pluggable rules registry (interface, no rules)
-      chart-of-accounts/         # template-driven (no Indonesian COA seeded)
+      money.ts                   # currency-aware Money (no IDR default, explicit currency arg)
+      period.ts                  # fiscal period — per-entity config, not global
+      tax-engine/                # TaxRule registry interface; no rules live here
+      chart-of-accounts/         # template-driven; no Indonesian COA seeded
       employee/, invoice/, ...
-  l10n-id/                       # Indonesia (Phase 1)
-    manifest.ts                  # country, langs, currency, fiscal_year_default
-    tax/                         # PPh 21 TER, BPJS Kesehatan + Ketenagakerjaan, PPN
+  l10n-id/                       # Indonesia — ships with v1.0
+    manifest.ts
+    tax/                         # PPh 21 TER, BPJS (Kesehatan + Ketenagakerjaan), PPN
     accounting/                  # PSAK COA template, dual-book depreciation
-    reporting/                   # SPT formats, e-Faktur / NSFP, CoreTax DJP
-    banking/                     # BCA, Mandiri, BRI, BNI connectors
-    formatters/                  # Rupiah, NIK mask, Indonesian date
-    translations/id.json         # Bahasa Indonesia strings
-  l10n-sg/                       # Singapore (international expansion)
-  l10n-my/                       # Malaysia (international expansion)
-  l10n-ph/                       # Philippines (international expansion)
+    reporting/                   # SPT formats, e-Faktur / NSFP, CoreTax DJP connector
+    banking/                     # BCA, Mandiri, BRI, BNI
+    formatters/                  # Rupiah (Rp 1.500.000), NIK mask, ID date
+    translations/id.json
+  l10n-sg/                       # Singapore — Phase 2
+  l10n-my/                       # Malaysia — Phase 2
+  l10n-ph/                       # Philippines — Phase 2+
 ```
 
-**Tax engine as plugin (the key abstraction):**
-```ts
-interface TaxRule {
-  code: string;              // "ID.PPh21.TER"
-  jurisdiction: string;      // "ID"
-  effective_from: Date;
-  effective_to: Date | null; // historical accuracy preserved
-  applies_to(ctx: TaxContext): boolean;
-  compute(ctx: TaxContext): TaxResult;
-}
-```
-Old rules stay registered for historical re-runs and audit re-computation. Adding SG = registering SG TaxRule implementations; core never changes.
+**Known complexity and risk areas in `l10n-id`:**
 
-**Multi-entity multinational support (required from v1.0):**
-A holding company with PT Subsidiary (ID) + Pte Ltd (SG) runs in the same tenant. ID users see IDR/Bahasa in PT Subsidiary, English/SGD in Pte Ltd. Consolidation rolls up to parent in chosen reporting currency. This is a non-negotiable requirement for the multi-entity feature already in `IS-FIN-ACC-005`.
+| Risk | Detail | Mitigation |
+|---|---|---|
+| Number formatting | ID uses `.` thousands / `,` decimal (Rp 1.500.000,00). Inconsistent in practice. | Store raw numeric in DB; locale formatting only at render layer, never in business logic |
+| Fiscal year | Not always Jan–Dec (holding companies with UK parents use Apr–Mar) | Fiscal year is per-entity setting; period boundaries use entity's configured timezone |
+| FX rate snapshot | ID companies may invoice in USD but report in IDR. Rate at report time ≠ rate at transaction time → P&L changes retroactively | `Money` stores `{ amount, currency, fx_rate_to_reporting, fx_rate_snapshot_date }` — immutable after transaction confirmation |
+| Tax rule versioning | PPh 21 changed to TER method Jan 2024; PTKP changes periodically; BPJS rates vary by risk class | Append-only TaxRule rows with `effective_from` / `effective_to`; historical payroll re-runs always resolve the correct version |
+| e-Faktur / NSFP fragility | NSFP quota is per-NPWP, pre-allocated from DJP; CoreTax API has documented downtime | NSFP buffer pool with alert at 20% remaining; invoice enters "pending submission" state on DJP outage; retry worker handles async submission |
+| Regulatory string freeze | SPT / e-Faktur field labels are legally mandated wording — translators must not touch them | Mark regulatory strings `{ frozen: true }` in i18n catalog; CI fails if frozen string is modified |
+| COA template updates | Customer customizes PSAK COA; a future PSAK change cannot auto-apply without overwriting their work | COA template is a one-time seed, never auto-updated; PSAK changes ship as documented migration guidance, not automatic schema changes |
+| Multi-timezone within ID | Jakarta (WIB, UTC+7), Makassar (WITA, UTC+8), Jayapura (WIT, UTC+9) — period-end-of-day differs | All timestamps stored as UTC; period boundaries defined by entity's configured timezone |
 
-**Core invariants (enforced at code review):**
-- No `IDR` literal in `core/`
-- No Indonesian language string in `core/`
-- No `pph21`, `bpjs`, `nik`, `npwp` symbol in `core/`
-- All currency math goes through `Money` value object with explicit currency
-- All user-facing strings externalized to i18n keys, even in Phase 1 ID-only release
-- Fiscal year is per-entity setting, not assumed Jan–Dec
+**Core invariants (enforced at code review + CI lint):**
+- No `IDR` literal in `packages/core/`
+- No `pph21`, `bpjs`, `nik`, `npwp` symbol in `packages/core/`
+- No Indonesian-language string inline in any component
+- All currency math via `Money` value object with explicit currency argument
+- All user-facing strings via i18n keys (even in Phase 1 ID-only release)
+- Fiscal year config per entity, not global
 
-**Why not "ship Indonesia-only now, refactor later":**
-- Refactoring Indonesian assumptions out of mature code = months of work + regression risk on a working compliance surface
-- The architectural cost of doing it right on day one is small (~10% extra design effort); the cost of doing it later is 3x
+**Multi-entity multinational (required from v1.0):**
+A holding with PT Subsidiary (ID, IDR, Bahasa) + Pte Ltd (SG, SGD, English) runs in one tenant. Each entity resolves its own `LocalizationPack`. Consolidation rolls up to parent in chosen reporting currency using snapshotted FX rates.
 
-**Implication for partner ecosystem:** The `l10n-*` interface becomes our "Localization Toolkit" equivalent. After v1.0, regional partners can ship their own packs (e.g., `l10n-th` by a Thai partner) without our involvement.
+**Why not "ID-only now, refactor later":**
+Refactoring country assumptions out of mature payroll/accounting code = months of work + regression risk on a working compliance surface. The architectural cost of doing it right on day one is ~10% extra design effort; the cost of doing it at Series A is 3×.
 
-### AI agent actions on the Event Bus
+### AI agent governance: delegated agents vs. autonomous agents
 
 **Date:** 2026-05-10
 
-**Context:** The Tool Registry decision establishes that all mutations flow through typed tools, called by UI, API, workflows, or AI agents. The event bus emits an event for every mutation with an `Actor` field identifying who performed it. AI agents acting on behalf of users must be a first-class actor type — not flattened into "user" — for audit, rollback, permission scoping, and explainability.
+**Context:** The Tool Registry establishes that all mutations flow through typed tools, called by UI, API, workflows, or AI agents. We initially modeled a single `ai_agent` actor type for all agent actions. After deeper review, two categorically different operating modes emerged — delegated (human in the loop in real time) and autonomous (scheduled/event-triggered with no real-time human). Flattening them into one actor type is a compliance failure: blast radius, rollback semantics, approval flows, and audit surfaces are all different.
 
-**Decision:** Extend the `Actor` discriminated union with an `ai_agent` variant. Every event emitted by an AI-agent-initiated tool call carries this actor.
+**Decision:** Two separate actor types + a Mandate system for autonomous agents.
 
 ```ts
 type Actor =
@@ -540,38 +665,115 @@ type Actor =
   | { type: "system";   subsystem: string }
   | { type: "workflow"; id: WorkflowId; stepId: string }
   | { type: "api_key";  keyId: string; label: string }
+
+  // Delegated: user invokes agent in real time; human is in the loop throughout
   | { type: "ai_agent";
-      agentId:    string;       // logical agent identity, e.g. "agent.payroll-assistant"
-      sessionId:  string;       // groups all events from one agent session
-      onBehalfOf: UserId;       // delegating user — required, no autonomous agents
-      toolCallId: string;       // links event to specific tool call in the trace
-      model:      string;       // "claude-opus-4-7" — for audit when models change
-      promptHash: string;       // sha256 of the user prompt (privacy-preserving)
+      agentId:    AgentId;
+      sessionId:  SessionId;     // groups all events from one session; rollback unit
+      onBehalfOf: UserId;        // required — no autonomous mutations on this type
+      toolCallId: string;
+      model:      ModelVersion;
+      promptHash: string;        // sha256 of user prompt — privacy-preserving audit trail
+    }
+
+  // Autonomous: scheduled / event-triggered; no real-time human oversight
+  | { type: "autonomous_agent";
+      agentId:       AgentId;
+      mandateId:     MandateId;  // references the pre-approved Mandate
+      mandateVersion: number;    // pinned at run start — mandate changes don't affect running jobs
+      runId:         RunId;      // groups all events from one execution run; rollback unit
+      toolCallId:    string;
+      model:         ModelVersion; // pinned per mandate
+      triggeredBy:   "schedule" | "event" | "webhook";
+      triggerRef:    string;     // hashed reference to triggering source
     }
 ```
 
-**Why each field is required:**
-| Field | Reason |
+**The Mandate — pre-approved policy for autonomous agents:**
+
+```ts
+interface Mandate {
+  id:             MandateId;
+  version:        number;             // monotonic; immutable after creation
+  agentId:        AgentId;
+  name:           string;             // "Nightly AP Reconciliation"
+  description:    string;
+
+  // 4-eyes authorization — configuredBy and approvedBy must be different users
+  configuredBy:   UserId;
+  configuredAt:   Date;
+  approvedBy:     UserId;
+  approvedAt:     Date;
+
+  // Scope — principle of least privilege
+  scope:          PermissionScope[];  // exactly what tools this agent may call
+  entityScope:    EntityId[];         // which legal entities it may touch
+
+  // Hard limits — enforced by Tool Registry, not by agent code
+  maxFinancialImpactPerRun:      Money;  // single execution ceiling
+  maxFinancialImpactRolling24h:  Money;  // anti-fragmentation ceiling
+  humanApprovalAbove:            Money;  // pause-and-request-approval gate
+
+  // Trigger
+  trigger:
+    | { kind: "schedule"; cron: string; timezone: TimeZoneId }
+    | { kind: "event";    eventType: string; filter?: EventFilter }
+    | { kind: "webhook";  secret: WebhookSecret };
+
+  modelPin:      ModelVersion;    // exact version; upgrade = new mandate version + re-approval
+  alertChannel:  NotificationChannel; // non-nullable; receives failure + approval-needed alerts
+  expiresAt:     Date;            // default 1 year, max 2 years; must be actively renewed
+  status:        "active" | "paused" | "expired" | "revoked";
+  supersededBy?: MandateId;       // set when a new version replaces this
+}
+```
+
+**The Mutation Gate — enforced at Tool Registry, not at agent runtime:**
+
+The agent calls `tools.invoke(toolName, args)`. The registry checks actor type, sees `autonomous_agent`, resolves the mandate, and runs the gate before any mutation is allowed. The agent code cannot bypass or inspect the limits.
+
+```
+Gate checks (in order):
+1. mandate.scope includes this tool?                  → reject: out_of_scope
+2. mutation.entityId in mandate.entityScope?          → reject: out_of_entity
+3. runImpact + mutation.financialImpact > perRunCap?  → reject: run_cap_exceeded
+4. rolling24h + mutation.financialImpact > 24h cap?   → reject: daily_cap_exceeded
+5. mutation.financialImpact > humanApprovalAbove?     → pause: require_human_approval
+6. All checks pass                                    → approve
+```
+
+**Audit log split:**
+
+| View | Shows |
 |---|---|
-| `agentId` | Identifies *which* agent did this (different agents have different scopes) |
-| `sessionId` | Enables session-level rollback if an agent misbehaves — pull every event from one session |
-| `onBehalfOf` | Enforces non-autonomy — every agent action traces to a human delegator |
-| `toolCallId` | Links event to the exact tool call in the agent trace for explainability |
-| `model` | Audit trail when model behavior changes between versions |
-| `promptHash` | Reconstruct *why* without storing PII-laden prompts in the event log |
+| User activity feed | Human actions + `ai_agent` delegated actions on behalf of that user |
+| System automation log | `autonomous_agent` runs, grouped by mandate + runId |
+| Compliance export (SOC 2 / ISO 27001) | All actor types, tagged, exportable by date range |
 
-**Permission Fabric rule:** an AI agent's effective permissions = `intersection(user.permissions, agent.granted_scope)`. Agents cannot escalate beyond the user who delegated. Same model as OAuth scopes — agents get a downscoped token, not the full user token. The agent definition declares its scope; the user grants the agent the right to act for them; the runtime enforces the intersection.
+Every UI surface that shows event history must visually distinguish all three categories (human / delegated agent / autonomous agent) with distinct icons and labels.
 
-**UI / audit log requirement:** every UI surface displaying event history must visually distinguish AI agent actions from human actions (small bot icon + agent name). Compliance teams need this to answer SOC 2 / ISO 27001 questions like "which mutations were made autonomously vs. by humans?"
+**Rollback semantics:**
+- Delegated session rollback: all events where `actor.sessionId === X`
+- Autonomous run rollback: all events where `actor.runId === X`
+- Both must be supported from v1.0 — bulk reversal of agent mistakes is not rare
 
-**Rollback semantics:** the event store must support "rollback all events with `actor.type === 'ai_agent'` and `actor.sessionId === X`." This is a required feature, not a nice-to-have, because LLM agents will occasionally make systematic mistakes that need bulk reversal.
+**Key risks and mitigations:**
 
-**Why not "treat AI agents as just another user":**
-- Compliance teams need to answer "what did AI do vs. what did humans do?" — flattening loses this
-- Bulk rollback of an agent session is qualitatively different from rolling back a user — different UX, different blast radius
-- Permission semantics differ — agents have *additional* scope constraints beyond the delegating user
+| Risk | Mitigation |
+|---|---|
+| Mandate scope creep over time | Every edit creates a new version; old version preserved; diff visible in audit |
+| Fragmentation (split large mutation into many small ones to stay under cap) | Rolling 24h cap in addition to per-run cap |
+| Silent failure goes unnoticed until month-end | `alertChannel` mandatory; RunCompleted event emitted on success AND failure |
+| Model upgrade silently changes autonomous behavior | Model pinned per mandate; upgrade = new version + 4-eyes re-approval |
+| Compromised agent code self-elevates permissions | Limits enforced at Tool Registry layer; agent code never sees or controls the limits |
 
-**Implication for IS-PLAT-AUDIT (audit log) and IS-PLAT-PERM (permissions):** both must implement these rules from v1.0. This is not deferrable to Phase 2.
+**Why not treat both as the same actor type:**
+- Blast radius is categorically different: a delegated session affects one user interaction; an autonomous run can touch the entire company's financials before anyone notices
+- Approval model is different: delegated = real-time human sees each action; autonomous = pre-approved mandate policy
+- Rollback surfaces are different: delegated shows in the user's activity feed; autonomous shows in the system automation log
+- Compliance requirement: SOC 2 and ISO 27001 auditors specifically ask "what actions were automated vs. human-initiated?"
+
+**Implication for IS-PLAT-AUDIT and IS-PLAT-PERM:** both must implement the full actor model (all 6 types) and Mandate evaluation from v1.0. Autonomous agents without Mandate governance must be blocked at the infrastructure level.
 
 ---
 
