@@ -6050,6 +6050,83 @@
       "parent": "chat-federation",
       "code": "IS-CHAT-FED-004",
       "milestone": "v2.0"
+    },
+    {
+      "id": "crm-methodology",
+      "label": "Sales Methodology",
+      "description": "Qualification frameworks per pipeline: built-in templates (MEDDPICC, BANT, SPICED, PEATS) plus custom builder. One methodology per pipeline enforces consistent qualification across the team.",
+      "type": "app",
+      "status": "planned",
+      "phase": 1,
+      "parent": "crm",
+      "code": "IS-CRM-METH",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "crm-meth-templates",
+      "label": "Built-in Templates",
+      "description": "Out-of-the-box methodology templates: MEDDPICC and MEDDICC (enterprise opportunities), BANT and SPICED and NEAT (general opportunities), PEATS and ANUM (lead qualification). Each ships with field definitions, coaching hints per field, and suggested stage-gate requirements.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "crm-methodology",
+      "code": "IS-CRM-METH-001",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "crm-meth-builder",
+      "label": "Custom Methodology Builder",
+      "description": "Create a methodology from scratch or clone any built-in template. Define fields (text, score 1–10, select, boolean), add a coaching hint per field, set field order, and mark fields as required or optional.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "crm-methodology",
+      "code": "IS-CRM-METH-002",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "crm-meth-pipeline-bind",
+      "label": "Pipeline Assignment",
+      "description": "Assign exactly one methodology to a pipeline (or none for informal pipelines). Methodology is pipeline-scoped: all deals in that pipeline share the same qualification fields. Different pipelines can use different methodologies.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "crm-methodology",
+      "code": "IS-CRM-METH-003",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "crm-meth-stage-gates",
+      "label": "Stage Gates",
+      "description": "Per pipeline stage, define which methodology fields must be completed before a deal can advance. Configurable as hard blocks (advance blocked until filled) or soft warnings (advance allowed with confirmation). Prevents deals from moving forward without critical qualification data.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "crm-methodology",
+      "code": "IS-CRM-METH-004",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "crm-meth-scorecard",
+      "label": "Qualification Scorecard",
+      "description": "Completion percentage and field-by-field status shown on each deal card and in pipeline view. Scorecard feeds forecast confidence: fully qualified deals weighted higher in revenue forecasts. Managers see team-wide qualification health per pipeline.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "crm-methodology",
+      "code": "IS-CRM-METH-005",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "crm-meth-conversion-map",
+      "label": "Lead-to-Opportunity Field Map",
+      "description": "When a lead converts to an opportunity across pipelines using different methodologies, pre-mapped field translations carry qualification data forward (e.g. PEATS Pain → MEDDPICC Identify Pain, PEATS Authority → Economic Buyer). Reduces re-entry, preserves discovery context.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "crm-methodology",
+      "code": "IS-CRM-METH-006",
+      "milestone": "v1.0"
     }
   ]
 }
