@@ -82,8 +82,10 @@ data/
 - Pan: mouse drag; Zoom: scroll wheel
 - Nodes placed in phase rings (dynamic radii); modules on rings, apps/features fan outward on expand
 - **Dynamic ring radii**: when a module in phase P is expanded, rings P+1 and P+2 push outward to prevent child nodes from overlapping the next ring
-- **Hover focus**: hovering a node dims all unrelated nodes (opacity 0.1); related = hovered + its parent + its direct children
-- **Moving dash animation**: edges connected to the hovered node get `stroke-dasharray: 5 5` + `dashFlow` keyframe animation, showing data flow direction
+- **Slot-based collision avoidance**: each module owns 360°/N of its ring's angular slot; its child fan is capped at ~92% of that slot, and the fan radius auto-grows so children always have a minimum pixel spacing — no overlap with sibling-module children
+- **Hover focus (1s delay)**: hovering a node for 1 second dims all unrelated nodes (opacity 0.1); related = the hovered node + **all ancestors up to root** + **all descendants recursively**
+- **Moving dash animation**: edges along the full ancestry/descendant chain get `stroke-dasharray: 5 5` + `dashFlow` keyframe animation, so you can trace the complete connection chain
+- **Multi-line labels**: long labels word-wrap to 2 lines; box heights grow dynamically per node based on line count
 - **Smooth position transitions**: nodes use CSS `transform: translate(Xpx, Ypx)` with `transition: transform 0.45s` so expanding/collapsing smoothly redistributes the layout
 
 ### `/api/chat` system prompt:

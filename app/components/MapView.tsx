@@ -23,12 +23,58 @@ const PHASE_LABELS: Record<number, string> = {
   3: 'Phase 3',
 }
 
-const NODE_SIZE: Record<string, { w: number; h: number; rx: number; fontSize: number }> = {
-  root:           { w: 162, h: 50, rx: 10, fontSize: 13 },
-  module:         { w: 130, h: 40, rx: 9,  fontSize: 11 },
-  app:            { w: 110, h: 32, rx: 7,  fontSize: 10 },
-  feature:        { w: 96,  h: 26, rx: 6,  fontSize: 9  },
-  infrastructure: { w: 96,  h: 26, rx: 6,  fontSize: 9  },
+const HOVER_DELAY_MS = 1000
+
+// Visual size config per node level. Height grows dynamically with line count.
+const NODE_SIZE: Record<string, { w: number; baseH: number; rx: number; fontSize: number; maxCharsPerLine: number }> = {
+  root:           { w: 168, baseH: 50, rx: 10, fontSize: 13, maxCharsPerLine: 18 },
+  module:         { w: 150, baseH: 42, rx: 9,  fontSize: 11, maxCharsPerLine: 17 },
+  app:            { w: 122, baseH: 34, rx: 7,  fontSize: 10, maxCharsPerLine: 14 },
+  feature:        { w: 110, baseH: 28, rx: 6,  fontSize: 9,  maxCharsPerLine: 13 },
+  infrastructure: { w: 110, baseH: 28, rx: 6,  fontSize: 9,  maxCharsPerLine: 13 },
+}
+
+// Word-wrap a label into up to maxLines lines, truncating only if a single word doesn't fit
+function wrapLabel(label: string, maxCharsPerLine: number, maxLines = 2): string[] {
+  if (label.length <= maxCharsPerLine) return [label]
+
+  const words = label.split(/\s+/)
+  const lines: string[] = []
+  let current = ''
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i]
+    const tentative = current ? current + ' ' + word : word
+
+    if (tentative.length <= maxCharsPerLine) {
+      current = tentative
+      continue
+    }
+
+    if (current) lines.push(current)
+
+    if (lines.length >= maxLines) {
+      // Out of lines — append remaining to last line with ellipsis
+      const remaining = words.slice(i).join(' ')
+      const last = remaining.length <= maxCharsPerLine
+        ? remaining
+        : remaining.slice(0, maxCharsPerLine - 1) + '…'
+      lines[maxLines - 1] = lines[maxLines - 1] + ' ' + last
+      if (lines[maxLines - 1].length > maxCharsPerLine) {
+        lines[maxLines - 1] = lines[maxLines - 1].slice(0, maxCharsPerLine - 1) + '…'
+      }
+      return lines
+    }
+
+    // Word itself longer than line: hard-truncate
+    if (word.length > maxCharsPerLine) {
+      current = word.slice(0, maxCharsPerLine - 1) + '…'
+    } else {
+      current = word
+    }
+  }
+  if (current) lines.push(current)
+  return lines.slice(0, maxLines)
 }
 
 type Props = {
@@ -37,34 +83,48 @@ type Props = {
   onSelect: (node: Node) => void
 }
 
-// Compute ring radii dynamically — push outer rings out when inner rings expand
+// Dynamic ring radii: push outer rings out when inner rings have expansions
 function computeRingRadii(expanded: Set<string>, modules: Node[]): Record<number, number> {
   const phaseExpanded: Record<number, boolean> = {}
   for (const m of modules) {
     if (expanded.has(m.id)) phaseExpanded[m.phase] = true
   }
-
   return {
-    1: phaseExpanded[1] ? 290 : 240,
-    2: phaseExpanded[1] ? 540 : (phaseExpanded[2] ? 490 : 440),
-    3: phaseExpanded[1] ? 800 : (phaseExpanded[2] ? 760 : (phaseExpanded[3] ? 710 : 640)),
+    1: phaseExpanded[1] ? 300 : 240,
+    2: phaseExpanded[1] ? 580 : (phaseExpanded[2] ? 520 : 440),
+    3: phaseExpanded[1] ? 880 : (phaseExpanded[2] ? 820 : (phaseExpanded[3] ? 740 : 640)),
   }
 }
 
+// Fan children at outAngle, capped at maxArc; grow radius if needed to maintain minimum pixel spacing
 function placeChildren(
   parentPos: { x: number; y: number },
   outAngle: number,
   children: Node[],
-  radius: number,
+  baseRadius: number,
+  maxArc: number,
+  minSpacing: number,
   pos: Record<string, { x: number; y: number }>
 ) {
   const n = children.length
   if (n === 0) return
-  const targetStep = Math.PI / 5
-  const maxArc     = Math.PI * 1.1
-  const totalArc   = Math.min((n - 1) * targetStep, maxArc)
-  const step       = n > 1 ? totalArc / (n - 1) : 0
-  const start      = outAngle - totalArc / 2
+
+  const idealStep = Math.PI / 5 // 36°
+  const naturalArc = (n - 1) * idealStep
+  let arc: number
+  let radius = baseRadius
+
+  if (naturalArc <= maxArc) {
+    arc = naturalArc
+  } else {
+    arc = maxArc
+    // Required arc length to fit n children at minSpacing
+    const requiredLength = (n - 1) * minSpacing
+    radius = Math.max(baseRadius, requiredLength / arc)
+  }
+
+  const step = n > 1 ? arc / (n - 1) : 0
+  const start = outAngle - arc / 2
   children.forEach((child, i) => {
     const angle = start + i * step
     pos[child.id] = {
@@ -86,10 +146,14 @@ function computePositions(
   if (!root) return { pos, radii }
   pos[root.id] = { x: 0, y: 0 }
 
+  // Modules per phase, for slot-arc calculation
+  const modulesByPhase: Record<number, Node[]> = { 1: [], 2: [], 3: [] }
+  for (const m of modules) modulesByPhase[m.phase]?.push(m)
+
   const offsets: Record<number, number> = { 1: 0, 2: 0.18, 3: -0.12 }
 
   for (const phase of [1, 2, 3]) {
-    const ring = modules.filter(m => m.phase === phase)
+    const ring = modulesByPhase[phase]
     const n = ring.length
     ring.forEach((m, i) => {
       const angle = -Math.PI / 2 + offsets[phase] + (i / n) * Math.PI * 2
@@ -105,25 +169,33 @@ function computePositions(
     const modPos = pos[mod.id]
     if (!modPos) continue
 
+    const phaseCount = modulesByPhase[mod.phase].length
+    // Module owns 2π / phaseCount of the ring — cap fan to ~92% of that
+    const moduleSlotArc = (2 * Math.PI / phaseCount) * 0.92
+
     const outAngle = Math.atan2(modPos.y, modPos.x)
-    // App radius: use the gap between this ring and the next, scaled down
-    const nextRadius = radii[(mod.phase + 1) as keyof typeof radii] ?? radii[mod.phase] + 220
-    const appRadius = Math.max(120, (nextRadius - radii[mod.phase]) * 0.56)
+    const nextRadius = radii[(mod.phase + 1) as keyof typeof radii] ?? radii[mod.phase] + 260
+    const baseAppRadius = Math.max(140, (nextRadius - radii[mod.phase]) * 0.5)
 
     const apps = nodes.filter(n => n.parent === mod.id && n.type === 'app')
+
     if (apps.length > 0) {
-      placeChildren(modPos, outAngle, apps, appRadius, pos)
+      placeChildren(modPos, outAngle, apps, baseAppRadius, moduleSlotArc, 65, pos)
+
       for (const app of apps) {
         if (!expanded.has(app.id)) continue
         const appPos = pos[app.id]
         if (!appPos) continue
+
         const features = nodes.filter(n => n.parent === app.id)
+        // Each app gets a share of the module's slot (so siblings of this app's features don't collide)
+        const appSlotArc = (moduleSlotArc / apps.length) * 1.5
         const appAngle = Math.atan2(appPos.y - modPos.y, appPos.x - modPos.x)
-        placeChildren(appPos, appAngle, features, 130, pos)
+        placeChildren(appPos, appAngle, features, 120, Math.min(appSlotArc, Math.PI * 0.55), 50, pos)
       }
     } else {
       const features = nodes.filter(n => n.parent === mod.id)
-      placeChildren(modPos, outAngle, features, appRadius, pos)
+      placeChildren(modPos, outAngle, features, baseAppRadius, moduleSlotArc, 55, pos)
     }
   }
 
@@ -149,6 +221,7 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
   const dragging  = useRef(false)
   const lastMouse = useRef({ x: 0, y: 0 })
   const didDrag   = useRef(false)
+  const hoverTimer = useRef<number | null>(null)
 
   useEffect(() => {
     const el = svgRef.current
@@ -158,6 +231,25 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
     })
     obs.observe(el)
     return () => obs.disconnect()
+  }, [])
+
+  useEffect(() => () => {
+    if (hoverTimer.current) window.clearTimeout(hoverTimer.current)
+  }, [])
+
+  const scheduleHover = useCallback((id: string) => {
+    if (hoverTimer.current) window.clearTimeout(hoverTimer.current)
+    hoverTimer.current = window.setTimeout(() => {
+      setHovered(id)
+    }, HOVER_DELAY_MS)
+  }, [])
+
+  const cancelHover = useCallback(() => {
+    if (hoverTimer.current) {
+      window.clearTimeout(hoverTimer.current)
+      hoverTimer.current = null
+    }
+    setHovered(null)
   }, [])
 
   const onMouseDown = useCallback((e: React.MouseEvent) => {
@@ -195,7 +287,6 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
     [nodes, expanded]
   )
 
-  // Nodes visible in the current expansion state
   const visibleNodes = useMemo(() => nodes.filter(n => {
     if (n.type === 'root' || n.type === 'module') return true
     if (!n.parent) return false
@@ -210,14 +301,52 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
     return map
   }, [nodes])
 
-  // Related nodes for hover dimming: hovered + its parent + its direct children
+  // Pre-wrap labels and compute box heights once per nodes
+  const labelCache = useMemo(() => {
+    const map = new Map<string, { lines: string[]; h: number }>()
+    for (const n of nodes) {
+      const cfg = NODE_SIZE[n.type] ?? NODE_SIZE.feature
+      const lines = wrapLabel(n.label, cfg.maxCharsPerLine, 2)
+      const h = cfg.baseH + (lines.length - 1) * (cfg.fontSize + 4)
+      map.set(n.id, { lines, h })
+    }
+    return map
+  }, [nodes])
+
+  // Related set: full ancestry (all parents up to root) + all descendants (recursive)
   const relatedSet = useMemo<Set<string> | null>(() => {
     if (!hovered) return null
+    const byId = new Map(nodes.map(n => [n.id, n]))
+    const childrenOf = new Map<string, string[]>()
+    for (const n of nodes) {
+      if (n.parent) {
+        if (!childrenOf.has(n.parent)) childrenOf.set(n.parent, [])
+        childrenOf.get(n.parent)!.push(n.id)
+      }
+    }
+
     const set = new Set<string>()
     set.add(hovered)
-    const hov = nodes.find(n => n.id === hovered)
-    if (hov?.parent) set.add(hov.parent)
-    nodes.forEach(n => { if (n.parent === hovered) set.add(n.id) })
+
+    // Walk up — all ancestors
+    let cur = byId.get(hovered)
+    while (cur?.parent) {
+      set.add(cur.parent)
+      cur = byId.get(cur.parent)
+    }
+
+    // Walk down — all descendants (BFS)
+    const queue = [hovered]
+    while (queue.length) {
+      const id = queue.shift()!
+      const kids = childrenOf.get(id) ?? []
+      for (const kid of kids) {
+        if (!set.has(kid)) {
+          set.add(kid)
+          queue.push(kid)
+        }
+      }
+    }
     return set
   }, [hovered, nodes])
 
@@ -251,7 +380,7 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
 
       <g transform={`translate(${cx}, ${cy}) scale(${scale})`}>
 
-        {/* Phase ring guides — animate radii changes with CSS transition */}
+        {/* Phase ring guides — r transitions when expansion shifts rings */}
         {([1, 2, 3] as const).map(phase => (
           <circle
             key={phase}
@@ -266,7 +395,7 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
           />
         ))}
 
-        {/* Edges — drawn before nodes */}
+        {/* Edges */}
         {visibleNodes
           .filter(n => n.parent && positions[n.parent] && positions[n.id])
           .map(n => {
@@ -275,14 +404,17 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
             const deep = n.type === 'module'
             const color = PHASE_COLORS[n.phase as keyof typeof PHASE_COLORS]
 
-            // Active = edge connects to/from the hovered node
-            const isActiveEdge = hovered === n.id || hovered === n.parent
+            // Edge is active if BOTH endpoints are in the ancestry/descendant chain
+            const isActiveEdge =
+              relatedSet !== null &&
+              relatedSet.has(n.id) &&
+              relatedSet.has(n.parent!)
             const isSelectedEdge = selected?.id === n.id || selected?.id === n.parent
             const isHot = isActiveEdge || isSelectedEdge
 
             const baseOpacity = n.type === 'module' ? 0.18 : 0.25
-            const opacity = hovered
-              ? (isActiveEdge ? 0.85 : 0.06)
+            const opacity = relatedSet
+              ? (isActiveEdge ? 0.85 : 0.05)
               : (isHot ? 0.55 : baseOpacity)
 
             return (
@@ -295,7 +427,7 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
                 strokeDasharray={isActiveEdge ? '5 5' : undefined}
                 fill="none"
                 style={{
-                  transition: 'stroke-opacity 0.2s, stroke-width 0.2s',
+                  transition: 'stroke-opacity 0.25s, stroke-width 0.25s',
                   ...(isActiveEdge && {
                     animation: 'dashFlow 0.55s linear infinite',
                   }),
@@ -317,10 +449,9 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
           const color      = PHASE_COLORS[node.phase as keyof typeof PHASE_COLORS]
           const lightBg    = PHASE_LIGHT[node.phase as keyof typeof PHASE_LIGHT]
           const cfg        = NODE_SIZE[node.type] ?? NODE_SIZE.feature
-          const { w, h, rx, fontSize } = cfg
-
-          const maxChars = isRoot ? 18 : node.type === 'module' ? 16 : node.type === 'app' ? 14 : 13
-          const label = node.label.length > maxChars ? node.label.slice(0, maxChars - 1) + '…' : node.label
+          const { w, rx, fontSize } = cfg
+          const labelInfo  = labelCache.get(node.id)!
+          const { lines, h } = labelInfo
 
           const fill = isRoot
             ? color
@@ -329,23 +460,25 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
               : '#FFFFFF'
 
           const strokeOpacity = node.type === 'feature' || node.type === 'infrastructure' ? 0.55 : 1
-
-          // Dimming: if something is hovered and this node isn't related, dim it
           const isDimmed = relatedSet !== null && !relatedSet.has(node.id)
+
+          // Vertical centering for multi-line text
+          const lineHeight = fontSize * 1.15
+          const textBlockHeight = (lines.length - 1) * lineHeight
+          const firstLineDy = -textBlockHeight / 2
 
           return (
             <g
               key={node.id}
-              // CSS transform for smooth position transitions when expand/collapse changes layout
               style={{
                 transform: `translate(${pos.x}px, ${pos.y}px)`,
-                transition: 'transform 0.45s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.18s',
+                transition: 'transform 0.45s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.25s',
                 opacity: isDimmed ? 0.1 : 1,
                 cursor: 'pointer',
               }}
               onClick={e => { if (!didDrag.current) { e.stopPropagation(); onSelect(node) } }}
-              onMouseEnter={() => setHovered(node.id)}
-              onMouseLeave={() => setHovered(null)}
+              onMouseEnter={() => scheduleHover(node.id)}
+              onMouseLeave={cancelHover}
             >
               <g
                 className="map-node"
@@ -357,7 +490,6 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
                   animationDelay: `${Math.min(i * 22, 600)}ms`,
                 }}
               >
-                {/* Selection ring */}
                 {isSelected && (
                   <rect
                     className="map-ring"
@@ -370,7 +502,6 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
                   />
                 )}
 
-                {/* Card */}
                 <rect
                   x={-w / 2} y={-h / 2}
                   width={w} height={h} rx={rx}
@@ -381,20 +512,28 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
                   filter={isHovered || isSelected ? 'url(#shadow-md)' : 'url(#shadow-sm)'}
                 />
 
-                {/* Label */}
                 <text
                   x={0} y={0}
-                  textAnchor="middle" dominantBaseline="middle"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
                   fontSize={fontSize}
                   fontWeight={node.type === 'feature' || node.type === 'infrastructure' ? 500 : 700}
                   fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
                   fill={isRoot ? '#FFFFFF' : color}
-                  fillOpacity={node.type === 'feature' || node.type === 'infrastructure' ? 0.85 : 1}
+                  fillOpacity={node.type === 'feature' || node.type === 'infrastructure' ? 0.9 : 1}
+                  style={{ pointerEvents: 'none' }}
                 >
-                  {label}
+                  {lines.map((line, idx) => (
+                    <tspan
+                      key={idx}
+                      x={0}
+                      dy={idx === 0 ? firstLineDy : lineHeight}
+                    >
+                      {line}
+                    </tspan>
+                  ))}
                 </text>
 
-                {/* Expand / collapse toggle */}
                 {hasKids && !isRoot && (
                   <g
                     transform={`translate(0, ${h / 2 + 13})`}
@@ -452,7 +591,7 @@ export default function MapView({ nodes, selected, onSelect }: Props) {
         textAnchor="end" fontSize={10}
         fontFamily="-apple-system, sans-serif" fill="#9CA3AF"
       >
-        {visibleNodes.length - 1} nodes visible · click + to expand · hover to focus · drag to pan · scroll to zoom
+        {visibleNodes.length - 1} nodes visible · click + to expand · hover (1s) to focus · drag to pan · scroll to zoom
       </text>
     </svg>
   )
