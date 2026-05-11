@@ -1,6 +1,6 @@
 {
-  "version": "0.8",
-  "lastUpdated": "2026-05-03",
+  "version": "0.9",
+  "lastUpdated": "2026-05-11",
   "nodes": [
     {
       "id": "core",
@@ -4401,12 +4401,12 @@
       "description": "Cross-module AI: semantic search, auto-translation, smart field extraction, and summarization",
       "type": "module",
       "status": "planned",
-      "phase": 3,
+      "phase": 2,
       "parent": "core",
       "x": -800,
       "y": -200,
       "code": "IS-AIP",
-      "milestone": "v3.0"
+      "milestone": "v2.0"
     },
     {
       "id": "ai-platform-search",
@@ -4414,12 +4414,12 @@
       "description": "Semantic search across all records, messages, documents, and files",
       "type": "app",
       "status": "planned",
-      "phase": 3,
+      "phase": 2,
       "parent": "ai-platform",
       "x": 0,
       "y": 0,
       "code": "IS-AIP-SCH",
-      "milestone": "v3.0"
+      "milestone": "v2.0"
     },
     {
       "id": "ai-platform-search-semantic",
@@ -4427,12 +4427,12 @@
       "description": "Find records by meaning, not just exact keywords",
       "type": "feature",
       "status": "planned",
-      "phase": 3,
+      "phase": 2,
       "parent": "ai-platform-search",
       "x": 0,
       "y": 0,
       "code": "IS-AIP-SCH-001",
-      "milestone": "v3.0"
+      "milestone": "v2.0"
     },
     {
       "id": "ai-platform-translation",
@@ -4440,12 +4440,12 @@
       "description": "Auto-translate content across chat, documents, meetings, and the website",
       "type": "app",
       "status": "planned",
-      "phase": 3,
+      "phase": 2,
       "parent": "ai-platform",
       "x": 0,
       "y": 0,
       "code": "IS-AIP-TRL",
-      "milestone": "v3.0"
+      "milestone": "v2.0"
     },
     {
       "id": "ai-platform-translation-chat",
@@ -4453,12 +4453,12 @@
       "description": "Real-time translation of chat messages for international teams",
       "type": "feature",
       "status": "planned",
-      "phase": 3,
+      "phase": 2,
       "parent": "ai-platform-translation",
       "x": 0,
       "y": 0,
       "code": "IS-AIP-TRL-001",
-      "milestone": "v3.0"
+      "milestone": "v2.0"
     },
     {
       "id": "ai-platform-translation-docs",
@@ -4466,12 +4466,12 @@
       "description": "One-click full translation of documents and website content",
       "type": "feature",
       "status": "planned",
-      "phase": 3,
+      "phase": 2,
       "parent": "ai-platform-translation",
       "x": 0,
       "y": 0,
       "code": "IS-AIP-TRL-002",
-      "milestone": "v3.0"
+      "milestone": "v2.0"
     },
     {
       "id": "ai-platform-fields",
@@ -4479,12 +4479,12 @@
       "description": "Auto-populated fields that read and understand related text across records",
       "type": "app",
       "status": "planned",
-      "phase": 3,
+      "phase": 2,
       "parent": "ai-platform",
       "x": 0,
       "y": 0,
       "code": "IS-AIP-FLD",
-      "milestone": "v3.0"
+      "milestone": "v2.0"
     },
     {
       "id": "ai-platform-fields-extract",
@@ -4492,12 +4492,12 @@
       "description": "Auto-populate fields by reading emails, documents, and conversation context",
       "type": "feature",
       "status": "planned",
-      "phase": 3,
+      "phase": 2,
       "parent": "ai-platform-fields",
       "x": 0,
       "y": 0,
       "code": "IS-AIP-FLD-001",
-      "milestone": "v3.0"
+      "milestone": "v2.0"
     },
     {
       "id": "ai-platform-fields-summarize",
@@ -4505,12 +4505,12 @@
       "description": "Summarize long threads, documents, and ticket histories on demand",
       "type": "feature",
       "status": "planned",
-      "phase": 3,
+      "phase": 2,
       "parent": "ai-platform-fields",
       "x": 0,
       "y": 0,
       "code": "IS-AIP-FLD-002",
-      "milestone": "v3.0"
+      "milestone": "v2.0"
     },
     {
       "id": "authentication",
@@ -5569,96 +5569,6 @@
       "milestone": "v2.0"
     },
     {
-      "id": "marketplace",
-      "label": "Marketplace",
-      "description": "Plugin SDK and app marketplace: third-party developers build IS apps using the same Tool Registry, Event Bus, and schema primitives as first-party modules",
-      "type": "module",
-      "status": "planned",
-      "phase": 3,
-      "parent": "core",
-      "code": "IS-MKT",
-      "milestone": "v3.0",
-      "x": 0,
-      "y": 0
-    },
-    {
-      "id": "mkt-plugin-sdk",
-      "label": "Plugin SDK",
-      "description": "npm package: register tools, subscribe to events, extend schemas, render UI slots — same APIs as first-party modules",
-      "type": "app",
-      "status": "planned",
-      "phase": 3,
-      "parent": "marketplace",
-      "code": "IS-MKT-SDK",
-      "milestone": "v3.0"
-    },
-    {
-      "id": "mkt-sdk-tools",
-      "label": "Tool Registration",
-      "description": "SDK method to publish named tools into the tenant Tool Registry with automatic permission scope generation",
-      "type": "feature",
-      "status": "planned",
-      "phase": 3,
-      "parent": "mkt-plugin-sdk",
-      "code": "IS-MKT-SDK-001",
-      "milestone": "v3.0"
-    },
-    {
-      "id": "mkt-sdk-events",
-      "label": "Event Subscription",
-      "description": "SDK method to subscribe to domain events from any module; plugins receive events scoped to tenant",
-      "type": "feature",
-      "status": "planned",
-      "phase": 3,
-      "parent": "mkt-plugin-sdk",
-      "code": "IS-MKT-SDK-002",
-      "milestone": "v3.0"
-    },
-    {
-      "id": "mkt-sdk-ui",
-      "label": "UI Slot Extensions",
-      "description": "Plugins inject React components into named layout slots (sidebar, record-detail, dashboard widget) without forking core UI",
-      "type": "feature",
-      "status": "planned",
-      "phase": 3,
-      "parent": "mkt-plugin-sdk",
-      "code": "IS-MKT-SDK-003",
-      "milestone": "v3.0"
-    },
-    {
-      "id": "mkt-store",
-      "label": "App Store",
-      "description": "Tenant-admin portal to browse, install, and manage third-party plugins; sandboxed execution; usage-based billing for paid plugins",
-      "type": "app",
-      "status": "planned",
-      "phase": 3,
-      "parent": "marketplace",
-      "code": "IS-MKT-STORE",
-      "milestone": "v3.0"
-    },
-    {
-      "id": "mkt-store-install",
-      "label": "Install & Sandbox",
-      "description": "One-click install with permission review; plugins run in isolated worker context; can be disabled per-tenant without restart",
-      "type": "feature",
-      "status": "planned",
-      "phase": 3,
-      "parent": "mkt-store",
-      "code": "IS-MKT-STORE-001",
-      "milestone": "v3.0"
-    },
-    {
-      "id": "mkt-store-billing",
-      "label": "Plugin Billing",
-      "description": "Revenue share for plugin authors: usage metering via Tool Registry call counts; Xendit disbursements",
-      "type": "feature",
-      "status": "planned",
-      "phase": 3,
-      "parent": "mkt-store",
-      "code": "IS-MKT-STORE-002",
-      "milestone": "v3.0"
-    },
-    {
       "id": "plat-org",
       "label": "Organization Structure",
       "description": "Multi-company and multi-branch hierarchy within a tenant: organizations, legal entities (companies), and branches/business units — the context every record and permission scope is anchored to",
@@ -6025,6 +5935,120 @@
       "phase": 2,
       "parent": "portal",
       "code": "IS-PORTAL-EMP",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "config-templates",
+      "label": "Configuration Template Library",
+      "description": "Curated, first-party configuration templates: chart of accounts presets, workflow templates, report layouts, dashboard configurations, and role permission bundles — no third-party code, configuration only",
+      "type": "module",
+      "status": "planned",
+      "phase": 3,
+      "parent": "core",
+      "code": "IS-TPL",
+      "milestone": "v3.0",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "id": "tpl-coa",
+      "label": "COA Templates",
+      "description": "Pre-built chart of accounts templates by industry (manufacturing, retail, services, construction, hospitality) and country localization pack",
+      "type": "app",
+      "status": "planned",
+      "phase": 3,
+      "parent": "config-templates",
+      "code": "IS-TPL-COA",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "tpl-workflow",
+      "label": "Workflow Templates",
+      "description": "Curated approval and automation workflow blueprints for common business processes (purchase approval, invoice approval, leave request, expense claim)",
+      "type": "app",
+      "status": "planned",
+      "phase": 3,
+      "parent": "config-templates",
+      "code": "IS-TPL-WFL",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "tpl-dashboard",
+      "label": "Dashboard Templates",
+      "description": "Pre-built executive and operational dashboards by role (CFO, HR Manager, Sales Lead, Operations) that wire to live tenant data on import",
+      "type": "app",
+      "status": "planned",
+      "phase": 3,
+      "parent": "config-templates",
+      "code": "IS-TPL-DSH",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "tpl-roles",
+      "label": "Permission Role Templates",
+      "description": "Standard RBAC role bundles (Finance Ops, HR Admin, Sales Rep, Viewer) importable as a starting point; tenant-editable after import",
+      "type": "app",
+      "status": "planned",
+      "phase": 3,
+      "parent": "config-templates",
+      "code": "IS-TPL-ROLE",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "chat-federation",
+      "label": "Inter-Tenant Chat Federation",
+      "description": "Matrix-protocol federated messaging between tenants on the IS platform — users from different companies communicate in shared rooms; works for both cloud and on-premise tenants via hub-and-spoke relay",
+      "type": "module",
+      "status": "planned",
+      "phase": 2,
+      "parent": "core",
+      "code": "IS-CHAT-FED",
+      "milestone": "v2.0",
+      "x": -280,
+      "y": 420
+    },
+    {
+      "id": "chat-fed-handshake",
+      "label": "B2B Connection Gate",
+      "description": "Federation room only provisioned after mutual B2B Handshake acceptance; prevents cold-contact spam between tenants",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "chat-federation",
+      "code": "IS-CHAT-FED-001",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "chat-fed-relay",
+      "label": "Cloud Relay for On-Premise",
+      "description": "Hub-and-spoke Matrix relay hosted on IS cloud; on-premise tenants route federation through relay with E2E encryption preserved; relay cannot read content",
+      "type": "infrastructure",
+      "status": "planned",
+      "phase": 2,
+      "parent": "chat-federation",
+      "code": "IS-CHAT-FED-002",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "chat-fed-identity",
+      "label": "Cross-Tenant Identity",
+      "description": "Users are addressable as @user:tenant.id across tenants; tenant display names resolved via B2B Handshake metadata",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "chat-federation",
+      "code": "IS-CHAT-FED-003",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "chat-fed-e2e",
+      "label": "End-to-End Encryption",
+      "description": "Olm/Megolm key exchange for federated rooms; messages encrypted per-device; IS servers and relay cannot decrypt content",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "chat-federation",
+      "code": "IS-CHAT-FED-004",
       "milestone": "v2.0"
     }
   ]

@@ -793,6 +793,169 @@ Every UI surface that shows event history must visually distinguish all three ca
 
 ---
 
+## Email & Workspace: build strategy
+
+**Decision:** Integration-first for email, phased ownership for infrastructure.
+
+**Phase 2 (v2.0):**
+- Gmail and Outlook integration via IMAP/SMTP + OAuth sync — non-negotiable; most Indonesian SME users live in one of these
+- CalDAV calendar (RFC 4791) — build own calendar server from the start; CalDAV is open, well-supported (Apple Calendar, Google Calendar, Thunderbird), lower deliverability risk than mail, and lets us own meeting/event data natively
+- Exchange ActiveSync for mobile calendar sync (iOS/Android native apps)
+- Contacts sync via CardDAV (RFC 6352)
+
+**Phase 3 (v3.0):**
+- Own inbound mail routing: receive @yourdomain.com addresses, store in IS mailboxes, display in IS mail client
+- MTA foundation: Postal (Ruby) or Stalwart (Rust, zero-config SMTP+IMAP+JMAP) as base; Stalwart preferred for JMAP support
+- Outbound mail: start with Postmark or AWS SES relay for reputation building; own MTA only after domain reputation established (12–18 months of warm-up)
+
+**Why not build own mail from day 1:**
+Deliverability is a reputation game. New MTAs land in spam by default. Reputational recovery takes months. Users on Gmail/Outlook already trust their existing deliverability. Calendar is lower risk — build it early. Mail server is higher risk — build it after credibility is established.
+
+**Lark reference:** Lark (ByteDance) runs its own mail server within the product. The model is proven. The difference: Lark launched with ByteDance's existing email infrastructure and global CDN relationships. We build credibility first via integration, then own the stack.
+
+**Key risks:**
+
+| Risk | Mitigation |
+|---|---|
+| SES/Postmark outbound limits throttle large tenants | Pre-provision dedicated IPs per tier; monitor bounce rates with alert thresholds |
+| Own MTA blacklisted on rollout | Graduated rollout: internal domains only → low-volume tenants → general availability |
+| CalDAV timezone edge cases (WITA/WIT/WIB) | All calendar events stored as UTC; timezone display set per-user preference; no floating times |
+| Exchange ActiveSync license | Microsoft EAS licensing required for sync; evaluate open-source alternatives (z-push) |
+
+**Implication for IS-EMAIL:** Phase 2 scope = Gmail/Outlook sync + CalDAV calendar + CardDAV contacts. Own mail (SMTP/IMAP/JMAP) moves to Phase 3.
+
+---
+
+## Inter-tenant chat federation (IS-CHAT-FED)
+
+**Decision:** Build inter-tenant chat via Matrix protocol. Skip WhatsApp BSP for internal federation — Matrix handles cloud + on-premise. WhatsApp BSP remains for off-platform messaging.
+
+**Why Matrix:**
+- Open standard (matrix.org), not a proprietary silo
+- End-to-end encryption (Olm/Megolm) built in
+- Federation is the core design: servers from different orgs talk directly
+- On-premise deployment solved: Synapse (Python) or Dendrite (Go, lighter); Conduit (Rust) as a minimal option
+- Works without requiring counter-party to install anything beyond a Matrix client (or IS itself)
+
+**Architecture: hub-and-spoke for on-premise tenants**
+
+```
+Cloud Tenant A ──┐
+                  ├── IS Cloud Matrix Relay (Dendrite/Synapse) ── On-Premise Tenant B
+Cloud Tenant C ──┘
+```
+
+On-premise tenants cannot receive inbound federation directly (firewalls, no public IP). Cloud relay brokers the connection. E2E encryption is preserved end-to-end — relay cannot read message content.
+
+**Discovery model:** invitation-only, not open federation.
+1. Tenant A sends B2B Handshake request (IS-SALE or IS-CRM)
+2. Both tenants accept the connection
+3. IS provisions a federated Matrix room between the two tenants
+4. Users on either side appear as `@user:company-a.id` / `@user:company-b.id`
+
+**What WhatsApp BSP is still required for:**
+- Messaging parties who are NOT on the IS platform (customers, vendors, government contacts)
+- Customer support flows (IS-HD) where end customers contact via WhatsApp
+- Broadcast messaging to non-tenant contacts
+- BSP is for external reach; Matrix is for inter-tenant (platform-to-platform) communication
+
+**Phase assignment:** Phase 2 (IS-CHAT-FED). Requires B2B Handshake (IS-SALE-004) to be complete first — federation is gated on Handshake approval.
+
+**Key risks:**
+
+| Risk | Mitigation |
+|---|---|
+| Matrix server operational complexity | Managed Matrix hosting (EMS by Element) until traffic justifies self-hosting |
+| On-premise relay latency | Cloud relay in same AWS region as on-premise; relay is stateless, not a single point of failure |
+| Discovery abuse (cold-contact spam) | Federation only opened after explicit B2B Handshake; no open join links |
+| Matrix room key loss if server wipes | Key backup mandatory in IS deployment config; client-side key export supported |
+| Regulatory: data residency for federated messages | Messages stored in receiver's home server; cross-border = receiver's jurisdiction; disclosed in ToS |
+
+---
+
+## E-commerce & Website: integration depth as the wedge
+
+**Decision:** Keep e-commerce and website builder. Reframe: we do not compete on design flexibility with Shopify or Webflow. We win on integration depth — the online store and website are pre-wired to the operational backend.
+
+**IS-ECOM (Online Store) scope:**
+- Template-based storefronts (10–20 templates, not infinite customization)
+- Pre-integrated with IS-INV (stock levels, SKU sync), IS-SALES (order creation on purchase), IS-FIN (payment reconciliation, revenue recognition)
+- Indonesian payment gateways: Xendit, Midtrans, DOKU, QRIS — all built-in, no plugin required
+- Marketplace channel integrations: Tokopedia, Shopee, Lazada channel sync (inventory + orders) — not a replacement, a bridge
+- Multi-warehouse fulfillment routing via IS-INV
+
+**IS-WEB (Website Builder) scope:**
+- Block-based editor (not code, not infinite Webflow-style flex)
+- CRM forms auto-connected to IS-CRM (lead capture goes directly into pipeline)
+- KMS auto-publish: knowledge base articles published to public website with one toggle
+- Hosted on IS CDN; custom domain via DNS delegation
+- NOT a Webflow replacement — users who need pixel-perfect design should use Webflow and embed IS forms
+
+**Positioning:** The wedge is zero-configuration ERP integration. A Shopify store requires Zapier + custom dev to sync inventory. IS-ECOM has no sync lag — it IS the inventory system.
+
+**Key risks:**
+
+| Risk | Mitigation |
+|---|---|
+| Indonesian marketplace API rate limits (Tokopedia/Shopee) | Queued sync with exponential backoff; surfaced in IS-INV dashboard, not silent failure |
+| Payment gateway downtime (Xendit/Midtrans) | Fallback order-on-hold state; customer notified; retry window 24h |
+| Tenants try to use IS-WEB as a Webflow replacement | Explicit positioning in onboarding: "integration-depth, not design flexibility" |
+| Marketplace ToS changes blocking channel integrations | Official partner integrations where possible (Shopee Open Platform, Tokopedia API); monitor ToS alerts |
+
+---
+
+## B2B Marketplace: sister product
+
+**Decision:** Build a B2B-focused marketplace as a sister product under the same PT entity, separate brand, separate repo. Phase 3–4. Not part of the IS core product.
+
+**Why separate brand:**
+- IS is a corporate OS (internal tooling). Marketplace is a trading network (external-facing). Conflating them confuses the IS value proposition.
+- Separate brand allows separate GTM, separate pricing, separate trust posture.
+- B2C marketplace (Tokopedia-style) is a capital-intensive commodity war. We are not in that fight.
+
+**Scope (B2B only):**
+- Product/service listings between businesses (not consumer retail)
+- Purchase order creation flowing into IS-PURCH on buyer's IS instance
+- Quote requests and RFQ workflows
+- Escrow via Xendit (no OJK escrow license initially; Xendit holds escrow as licensed PJP)
+- Dispute resolution via Trust & Safety team (manual initially; AI-assisted at scale)
+- Seller identity verified via NIK/NPWP (IS-COMP or government API)
+
+**Seeding strategy:** IS platform customers are the initial seller base. Buyers are sourced from their existing B2B networks. No demand-side cold start problem — sellers are already credentialed via IS-COMP.
+
+**Regulatory risk:**
+- OJK escrow/payment licensing required if marketplace holds funds > threshold or > 7 days. Mitigation: Xendit as licensed PJP holds funds; marketplace never touches settlement directly.
+- If marketplace revenue grows, evaluate OJK PPMSE classification and licensing requirements.
+
+**Phase assignment:** Phase 3 planning, Phase 4 build. Blocked on IS-COMP (company profiles + NPWP verification) and IS-PURCH (purchase order integration) being stable in Phase 2.
+
+**Key risks:**
+
+| Risk | Mitigation |
+|---|---|
+| Distraction from IS core product | Separate team, separate P&L, separate roadmap; IS team does not contribute to marketplace |
+| Demand-side bootstrapping (buyers don't come without sellers) | Seeded by IS customer base; B2B networks are denser than B2C; buyers follow suppliers they already work with |
+| Capital intensity for trust, payments, and dispute infra | Phase 3-4 timing ensures IS generates revenue before marketplace investment |
+| OJK licensing surprise | Engage OJK sandbox program early; structure as referral + Xendit escrow until license obtained |
+
+---
+
+## What NOT to Build (avoid redundancy with ecosystem)
+
+| Area | Don't build | Use instead |
+|---|---|---|
+| NIK chip reading | Private NFC chip read not supported | PrivyID OCR + verification API |
+| IKD QR scan | Blocked for private apps | Wait for Dukcapil SDK (2026+) |
+| QRIS infrastructure | Requires BI PJP license | Xendit / DOKU as acquirer |
+| Payment rail | Requires BI licensing | BI-FAST via bank API or Xendit |
+| CA / certificate authority | PSrE requires BSSN accreditation | PrivyID (e-sign), Peruri (e-Meterai) |
+| SMS OTP | Security anti-pattern | TOTP / passkeys instead |
+| Tax engine (core) | DJP handles rules | Pajakku/PajakExpress API for filing |
+| Message broker infrastructure | Operational complexity | NATS JetServer or Redis Streams (managed) |
+| AI model hosting | Requires GPU infra + ops | Anthropic API / OpenAI API via AI Platform connector |
+
+---
+
 ## Sister Products (same PT entity, separate repos)
 
 - **is-roadmap** — Public product roadmap (this planning tool, Vercel)
