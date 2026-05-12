@@ -176,6 +176,7 @@ See `PRODUCT_CLAUDE.md` for all architectural decisions. Key ones relevant to th
 | IS-LMS | Learning Management | 3 |
 | IS-IND | Industry Verticals | 3 |
 | IS-TPL | Configuration Template Library | 3 |
+| IS-EXT | Workspace Extensions (tenant-scoped mini apps) | 3 |
 
 ## Nice-to-haves (post-MVP)
 

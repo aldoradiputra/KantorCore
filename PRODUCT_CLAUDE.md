@@ -1070,3 +1070,72 @@ On-premise tenants cannot receive inbound federation directly (firewalls, no pub
 - **is-roadmap** — Public product roadmap (this planning tool, Vercel)
 - **Supapark** — (separate product, separate repo)
 - **Jurna** — (separate product, separate repo)
+
+---
+
+## Workspace Extensions (IS-EXT): tenant-scoped mini apps
+
+**Decision:** Allow tenant power users to build lightweight, sandboxed mini apps within their own workspace. Phase 3. Inspired by the WeChat Mini Programs model, but with one absolute rule: **no cross-tenant distribution, ever**.
+
+**Why this is not the rejected plugin marketplace:**
+- The rejected marketplace was about external partners building for *all tenants* (distribution layer, revenue share, ecosystem play).
+- Workspace Extensions are about internal users at Tenant X building micro-apps for Tenant X's own people, using Tenant X's own data.
+- No storefront, no third-party developers, no inter-tenant code sharing.
+- It is internal tooling, not an ecosystem.
+
+**The gap this fills:**
+ERPs fail at customization for tail-of-distribution needs (a logistics firm's custom vehicle board, an HR team's bespoke onboarding checklist, a finance team's cross-module dashboard). Historically this required expensive professional services or abandoning the ERP for spreadsheets. Workspace Extensions is the escape hatch.
+
+**Architecture:**
+- **Sandboxed runtime**: iframe + Web Worker with postMessage bridge. No direct DOM access to host. CSP-locked. CPU/memory caps.
+- **Data access**: only via OAuth 2.0–scoped Tenant Data API (IS-EXT-002). Same API external apps use, just authorized in-shell. No raw DB.
+- **Permissions**: inherited from user's IS-AUTH role. No privilege escalation paths.
+- **Distribution**: tenant-private. Code never leaves the tenant. No cross-tenant sharing, no public registry.
+- **Stability**: versioned API contract (IS-EXT-007). Breaking changes require major version bump + 12-month deprecation window. Without this guarantee, every IS release would break tenant extensions.
+
+**Hard limits (non-negotiable):**
+- No outbound network from extension sandbox except to IS APIs (prevents data exfiltration).
+- No file system access.
+- No access to other extensions' state or storage.
+- Tenant admin must approve activation; users cannot self-install.
+
+**Risks:**
+
+| Risk | Mitigation |
+|---|---|
+| Security surface — sandbox escape | Defense in depth: iframe + CSP + Worker isolation + API scope enforcement at gateway. Regular pentests. |
+| Support burden — "my extension broke after IS update" | Stable versioned API contract; old versions supported 12 months post-deprecation. |
+| Feature parity creep — extensions duplicate or replace core features | Extensions are observable per-tenant; if a pattern emerges across many tenants, promote to core. |
+| Data governance — tenant admins blind to what extensions access | Per-extension scope visibility in IS-EXT-004 registry; audit log of every data access. |
+
+---
+
+## IS as Identity Provider (IS-AUTH IdP/SCIM): the corporate identity layer for Indonesia
+
+**Decision:** IS exposes itself as an OIDC/SAML Identity Provider (Phase 2) and SCIM 2.0 provisioning source (Phase 2), with an OAuth 2.0 resource server already in Phase 1. Position IS-AUTH as the corporate identity layer for Indonesia, not just login for IS itself.
+
+**Three capabilities, one auth surface:**
+
+1. **OAuth 2.0 Resource Server (IS-AUTH-008, Phase 1)** — IS data accessible via OAuth with module-scoped permissions. Needed anyway for mobile PWA and Workspace Extensions; promoting to Phase 1.
+2. **IS as IdP (IS-AUTH-009, Phase 2)** — "Sign in with Indonesia System" for external apps (Slack, Figma, GitHub, internal legacy). OIDC + SAML 2.0 endpoints.
+3. **SCIM 2.0 Provisioning (IS-AUTH-010, Phase 2)** — automatic user lifecycle in external apps tied to IS-HR events (joiner/leaver/mover).
+
+**Strategic rationale:**
+- Okta, Auth0, JumpCloud, Google Workspace SSO all own the corporate identity layer globally. Indonesia has no strong local equivalent.
+- Owning corporate identity is stickier than ERP alone — switching cost compounds across every connected app, and joiner/leaver/mover workflow makes IS the source of truth for organizational state.
+- Eventual government push toward unified national digital identity (NIK/BPJS) will need a corporate-side broker. IS being that broker is a defensible position.
+
+**Why OAuth Resource Server moves to Phase 1:**
+- Mobile PWA (IS-MOB) needs it.
+- Workspace Extensions (Phase 3) need it.
+- External integrations (PowerBI, Metabase, custom scripts) need it.
+- Building it in Phase 1 means the API surface is battle-tested before IdP and SCIM ride on top of it.
+
+**Risks:**
+
+| Risk | Mitigation |
+|---|---|
+| Security bar raises significantly — IdP is a high-value target | MFA enforcement (TOTP Phase 1, passkeys Phase 2), anomaly detection, hardware key support, security audits before IdP launch |
+| Compliance scope expansion (PDP law, cybersecurity law on identity data) | Engage legal counsel before Phase 2 IdP launch; design audit log to satisfy regulator requests by default |
+| Support burden — "I can't log into Slack" becomes an IS ticket | Clear scoping in admin docs; admin-facing diagnostics dashboard showing SAML/OIDC handshake errors per external app |
+| External app vendor lock-in to IS | Standards-based (OIDC, SAML, SCIM); no proprietary protocols — tenants can replace IS with another IdP without breaking external apps |

@@ -4617,6 +4617,39 @@
       "y": 0
     },
     {
+      "id": "auth-oauth-server",
+      "label": "OAuth 2.0 Resource Server",
+      "description": "IS exposes its data via OAuth 2.0 with PKCE. Scopes mapped per module (is.fin.read, is.hr.write, etc.). Personal access tokens for scripts/CLI. Powers mobile app, Workspace Extensions, and external integrations from one unified authorization surface.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "authentication",
+      "code": "IS-AUTH-008",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "auth-idp",
+      "label": "IS as Identity Provider (OIDC/SAML)",
+      "description": "IS issues identity to external apps. 'Sign in with Indonesia System' for Slack, Figma, GitHub, internal legacy systems. OIDC + SAML 2.0 endpoints. Per-tenant external app registry. Group/role mapping from IS-HR job titles and IS-AUTH groups to external app roles. Audit log of every external auth event. Positions IS as the corporate identity layer for Indonesia, not just login for IS itself.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "authentication",
+      "code": "IS-AUTH-009",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "auth-scim",
+      "label": "SCIM 2.0 Provisioning",
+      "description": "Auto-provision and de-provision user accounts in external apps when IS-HR records change. New hire in IS-HR triggers account creation in connected apps; termination disables them. Group membership syncs role assignments. Closes the joiner/leaver/mover loop that makes IdP function actually valuable.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "authentication",
+      "code": "IS-AUTH-010",
+      "milestone": "v2.0"
+    },
+    {
       "id": "user-docs",
       "label": "Documentation",
       "description": "In-product documentation hub — user guides, admin references, and API docs accessible inside the platform",
@@ -6292,6 +6325,94 @@
       "parent": "aip-agents",
       "code": "IS-AIP-AGT-007",
       "milestone": "v2.0"
+    },
+    {
+      "id": "ext",
+      "label": "Workspace Extensions",
+      "description": "Tenant-scoped lightweight mini apps built by power users within a single tenant. Sandboxed execution, controlled IS Data API surface, permissions inherited from user roles. Inspired by WeChat Mini Programs but with a hard rule: no cross-tenant distribution, ever. Solves real customization gaps without becoming a plugin marketplace.",
+      "type": "module",
+      "status": "planned",
+      "phase": 3,
+      "parent": "core",
+      "code": "IS-EXT",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "ext-runtime",
+      "label": "Sandboxed Runtime",
+      "description": "Iframe + Web Worker execution environment with postMessage bridge to IS shell. No direct DOM access to host app. CSP-locked. Memory and CPU caps per extension. Crash isolation: a misbehaving extension cannot bring down the IS shell or other extensions.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 3,
+      "parent": "ext",
+      "code": "IS-EXT-001",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "ext-data-api",
+      "label": "Tenant Data API",
+      "description": "Controlled API surface for extensions to read and write tenant data. Built on IS-AUTH OAuth 2.0 resource server with scopes mapped to modules. Read-heavy, writes go through existing IS mutation layer (no raw DB access). Same API surface external apps consume, just authorized in-shell.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 3,
+      "parent": "ext",
+      "code": "IS-EXT-002",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "ext-permissions",
+      "label": "Role-Inherited Permissions",
+      "description": "Extensions run with the current user's IS-AUTH permissions. If user cannot see payroll data, extension cannot see payroll data — period. Tenant admin can additionally restrict which scopes an extension may even request. No privilege escalation paths.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 3,
+      "parent": "ext",
+      "code": "IS-EXT-003",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "ext-registry",
+      "label": "Tenant Extension Registry",
+      "description": "Per-tenant catalog of extensions installed in that workspace. Admin approval workflow before activation. Visibility into which modules each extension touches and which users use it. Disable, uninstall, audit. Extensions are tenant-private — never published outside the tenant.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 3,
+      "parent": "ext",
+      "code": "IS-EXT-004",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "ext-builder",
+      "label": "Extension Builder",
+      "description": "In-product authoring environment for tenant power users. HTML/CSS/JS with a thin component library matching IS design system. Live preview against tenant's own sandbox data. No SDK install required. Code stays in IS (versioned), never leaves the tenant.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 3,
+      "parent": "ext",
+      "code": "IS-EXT-005",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "ext-versioning",
+      "label": "Versioning & Rollback",
+      "description": "Every saved extension version is retained. Admins can roll back to any prior version instantly. Diff view between versions. Required because tenant extensions are written by non-engineers and breakage is expected — rollback is the safety net that makes the whole feature viable.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 3,
+      "parent": "ext",
+      "code": "IS-EXT-006",
+      "milestone": "v3.0"
+    },
+    {
+      "id": "ext-api-contract",
+      "label": "Stable API Contract",
+      "description": "Versioned, semver-bound Data API contract. Breaking changes require a new major version; old versions supported for minimum 12 months after deprecation announcement. Without this guarantee, every IS release would break tenant extensions and the feature would collapse under support burden.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 3,
+      "parent": "ext",
+      "code": "IS-EXT-007",
+      "milestone": "v3.0"
     }
   ]
 }
