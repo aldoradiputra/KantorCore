@@ -6065,7 +6065,7 @@
     {
       "id": "crm-meth-templates",
       "label": "Built-in Templates",
-      "description": "Out-of-the-box methodology templates: MEDDPICC and MEDDICC (enterprise opportunities), BANT and SPICED and NEAT (general opportunities), PEATS and ANUM (lead qualification). Each ships with field definitions, coaching hints per field, and suggested stage-gate requirements.",
+      "description": "Out-of-the-box methodology templates: MEDDPICC and MEDDICC (enterprise opportunities), BANT and SPICED and NEAT (general opportunities), PEATS and ANUM (lead qualification). Each template ships with field definitions, default rating scales per field (e.g. MEDDPICC Metrics: 1–5 with labels None/Vague/Defined/Quantified/Committed; Champion: 1–3 with labels No champion/Identified/Mobilised), per-field coaching hints, and suggested stage-gate requirements. Built-in templates are read-only; clone to customise.",
       "type": "feature",
       "status": "planned",
       "phase": 1,
@@ -6076,7 +6076,7 @@
     {
       "id": "crm-meth-builder",
       "label": "Custom Methodology Builder",
-      "description": "Create a methodology from scratch or clone any built-in template. Define fields (text, score 1–10, select, boolean), add a coaching hint per field, set field order, and mark fields as required or optional.",
+      "description": "Create a methodology from scratch or clone any built-in template. Field types: text (free-form notes), rating (numeric scale with configurable min/max and step — e.g. 1–3, 1–5, 1–7, 1–10; each point can have a label such as 1=Weak/2=Moderate/3=Strong), select (single-choice picklist), boolean (confirmed/unconfirmed), and date. Each field has: label, coaching hint, field type, rating scale (if applicable), required/optional flag, and display order. Rating fields contribute to the overall methodology score; non-rating fields (text, boolean) contribute to completion percentage only.",
       "type": "feature",
       "status": "planned",
       "phase": 1,
@@ -6109,7 +6109,7 @@
     {
       "id": "crm-meth-scorecard",
       "label": "Qualification Scorecard",
-      "description": "Completion percentage and field-by-field status shown on each deal card and in pipeline view. Scorecard feeds forecast confidence: fully qualified deals weighted higher in revenue forecasts. Managers see team-wide qualification health per pipeline.",
+      "description": "Per-deal qualification scorecard: completion percentage (how many fields filled) and a weighted methodology score derived from rated fields. Score = sum of each rating field's value / sum of maximum possible ratings, expressed as a percentage. Shown on deal cards, pipeline kanban, and list view. Score feeds forecast confidence weighting: fully scored deals are weighted higher in revenue roll-ups. Manager dashboard shows team-wide average score and per-rep qualification health per pipeline. Score thresholds (e.g. ≥70% to enter late stages) can be set as soft or hard stage-gate conditions.",
       "type": "feature",
       "status": "planned",
       "phase": 1,
