@@ -777,6 +777,115 @@ Every UI surface that shows event history must visually distinguish all three ca
 
 ---
 
+## Multi-agent orchestration: spawn chains, skills, and run trees
+
+**Decision:** Allow orchestrator agents to spawn sub-agents, but enforce **mandate subset** and **hierarchical run accounting** at the infrastructure level. Spawned agents do not get to escape parent constraints.
+
+**Skill as a first-class primitive:**
+- A `Skill` is a named, versioned bundle of Tool Registry tools (e.g. "Refund Customer", "Reconcile Bank Statement", "Send Dunning Letter").
+- Agents are configured by attaching skills, not raw tools. This is what users see and manage in IS-AIP-AGT.
+- Skill version pinned per agent; upgrading a skill that expands scope forces mandate re-approval.
+
+```ts
+interface Skill {
+  id: SkillId;
+  version: number;
+  name: string;
+  description: string;
+  category: "financial" | "communication" | "data" | "orchestration";
+  tools: ToolId[];              // composes existing Tool Registry tools
+  emitsScopeExpansion: boolean; // if true, attaching to an agent requires re-approval
+}
+
+interface Agent {
+  id: AgentId;
+  type: "delegated" | "autonomous";
+  skills: { id: SkillId; pinnedVersion: number }[];
+  mandate?: MandateId;          // required for autonomous
+  modelPin: ModelVersion;
+}
+```
+
+**Mandate composition rule (subset enforcement):**
+When agent A spawns agent B with mandate M_b, the Mutation Gate verifies:
+1. `M_b.scope ⊆ M_a.scope` (permissions)
+2. `M_b.entityScope ⊆ M_a.entityScope` (data boundary)
+3. `M_b.maxFinancialImpactPerRun ≤ M_a.remainingRunCap` (cap reservation)
+4. `M_b.maxFinancialImpactRolling24h ≤ M_a.remainingRolling24hCap` (rolling reservation)
+5. `M_a.canSpawnSubAgents === true`
+6. `currentSpawnDepth < M_a.maxSpawnDepth`
+7. `currentChildCount < M_a.maxConcurrentChildren`
+
+Any violation = sub-agent spawn rejected at Tool Registry layer. Parent agent receives a failure event; cannot bypass via agent code.
+
+**Run as a tree, not a record:**
+
+```ts
+interface AgentRun {
+  id: RunId;
+  agentId: AgentId;
+  mandateId: MandateId;
+  mandateVersion: number;
+  parentRunId?: RunId;          // present iff spawned by another agent
+  rootRunId: RunId;             // top of the tree (== id for root runs)
+  lineage: AgentId[];           // path from root agent to this agent
+  spawnDepth: number;           // 0 for root, +1 per nested spawn
+  childRunIds: RunId[];
+  trigger:
+    | { kind: "schedule"; ref: string }
+    | { kind: "event"; eventId: string }
+    | { kind: "spawn"; parentRunId: RunId; reason: string };
+  costAggregate: {              // INCLUDES all descendants
+    tokensIn: number;
+    tokensOut: number;
+    modelCostUSD: number;
+    financialImpact: Money;
+  };
+  status: "running" | "completed" | "failed" | "cancelled";
+  startedAt: Date;
+  completedAt?: Date;
+}
+```
+
+Per-run financial caps apply to the **entire subtree**, not to individual agents. If the root run's cap is 50M IDR and the parent has already moved 30M, the next spawned sub-agent gets a 20M remaining budget — regardless of its own mandate's stated cap.
+
+**DAG enforcement and failure modes:**
+
+| Risk | Enforcement |
+|---|---|
+| Loop (A spawns B which spawns A) | Reject spawn if `agentId ∈ lineage` — DAG only, no cycles |
+| Runaway depth (A→B→C→D→…) | `maxSpawnDepth` per mandate (default 3, max 5) |
+| Fan-out explosion (A spawns 1000 children) | `maxConcurrentChildren` per mandate (default 5, max 20) |
+| Parent stuck on dead child | Child runs have a hard timeout inherited from parent; cascading cancel |
+| Cost runaway | Subtree cost aggregated in real time; parent run cancelled if subtree exceeds parent's cap |
+| Permission escalation | Subset rule enforced at Tool Registry — cannot grant a child permission the parent lacks |
+
+**Audit lineage:**
+Every action records the full `lineage[]` of agent IDs back to the root, plus the originating user or event that started the chain. If an autonomous chain causes harm, audit reconstructs from leaf back to root user/trigger in one query.
+
+**Implications on existing primitives:**
+
+| Primitive | Change required |
+|---|---|
+| IS-PLAT-AUDIT | Audit entries gain `runId`, `rootRunId`, `lineage[]`, `spawnDepth` |
+| IS-PLAT-PERM | Permission checks evaluate full lineage; subset rule enforced at Mutation Gate |
+| Event Bus | Events carry `causedByRunId` + `rootRunId` correlation IDs |
+| Tool Registry | New `spawn_agent` tool category; subset rule check on spawn; cost reservation atomic |
+| Mandate schema | New fields: `canSpawnSubAgents`, `maxSpawnDepth`, `maxConcurrentChildren` |
+| Cost accounting | Aggregation roll-up across run tree, not per agent in isolation |
+
+**Why this is non-optional once orchestration ships:**
+Single-agent autonomous mode is already governed by Mandate. Adding sub-agent spawning without these rules effectively lets one approved mandate fork into arbitrary unapproved descendants. The subset rule + tree-aggregated caps prevent that.
+
+**Why agent management is inside the platform, not outside:**
+- Agents act on platform data; the dashboard manages that data path. External management = duplicate Auth/Audit/Permissions stack.
+- Skills wrap Tool Registry entries, which only exist inside the platform.
+- Mandate approval workflows reuse IS-PLAT-PERM (4-eyes, role gates).
+- The CFO/Ops Manager who governs agents already has an IS account; making them context-switch to an external admin is friction without benefit.
+- An external "AI agent platform" would also conflict with the internal-centric distribution decision — we are not building a separate ecosystem.
+
+---
+
 ## What NOT to Build (avoid redundancy with ecosystem)
 
 | Area | Don't build | Use instead |

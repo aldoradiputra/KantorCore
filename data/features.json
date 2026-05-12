@@ -1,6 +1,6 @@
 {
   "version": "0.9",
-  "lastUpdated": "2026-05-11",
+  "lastUpdated": "2026-05-12",
   "nodes": [
     {
       "id": "core",
@@ -6127,6 +6127,171 @@
       "parent": "crm-methodology",
       "code": "IS-CRM-METH-006",
       "milestone": "v1.0"
+    },
+    {
+      "id": "fin-cashflow",
+      "label": "Cashflow & Payment Schedule",
+      "description": "Forward-looking cash calendar: every expected money-in and money-out event plotted on a timeline with running balance projection. Pulls real data from AR (invoice due dates), AP (vendor bills), IS-PAY (payroll runs), IS-PURCH (scheduled PO payments), IS-SUB (recurring revenue), and IS-COMP (tax obligation deadlines). Side-by-side with day-to-day finance work — not a separate report.",
+      "type": "app",
+      "status": "planned",
+      "phase": 1,
+      "parent": "finance",
+      "code": "IS-FIN-CASH",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "fin-cash-calendar",
+      "label": "Payment Calendar",
+      "description": "Day/week/month calendar view with money-in (green) and money-out (red) markers; click any day to see the underlying events. Filter by entity, bank account, currency, or category.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "fin-cashflow",
+      "code": "IS-FIN-CASH-001",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "fin-cash-projection",
+      "label": "Running Balance Projection",
+      "description": "Projected cash balance per bank account over time, computed from current balance + all scheduled events. Surfaces the date and magnitude of any forecast negative balance with alert thresholds.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "fin-cashflow",
+      "code": "IS-FIN-CASH-002",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "fin-cash-confidence",
+      "label": "Confidence-Weighted Forecast",
+      "description": "Each scheduled event has a confidence score (confirmed invoice on net-30 = 95%, forecasted sale = 40%). Balance projection shown as a band (optimistic / expected / pessimistic) rather than a single line.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "fin-cashflow",
+      "code": "IS-FIN-CASH-003",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "fin-cash-scenarios",
+      "label": "What-If Scenarios",
+      "description": "Drag any scheduled event to a new date to model 'what if customer X pays 30 days late' or 'what if we delay payroll by a week'. Scenarios can be saved, compared, and committed to update the live schedule.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "fin-cashflow",
+      "code": "IS-FIN-CASH-004",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "fin-cash-bank-sync",
+      "label": "Live Bank Balance Sync",
+      "description": "Real-time current cash position per bank account via bank API (BCA, Mandiri, BRI, BNI) or open-banking aggregator. Anchors the projection to actual cash, not just the GL ledger.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "fin-cashflow",
+      "code": "IS-FIN-CASH-005",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "fin-cash-manual",
+      "label": "Manual Cash Events",
+      "description": "Add one-off planned events not driven by an existing record (e.g. 'expected investor tranche on Aug 15', 'one-time consultant payment'). Marked clearly as manual; can attach notes and confidence.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "fin-cashflow",
+      "code": "IS-FIN-CASH-006",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "aip-agents",
+      "label": "Agent Management & Orchestration",
+      "description": "Unified workspace to manage AI agents: skill catalog, mandate configuration, run history, multi-agent orchestration with spawn-chain governance. Built inside the platform (not external) so agents reuse Auth, Audit, Permissions, and Event Bus primitives natively.",
+      "type": "app",
+      "status": "planned",
+      "phase": 2,
+      "parent": "ai-platform",
+      "code": "IS-AIP-AGT",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "aip-agt-catalog",
+      "label": "Agent Catalog",
+      "description": "Browse, create, and configure agents. Each agent has a type (delegated vs autonomous), assigned skills, mandate, model pin, and current status. Built-in agents (e.g. Cashflow Watcher, Invoice Chaser, Reconciliation Agent) ship with template mandates; custom agents start from scratch or clone.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "aip-agents",
+      "code": "IS-AIP-AGT-001",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "aip-agt-skills",
+      "label": "Skill Catalog",
+      "description": "Skills are named, versioned bundles of Tool Registry tools (e.g. 'Refund Customer', 'Reconcile Bank Statement', 'Send Dunning Letter'). Skills compose: enable or disable per agent via the dashboard. Skill changes trigger mandate re-approval if scope expands.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "aip-agents",
+      "code": "IS-AIP-AGT-002",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "aip-agt-mandates",
+      "label": "Mandate Configuration",
+      "description": "UI for creating, versioning, and approving mandates: scope, entity scope, per-run cap, rolling-24h cap, human-approval threshold, model pin, alert channel, expiration. Enforces 4-eyes (approver must differ from configurer). Edit creates a new version; old version preserved for audit.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "aip-agents",
+      "code": "IS-AIP-AGT-003",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "aip-agt-runs",
+      "label": "Run History & Tree View",
+      "description": "Every agent execution recorded as a Run. Orchestrator agents create parent runs that spawn child runs — visualised as a tree. Drill into any run to see the agent, mandate version, tool calls, costs, outcomes, and full audit lineage. Filter by agent, status, time range, entity.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "aip-agents",
+      "code": "IS-AIP-AGT-004",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "aip-agt-orchestration",
+      "label": "Multi-Agent Orchestration",
+      "description": "Orchestrator agents can spawn sub-agents to delegate sub-tasks. Sub-agent mandate must be a subset of parent's (permissions, entity scope, financial cap). Spawn graph enforced as a DAG with max-depth and max-concurrent-children limits. Cost and financial impact aggregate across the entire spawn tree.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "aip-agents",
+      "code": "IS-AIP-AGT-005",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "aip-agt-approvals",
+      "label": "Human Approval Queue",
+      "description": "Single queue for all pending human-gated agent actions (transactions above mandate threshold, sensitive scope changes, sub-agent spawns above depth). Approver sees full context: parent run, lineage, mandate, prior actions in the run. Approve/reject with comment; decisions become immutable audit entries.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "aip-agents",
+      "code": "IS-AIP-AGT-006",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "aip-agt-eval",
+      "label": "Performance & Cost Metrics",
+      "description": "Per-agent and per-skill metrics: success rate, completion time, model token cost, financial impact realized vs. forecast, human-override rate, error rate. Trend lines over time. Identifies underperforming agents and skills for tuning or retirement.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "aip-agents",
+      "code": "IS-AIP-AGT-007",
+      "milestone": "v2.0"
     }
   ]
 }
