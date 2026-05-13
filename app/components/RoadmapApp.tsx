@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import ListView from './ListView'
 import MapView from './MapView'
+import TimelineView from './TimelineView'
+import BoardView from './BoardView'
 import DetailPanel from './DetailPanel'
 import SearchFilterBar, { Filters } from './SearchFilterBar'
 import TopNav, { Page } from './TopNav'
@@ -26,7 +28,7 @@ const DEFAULT_FILTERS: Filters = {
   types: ['module', 'app', 'feature', 'infrastructure'],
 }
 
-type ViewMode = 'list' | 'map'
+type ViewMode = 'list' | 'map' | 'timeline' | 'board'
 
 export default function RoadmapApp({ nodes, version }: Props) {
   const [page, setPage]         = useState<Page>('roadmap')
@@ -112,6 +114,13 @@ type RoadmapPageProps = {
   onViewDocs: (id: string) => void
 }
 
+const VIEW_OPTIONS: { id: ViewMode; label: string }[] = [
+  { id: 'list',     label: 'List'     },
+  { id: 'timeline', label: 'Timeline' },
+  { id: 'board',    label: 'Board'    },
+  { id: 'map',      label: 'Map'      },
+]
+
 function RoadmapPage({ nodes, selected, onSelect, filters, setFilters, view, setView, onViewDocs }: RoadmapPageProps) {
   const displayable = nodes.filter(n => n.type !== 'root')
 
@@ -164,10 +173,10 @@ function RoadmapPage({ nodes, selected, onSelect, filters, setFilters, view, set
           padding: 3,
           gap: 2,
         }}>
-          {(['list', 'map'] as ViewMode[]).map(v => (
+          {VIEW_OPTIONS.map(({ id, label }) => (
             <button
-              key={v}
-              onClick={() => setView(v)}
+              key={id}
+              onClick={() => setView(id)}
               style={{
                 fontSize: 12,
                 fontWeight: 600,
@@ -176,13 +185,13 @@ function RoadmapPage({ nodes, selected, onSelect, filters, setFilters, view, set
                 border: 'none',
                 cursor: 'pointer',
                 fontFamily: 'inherit',
-                background: view === v ? 'var(--white)' : 'transparent',
-                color: view === v ? 'var(--navy)' : 'var(--muted)',
-                boxShadow: view === v ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                background: view === id ? 'var(--white)' : 'transparent',
+                color: view === id ? 'var(--navy)' : 'var(--muted)',
+                boxShadow: view === id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                 transition: 'all 0.15s',
               }}
             >
-              {v === 'list' ? 'List' : 'Map'}
+              {label}
             </button>
           ))}
         </div>
@@ -200,7 +209,7 @@ function RoadmapPage({ nodes, selected, onSelect, filters, setFilters, view, set
 
       {/* Content */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {view === 'list' ? (
+        {view === 'list' && (
           <ListView
             nodes={visibleNodes}
             allNodes={nodes}
@@ -208,7 +217,22 @@ function RoadmapPage({ nodes, selected, onSelect, filters, setFilters, view, set
             onSelect={onSelect}
             isFiltering={!!filters.search || filters.phases.length < 3}
           />
-        ) : (
+        )}
+        {view === 'timeline' && (
+          <TimelineView
+            nodes={nodes}
+            selected={selected}
+            onSelect={onSelect}
+          />
+        )}
+        {view === 'board' && (
+          <BoardView
+            nodes={nodes}
+            selected={selected}
+            onSelect={onSelect}
+          />
+        )}
+        {view === 'map' && (
           <MapView
             nodes={nodes}
             selected={selected}

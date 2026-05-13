@@ -196,6 +196,28 @@ Tenant  (is_tenant_acmecorp — one PG database, one billing unit)
 
 ---
 
+## Platform UX: Autosave
+
+**Decision:** All record editing in IS uses autosave. Users never press a Save button for routine field edits.
+
+**Behavior spec:**
+- **Optimistic local state** — edits apply immediately to the UI with no "unsaved" banner.
+- **Debounced write** — flush to server 800ms after the last keystroke. Not on every keystroke; not on blur only.
+- **Conflict handling** — last-write-wins for single-user fields. On true concurrent collision (same field, two users, within the debounce window), show an inline conflict prompt on the field, not a modal.
+- **Inline error** — if save fails (validation error, network error), the affected field turns error-colored in place. User fixes it where it broke. No full-page error state.
+- **Undo toast** — 5-second "Undo" toast appears after each autosave fires. Dismisses on next edit. Not a full version history — just the "oh wait" escape hatch.
+
+**Where autosave does NOT apply:**
+- Multi-step wizards (e.g. onboarding flow, import wizard) — use explicit Next/Submit.
+- Workflow transitions that trigger downstream effects (posting a journal entry, confirming a PO, approving a leave request) — these require an explicit confirm action. Autosave is for record editing, not workflow state machines.
+
+**Implementation notes for all IS modules:**
+- Every record form should expose a `useAutosave(record, mutateFn, { debounce: 800 })` hook.
+- Dirty state tracking at field level, not form level — only changed fields are sent in the patch.
+- The undo toast should invoke a single-step rollback endpoint (`PATCH /api/<module>/<id>/rollback-last`), not a full version history fetch.
+
+---
+
 ## Design System
 
 CSS variables (IS design tokens — same as roadmap app):
