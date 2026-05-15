@@ -1887,6 +1887,32 @@
       "milestone": "v2.0"
     },
     {
+      "id": "email-caldav",
+      "label": "CalDAV Server",
+      "description": "Standards-compliant CalDAV server so any calendar client (Apple Calendar, Thunderbird, GNOME Calendar) can sync to IS calendars natively — no vendor lock-in",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "email-calendar",
+      "x": 0,
+      "y": 0,
+      "code": "IS-EMAIL-CAL-003",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "email-carddav",
+      "label": "CardDAV Contacts",
+      "description": "Standards-compliant CardDAV server for contact sync across devices and clients; company address book auto-populated from HR directory",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "email",
+      "x": 0,
+      "y": 0,
+      "code": "IS-EMAIL-CARD-001",
+      "milestone": "v2.0"
+    },
+    {
       "id": "meetings",
       "label": "Meetings & Video",
       "description": "Roll call, agenda, Google Meet integration",
