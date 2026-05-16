@@ -166,6 +166,7 @@ See `PRODUCT_CLAUDE.md` for all architectural decisions. Key ones relevant to th
 | IS-MAINT | Maintenance | 2 |
 | IS-PORTAL | Customer/Vendor Portal | 2 |
 | IS-AGENT | Agent Runtime Platform | 1 |
+| IS-FLOW | Workflow Automation (no-code, deterministic) | 1 |
 | IS-AIP | AI Platform | 1 |
 | IS-CHAT-FED | Inter-Tenant Chat Federation | 2 |
 | IS-PUB | Publishing | 3 |
