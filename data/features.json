@@ -1,6 +1,6 @@
 {
   "version": "0.9",
-  "lastUpdated": "2026-05-12",
+  "lastUpdated": "2026-05-16",
   "nodes": [
     {
       "id": "core",
@@ -4427,12 +4427,12 @@
       "description": "Cross-module AI: semantic search, auto-translation, smart field extraction, and summarization",
       "type": "module",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "core",
       "x": -800,
       "y": -200,
       "code": "IS-AIP",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
     },
     {
       "id": "ai-platform-search",
@@ -4440,12 +4440,12 @@
       "description": "Semantic search across all records, messages, documents, and files",
       "type": "app",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "ai-platform",
       "x": 0,
       "y": 0,
       "code": "IS-AIP-SCH",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
     },
     {
       "id": "ai-platform-search-semantic",
@@ -4453,12 +4453,12 @@
       "description": "Find records by meaning, not just exact keywords",
       "type": "feature",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "ai-platform-search",
       "x": 0,
       "y": 0,
       "code": "IS-AIP-SCH-001",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
     },
     {
       "id": "ai-platform-translation",
@@ -4466,12 +4466,12 @@
       "description": "Auto-translate content across chat, documents, meetings, and the website",
       "type": "app",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "ai-platform",
       "x": 0,
       "y": 0,
       "code": "IS-AIP-TRL",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
     },
     {
       "id": "ai-platform-translation-chat",
@@ -4479,12 +4479,12 @@
       "description": "Real-time translation of chat messages for international teams",
       "type": "feature",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "ai-platform-translation",
       "x": 0,
       "y": 0,
       "code": "IS-AIP-TRL-001",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
     },
     {
       "id": "ai-platform-translation-docs",
@@ -4492,12 +4492,12 @@
       "description": "One-click full translation of documents and website content",
       "type": "feature",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "ai-platform-translation",
       "x": 0,
       "y": 0,
       "code": "IS-AIP-TRL-002",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
     },
     {
       "id": "ai-platform-fields",
@@ -4505,12 +4505,12 @@
       "description": "Auto-populated fields that read and understand related text across records",
       "type": "app",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "ai-platform",
       "x": 0,
       "y": 0,
       "code": "IS-AIP-FLD",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
     },
     {
       "id": "ai-platform-fields-extract",
@@ -4518,12 +4518,12 @@
       "description": "Auto-populate fields by reading emails, documents, and conversation context",
       "type": "feature",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "ai-platform-fields",
       "x": 0,
       "y": 0,
       "code": "IS-AIP-FLD-001",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
     },
     {
       "id": "ai-platform-fields-summarize",
@@ -4531,12 +4531,12 @@
       "description": "Summarize long threads, documents, and ticket histories on demand",
       "type": "feature",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "ai-platform-fields",
       "x": 0,
       "y": 0,
       "code": "IS-AIP-FLD-002",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
     },
     {
       "id": "authentication",
@@ -6270,10 +6270,10 @@
       "description": "Unified workspace to manage AI agents: skill catalog, mandate configuration, run history, multi-agent orchestration with spawn-chain governance. Built inside the platform (not external) so agents reuse Auth, Audit, Permissions, and Event Bus primitives natively.",
       "type": "app",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "ai-platform",
       "code": "IS-AIP-AGT",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
     },
     {
       "id": "aip-agt-catalog",
@@ -6281,10 +6281,10 @@
       "description": "Browse, create, and configure agents. Each agent has a type (delegated vs autonomous), assigned skills, mandate, model pin, and current status. Built-in agents (e.g. Cashflow Watcher, Invoice Chaser, Reconciliation Agent) ship with template mandates; custom agents start from scratch or clone.",
       "type": "feature",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "aip-agents",
       "code": "IS-AIP-AGT-001",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
     },
     {
       "id": "aip-agt-skills",
@@ -6292,10 +6292,10 @@
       "description": "Skills are named, versioned bundles of Tool Registry tools (e.g. 'Refund Customer', 'Reconcile Bank Statement', 'Send Dunning Letter'). Skills compose: enable or disable per agent via the dashboard. Skill changes trigger mandate re-approval if scope expands.",
       "type": "feature",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "aip-agents",
       "code": "IS-AIP-AGT-002",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
     },
     {
       "id": "aip-agt-mandates",
@@ -6303,10 +6303,10 @@
       "description": "UI for creating, versioning, and approving mandates: scope, entity scope, per-run cap, rolling-24h cap, human-approval threshold, model pin, alert channel, expiration. Enforces 4-eyes (approver must differ from configurer). Edit creates a new version; old version preserved for audit.",
       "type": "feature",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "aip-agents",
       "code": "IS-AIP-AGT-003",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
     },
     {
       "id": "aip-agt-runs",
@@ -6314,10 +6314,10 @@
       "description": "Every agent execution recorded as a Run. Orchestrator agents create parent runs that spawn child runs — visualised as a tree. Drill into any run to see the agent, mandate version, tool calls, costs, outcomes, and full audit lineage. Filter by agent, status, time range, entity.",
       "type": "feature",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "aip-agents",
       "code": "IS-AIP-AGT-004",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
     },
     {
       "id": "aip-agt-orchestration",
@@ -6325,10 +6325,10 @@
       "description": "Orchestrator agents can spawn sub-agents to delegate sub-tasks. Sub-agent mandate must be a subset of parent's (permissions, entity scope, financial cap). Spawn graph enforced as a DAG with max-depth and max-concurrent-children limits. Cost and financial impact aggregate across the entire spawn tree.",
       "type": "feature",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "aip-agents",
       "code": "IS-AIP-AGT-005",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
     },
     {
       "id": "aip-agt-approvals",
@@ -6336,10 +6336,10 @@
       "description": "Single queue for all pending human-gated agent actions (transactions above mandate threshold, sensitive scope changes, sub-agent spawns above depth). Approver sees full context: parent run, lineage, mandate, prior actions in the run. Approve/reject with comment; decisions become immutable audit entries.",
       "type": "feature",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "aip-agents",
       "code": "IS-AIP-AGT-006",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
     },
     {
       "id": "aip-agt-eval",
@@ -6347,10 +6347,101 @@
       "description": "Per-agent and per-skill metrics: success rate, completion time, model token cost, financial impact realized vs. forecast, human-override rate, error rate. Trend lines over time. Identifies underperforming agents and skills for tuning or retirement.",
       "type": "feature",
       "status": "planned",
-      "phase": 2,
+      "phase": 1,
       "parent": "aip-agents",
       "code": "IS-AIP-AGT-007",
-      "milestone": "v2.0"
+      "milestone": "v1.0"
+    },
+    {
+      "id": "agent-runtime",
+      "label": "Agent Runtime",
+      "description": "Platform-level infrastructure for autonomous and delegated agents: tool registry, agent identity namespace (agent_id separate from user_id), MCP server, event bus subscriptions, reasoning trace store, reversibility engine, and spend-limit enforcement. Agents are first-class actors alongside users — every audit row records acted_by_user_id OR acted_by_agent_id, never both.",
+      "type": "module",
+      "status": "planned",
+      "phase": 1,
+      "parent": "core",
+      "x": 0,
+      "y": 0,
+      "code": "IS-AGENT",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "agent-tool-registry",
+      "label": "Tool Registry",
+      "description": "Central registry where every IS module registers its callable tools. Tools are typed, permission-scoped, idempotent actions agents can invoke. Schema: tool_id, module, name, input_schema, output_schema, required_scopes, is_reversible, max_financial_impact. Modules declare tools on startup; registry validates and stores. Agents query the registry to discover available capabilities.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "agent-runtime",
+      "x": 0,
+      "y": 0,
+      "code": "IS-AGENT-001",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "agent-iam",
+      "label": "Agent Identity & Permissions",
+      "description": "Agent IAM parallel to user IAM. Each agent has agent_id, display name, owning tenant, owning user, permission scopes, and a mandate: the bounded operating contract (max financial impact per action, rolling 24h cap, human-approval threshold, expiration date). Agents inherit no more permissions than their delegating user. Scopes are additive and reviewable. Mandate changes require 4-eyes approval.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "agent-runtime",
+      "x": 0,
+      "y": 0,
+      "code": "IS-AGENT-002",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "agent-mcp-server",
+      "label": "MCP Server",
+      "description": "Expose all Tool Registry entries as a Model Context Protocol (MCP) server. Enables external AI agents (Claude, GPT, Gemini) to drive IS modules natively using the same tool definitions internal agents use. Authentication via IS OAuth scopes. Rate-limited and audited identically to internal agent calls.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "agent-runtime",
+      "x": 0,
+      "y": 0,
+      "code": "IS-AGENT-003",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "agent-reasoning-store",
+      "label": "Reasoning Trace Store",
+      "description": "Every agent action persists: input context, tools considered, tools called, intermediate reasoning steps, final action, confidence, and token cost. Queryable and exportable. Shown in the UI approval inbox and run history. Required for Indonesian enterprise trust and regulatory audit. Retention: 90 days default, configurable per tenant.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "agent-runtime",
+      "x": 0,
+      "y": 0,
+      "code": "IS-AGENT-004",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "agent-reversibility",
+      "label": "Reversibility Engine",
+      "description": "Every agent-initiated action is reversible within a configurable window (24h default). Each reversible action records reverse_action_id and reversible_until. The engine validates feasibility (e.g. cannot reverse a posted journal entry after close), executes the compensating action, and appends an audit entry referencing the original run. Human-triggered only — agents cannot self-reverse.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "agent-runtime",
+      "x": 0,
+      "y": 0,
+      "code": "IS-AGENT-005",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "agent-event-bus",
+      "label": "Event Bus",
+      "description": "Reactive substrate agents subscribe to. Modules emit typed events (InvoiceCreated, PayrollRunStarted, POApproved, etc.). Agents register subscriptions with filters; the bus delivers matching events to agent runtime for evaluation. Enables proactive agents that act on state changes without polling. Backed by Valkey pub/sub with durable consumer groups.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "agent-runtime",
+      "x": 0,
+      "y": 0,
+      "code": "IS-AGENT-006",
+      "milestone": "v1.0"
     },
     {
       "id": "ext",

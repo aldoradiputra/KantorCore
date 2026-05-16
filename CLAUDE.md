@@ -124,7 +124,8 @@ See `PRODUCT_CLAUDE.md` for all architectural decisions. Key ones relevant to th
 
 - **features.json is append-only** during planning — never delete a committed node; deprecate by setting `status: "deprecated"` instead
 - **Phase assignments**: Phase 1 = v1.0 launch; Phase 2 = v2.0; Phase 3 = v3.0+
-- **IS-AIP (AI Platform)** is Phase 2 (not Phase 3) — AI search, translation, smart fields are 2026 table stakes
+- **IS-AIP (AI Platform)** is Phase 1 (moved from Phase 2) — AI search, translation, smart fields, and agent dashboard are foundational, not add-ons
+- **IS-AGENT (Agent Runtime)** is Phase 1 core — tool registry, agent IAM, MCP server, reasoning store, reversibility engine. Must ship before any module ships agent functionality
 - **No plugin marketplace** — IS-MKT Phase 3 Plugin SDK was removed; replaced by IS-TPL (Configuration Template Library)
 - **IS-CHAT-FED** (Phase 2) — Matrix-protocol inter-tenant chat federation
 
@@ -164,7 +165,8 @@ See `PRODUCT_CLAUDE.md` for all architectural decisions. Key ones relevant to th
 | IS-COMP | Compliance Automation | 2 |
 | IS-MAINT | Maintenance | 2 |
 | IS-PORTAL | Customer/Vendor Portal | 2 |
-| IS-AIP | AI Platform | 2 |
+| IS-AGENT | Agent Runtime Platform | 1 |
+| IS-AIP | AI Platform | 1 |
 | IS-CHAT-FED | Inter-Tenant Chat Federation | 2 |
 | IS-PUB | Publishing | 3 |
 | IS-B2B | B2B Commerce | 3 |

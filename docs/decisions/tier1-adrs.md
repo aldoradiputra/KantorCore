@@ -445,14 +445,107 @@ The tiers above are **defaults**. Sales is authorized to deviate within these bo
 
 ---
 
+## ADR-009: Agent-Native Architecture
+
+**Date:** 2026-05-16
+
+### Decision
+Kantr is built agent-native from the ground up. Agents are first-class actors alongside users — not a Phase 2 feature bolted on. This is an internal architectural decision, not a brand or positioning claim. The product is still "the corporate OS for Indonesia."
+
+### Context
+Enterprise software is shifting from tools users operate to systems that do the work on users' behalf. Building agent support as a retrofit (Odoo's current path) creates brittle, inconsistent experiences. Starting native means every module is designed from day one to be driven by both humans and agents without special cases.
+
+### What "Agent-Native" Means
+
+**Not:** "Agentic ERP" as a marketing label — that is a 2024–2025 buzzword that will date and requires explanation.
+
+**Yes:** Agents work. Humans review. The product does more so users do less. The architecture enforces this cleanly.
+
+### Core Decisions
+
+| Decision | Ruling |
+|---|---|
+| Agent identity | `agent_id` namespace separate from `user_id`. Every audit row records exactly one of `acted_by_user_id` OR `acted_by_agent_id`, plus `on_behalf_of_user_id` when delegated |
+| Tool registry | Every IS module registers typed, permission-scoped, idempotent tools at startup. Tools are how agents act; CRUD APIs remain for UI |
+| MCP protocol | IS exposes all Tool Registry entries as an MCP (Model Context Protocol) server. External agents (Claude, GPT, Gemini) drive IS via the same protocol internal agents use |
+| Reasoning traces | Every agent action persists input context, tools called, reasoning steps, outcome, and cost. Queryable, shown in UI. Retention 90d default |
+| Reversibility | Every agent-initiated action is reversible within a configurable window (24h default). `reverse_action_id` and `reversible_until` on every agent-touched row. Human-triggered only |
+| Approval inbox | Primary Phase 1 UI primitive for agent-gated actions. Agents queue proposed actions; humans approve/reject with full context. Replaces confirmation dialogs |
+| Permission scopes | Agents operate under mandates: bounded contracts with max financial impact per action, rolling 24h cap, human-approval threshold, expiration date. Cannot exceed delegating user's permissions |
+| Event bus | Modules emit typed domain events; agents subscribe reactively. No polling. Backed by Valkey pub/sub with durable consumer groups |
+
+### Module Implications
+
+- **IS-AGENT** (new Phase 1 core): the runtime infrastructure module — tool registry, agent IAM, MCP server, reasoning store, reversibility engine, event bus. Sibling to IS-PLAT and IS-AUTH.
+- **IS-AIP** moved to Phase 1: AI Platform (semantic search, translation, smart fields, agent dashboard) is foundational, not a 2026 add-on. Without it, agents have no cross-module intelligence.
+- **Per-module agent catalogs**: each Phase 1 module ships with named built-in agents (e.g. IS-FIN ships with reconciliation agent, invoice-matching agent; IS-HR ships with onboarding agent, BPJS-compliance agent). These are part of the module, not optional extras.
+
+### Moat
+Indonesian-domain agents — tuned for BPJS rates, DJP CoreTax XML, e-Faktur edge cases, Dukcapil NIK validation — cannot be replicated by Western ERP vendors. This catalog is a durable competitive advantage.
+
+### What Does Not Change
+- Brand positioning: "the corporate OS for Indonesia" — unchanged
+- UI language: agents are invisible infrastructure; the product says "done" not "my agent did this"
+- Data residency: no agent reasoning traces or tool calls leave Indonesia
+
+### Consequences
+- Every table in every module needs agent-compatible audit columns (`acted_by_agent_id`, `reversible_until`, `reverse_action_id`)
+- Schema Specialist must include these columns in every migration from v1.0 onward
+- IS-AGENT must be fully operational before any other module ships agent functionality
+- ADR-001 addendum: agents are tenant-scoped — no cross-tenant agent access, ever
+
+---
+
+## ADR-010: Agent-Era Pricing Model
+
+**Date:** 2026-05-16  
+**Supersedes:** ADR-008 (pricing structure remains; this addendum covers the agent capacity layer)
+
+### Decision
+Add an **agent capacity** dimension to the pricing model. Human seats and agent capacity are priced separately. Outcome-based pricing available for high-value automated flows.
+
+### Context
+Per-seat pricing breaks when agents do work. A team of 5 humans running 50 concurrent agent workloads pays the same as a team of 5 doing everything manually — which is wrong in both directions: undercharges for value delivered, and misaligns incentives.
+
+### Model
+
+| Dimension | Unit | Rintis (Free) | Tumbuh | Pilih | Penuh |
+|---|---|---|---|---|---|
+| Human seats | per user/month | 5 | Rp 149.000 | Unlimited | Custom |
+| Agent slots | concurrent agents | 1 (built-in only) | 3 | 10 per module | Custom |
+| Outcome fees | per qualified event | — | — | Optional add-on | Negotiated |
+
+**Agent slot:** one slot = one concurrently running autonomous agent. Built-in module agents (reconciliation, onboarding, etc.) consume slots from the tenant's pool. Custom agents (configured by the tenant) consume additional slots.
+
+**Outcome fee examples** (optional, for Pilih and Penuh):
+- Per invoice auto-reconciled: Rp 500
+- Per BPJS filing prepared and submitted: Rp 2.000
+- Per payroll run closed without human intervention: Rp 5.000
+
+Outcome fees are opt-in — tenants choose the flows they want outcome-priced. All flows work without outcome pricing; the fee is for premium SLA guarantees on those flows.
+
+### Rationale
+- Human seats still matter: humans review, approve, configure. Not eliminated.
+- Agent slots reflect infrastructure cost honestly: more concurrent agents = more compute, more LLM tokens, more event bus load.
+- Outcome fees align IS revenue with customer value — the better the agent, the more IS earns. Incentive is correct.
+- Free tier gets 1 slot (built-in agents only) — agents are a differentiator visible from day one, not a paid-only wall.
+
+### Consequences
+- Billing system must track agent slot utilization in real time
+- Mandate system (IS-AGENT-002) enforces slot limits — agents cannot spawn beyond tenant's pool
+- Outcome fee tracking requires reliable event attribution (which run caused which outcome)
+
+---
+
 ## Open Items (not yet decided, require follow-up)
 
 | Item | Owner | Deadline |
 |---|---|---|
-| Brand name (Korta / Lantora / Nusa / Inti / other) | Founder | Before domain purchase |
+| ~~Brand name~~ | ~~Founder~~ | **Decided: Kantr** |
 | Exact v1.0 module scope (which Phase 1 modules ship at launch vs. trickle) | Founder + first design partners | Week 2 |
 | Design partner pipeline (3–5 confirmed companies) | Founder | Week 1 |
 | PT entity confirmation + NPWP | Legal | Before design partner contracts |
 | Apple Developer Program enrollment | Founder | Week 2 |
 | BPJS API access application | BD | Start immediately — 3–6 month lead time |
 | DJP CoreTax / PajakExpress partnership | BD | Start immediately |
+| Per-module built-in agent catalog (which agents ship with each Phase 1 module) | Founder + Spec Writer agent | Before v1.0 spec freeze |
