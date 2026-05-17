@@ -7,8 +7,10 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
-    "dev:roadmap": "turbo dev --filter=@kantr/roadmap",
-    "build:roadmap": "turbo build --filter=@kantr/roadmap"
+    "dev:roadmap":   "turbo dev --filter=@kantr/roadmap",
+    "build:roadmap": "turbo build --filter=@kantr/roadmap",
+    "dev:marketing":   "turbo dev --filter=@kantr/marketing",
+    "build:marketing": "turbo build --filter=@kantr/marketing"
   },
   "devDependencies": {
     "turbo": "^2.3.3"
