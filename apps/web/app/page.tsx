@@ -25,7 +25,7 @@ const SIDEBAR: SidebarSection[] = [
     label: 'Kolaborasi',
     items: [
       { label: 'Chat', href: '/chat' },
-      { label: 'Proyek', soon: true },
+      { label: 'Proyek', href: '/proj' },
       { label: 'Email', soon: true },
       { label: 'Telepon', soon: true },
     ],
