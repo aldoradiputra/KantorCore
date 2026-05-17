@@ -16,6 +16,7 @@ import {
 import { users } from '@kantr/db'
 import { eq } from 'drizzle-orm'
 import { getDb } from './db'
+import { provisionTenant, validateSlug } from './tenants'
 
 /** Returns the current session+user, or null when unauthenticated. */
 export async function getCurrentSession(): Promise<SessionWithUser | null> {
@@ -29,15 +30,22 @@ export async function signUp(input: {
   email: string
   name: string
   password: string
+  workspaceName: string
+  workspaceSlug: string
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const email = input.email.trim().toLowerCase()
   const name = input.name.trim()
+  const workspaceSlug = input.workspaceSlug.trim().toLowerCase()
+  const workspaceName = input.workspaceName.trim()
 
   if (!email || !email.includes('@')) return { ok: false, error: 'Email tidak valid.' }
   if (name.length < 2) return { ok: false, error: 'Nama terlalu pendek.' }
   if (input.password.length < 10) {
     return { ok: false, error: 'Kata sandi minimal 10 karakter.' }
   }
+  if (workspaceName.length < 2) return { ok: false, error: 'Nama workspace terlalu pendek.' }
+  const slugError = validateSlug(workspaceSlug)
+  if (slugError) return { ok: false, error: slugError }
 
   const db = getDb()
   const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1)
@@ -48,6 +56,17 @@ export async function signUp(input: {
     .insert(users)
     .values({ email, name, passwordHash })
     .returning({ id: users.id })
+
+  const provision = await provisionTenant({
+    userId: user.id,
+    name: workspaceName,
+    slug: workspaceSlug,
+  })
+  if (!provision.ok) {
+    // User row was created but tenant failed — surface the slug error to the
+    // form. The user can retry sign-in and call /api/provision separately.
+    return { ok: false, error: provision.error }
+  }
 
   const session = await createSession(db, user.id)
   await setSessionCookie(session.token, session.expiresAt)

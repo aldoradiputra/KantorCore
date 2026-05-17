@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { Button } from '@kantr/ui'
 import { getCurrentSession } from '../lib/auth'
+import { getCurrentTenant } from '../lib/tenants'
 import SignOutButton from './SignOutButton'
 
 type SidebarSection = {
@@ -52,6 +53,12 @@ export default async function Home() {
   const session = await getCurrentSession()
   if (!session) redirect('/sign-in')
   const { user } = session
+  const ctx = await getCurrentTenant(user.id)
+  // Legacy users created before tenant provisioning shipped will land here
+  // with no workspace; routing them to /sign-up to provision one is cleaner
+  // than building a recovery UI for what should be an empty set.
+  if (!ctx) redirect('/sign-up')
+  const { tenant, membership } = ctx
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -79,7 +86,20 @@ export default async function Home() {
             Kantr
           </span>
           <span style={{ font: '500 13px/1 var(--font-sans)', color: 'var(--fg-3)' }}>
-            · app
+            · {tenant.name}
+          </span>
+          <span
+            style={{
+              font: '600 9px/1 var(--font-sans)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.8px',
+              color: 'var(--fg-3)',
+              border: '1px solid var(--border)',
+              padding: '3px 5px',
+              borderRadius: 4,
+            }}
+          >
+            {membership.role}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)' }}>

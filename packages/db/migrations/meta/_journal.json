@@ -15,6 +15,13 @@
       "when": 1779012230093,
       "tag": "0001_great_giant_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779012912745,
+      "tag": "0002_neat_hawkeye",
+      "breakpoints": true
     }
   ]
 }
