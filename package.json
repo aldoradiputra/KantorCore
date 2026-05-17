@@ -12,7 +12,9 @@
     "dev:marketing":   "turbo dev --filter=@kantr/marketing",
     "build:marketing": "turbo build --filter=@kantr/marketing",
     "dev:docs":   "turbo dev --filter=@kantr/docs",
-    "build:docs": "turbo build --filter=@kantr/docs"
+    "build:docs": "turbo build --filter=@kantr/docs",
+    "dev:web":   "turbo dev --filter=@kantr/web",
+    "build:web": "turbo build --filter=@kantr/web"
   },
   "devDependencies": {
     "turbo": "^2.3.3"
