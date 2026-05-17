@@ -1,0 +1,12 @@
+{
+  "name": "@kantr/design-tokens",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Locked design tokens (color, type, spacing, radius, shadow, motion) for all Kantr surfaces.",
+  "exports": {
+    "./tokens.css": "./tokens.css"
+  },
+  "files": [
+    "tokens.css"
+  ]
+}

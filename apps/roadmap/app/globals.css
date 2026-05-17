@@ -1,22 +1,15 @@
+/* Design tokens come from @kantr/design-tokens (imported in layout.tsx).
+   This file holds only roadmap-specific resets and animations. */
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-:root {
-  --navy: #1A2B5A;
-  --indigo: #3B4FC4;
-  --indigo-light: #E8EBFA;
-  --teal: #0F7B6C;
-  --teal-light: #E0F4F1;
-  --amber: #B35A00;
-  --amber-light: #FEF3E2;
-  --slate: #4A4A5A;
-  --muted: #6B7280;
-  --border: #E5E7EB;
-  --bg: #F8F9FB;
-  --white: #FFFFFF;
-  --radius: 8px;
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--fg-2);
 }
-
-html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--slate); }
 
 /* scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
