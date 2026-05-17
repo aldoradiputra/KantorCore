@@ -10,9 +10,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@kantr/auth": "workspace:*",
+    "@kantr/db": "workspace:*",
     "@kantr/design-tokens": "workspace:*",
     "@kantr/types": "workspace:*",
     "@kantr/ui": "workspace:*",
+    "drizzle-orm": "^0.36.0",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

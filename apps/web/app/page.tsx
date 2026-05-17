@@ -1,4 +1,7 @@
+import { redirect } from 'next/navigation'
 import { Button } from '@kantr/ui'
+import { getCurrentSession } from '../lib/auth'
+import SignOutButton from './SignOutButton'
 
 type SidebarSection = {
   label: string
@@ -36,7 +39,20 @@ const SIDEBAR: SidebarSection[] = [
   },
 ]
 
-export default function Home() {
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]!.toUpperCase())
+    .join('')
+}
+
+export default async function Home() {
+  const session = await getCurrentSession()
+  if (!session) redirect('/sign-in')
+  const { user } = session
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Topbar */}
@@ -95,6 +111,7 @@ export default function Home() {
             </span>
           </div>
           <div
+            title={user.email}
             style={{
               width: 28,
               height: 28,
@@ -107,8 +124,9 @@ export default function Home() {
               font: '600 11px/1 var(--font-sans)',
             }}
           >
-            AS
+            {initials(user.name)}
           </div>
+          <SignOutButton />
         </div>
       </header>
 
@@ -195,10 +213,10 @@ export default function Home() {
             <span className="t-micro" style={{ display: 'block', marginBottom: 'var(--s-4)' }}>
               Pre-alpha · v0.0.1
             </span>
-            <h2 style={{ marginBottom: 'var(--s-3)' }}>Sistem sedang dibangun.</h2>
+            <h2 style={{ marginBottom: 'var(--s-3)' }}>Halo, {user.name.split(' ')[0]}.</h2>
             <p style={{ marginBottom: 'var(--s-5)', color: 'var(--fg-3)' }}>
-              Cangkang aplikasi sudah siap. Autentikasi, multi-tenan, dan modul
-              pertama sedang dipasang. Lihat roadmap untuk progres.
+              Anda sudah masuk. Cangkang aplikasi siap; modul pertama (Chat, lalu
+              Proyek) sedang dipasang. Lihat roadmap untuk progres.
             </p>
             <div style={{ display: 'flex', gap: 'var(--s-3)', justifyContent: 'center' }}>
               <a href="https://roadmap.kantr.com">
