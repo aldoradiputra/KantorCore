@@ -168,6 +168,8 @@ See `PRODUCT_CLAUDE.md` for all architectural decisions. Key ones relevant to th
 | IS-AGENT | Agent Runtime Platform | 1 |
 | IS-FLOW | Workflow Automation (no-code, deterministic) | 1 |
 | IS-AIP | AI Platform | 1 |
+| IS-TEL | Telephony (Telkom SIP Trunk, softphone, PBX) | 1 |
+| IS-MIG | Migration & Data Import (Accurate, Zahir, Excel) | 1 |
 | IS-CHAT-FED | Inter-Tenant Chat Federation | 2 |
 | IS-PUB | Publishing | 3 |
 | IS-B2B | B2B Commerce | 3 |
