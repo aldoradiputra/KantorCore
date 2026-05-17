@@ -20,6 +20,9 @@ importers:
       '@kantr/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@kantr/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       next:
         specifier: ^15.0.0
         version: 15.5.18(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -43,6 +46,18 @@ importers:
   packages/design-tokens: {}
 
   packages/types: {}
+
+  packages/ui:
+    devDependencies:
+      '@types/react':
+        specifier: ^19
+        version: 19.2.14
+      react:
+        specifier: ^19.0.0
+        version: 19.2.6
+      typescript:
+        specifier: ^5
+        version: 5.9.3
 
 packages:
 
