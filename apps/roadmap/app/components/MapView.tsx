@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
-import type { Node } from '../types'
+import type { Node } from '@kantr/types'
 
 const PHASE_COLORS: Record<number, string> = {
   0: '#1A2B5A',

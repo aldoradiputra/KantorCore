@@ -1,6 +1,6 @@
 'use client'
 
-import type { Node } from '../types'
+import type { Node } from '@kantr/types'
 import { DOCS_MAP } from '../docs-content'
 
 const PHASE_LABELS: Record<number, string> = {

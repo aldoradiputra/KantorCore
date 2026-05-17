@@ -12,7 +12,7 @@ import DocsView from './DocsView'
 import LearnView from './LearnView'
 import SearchModal from './SearchModal'
 import { LocaleContext, type Locale } from '../locale-context'
-import type { Node } from '../types'
+import type { Node } from '@kantr/types'
 
 export type { Node }
 

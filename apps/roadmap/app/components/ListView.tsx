@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { Node } from '../types'
+import type { Node } from '@kantr/types'
 
 const PHASE_COLOR: Record<number, string> = {
   1: 'var(--indigo)',

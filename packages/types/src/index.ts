@@ -1,3 +1,10 @@
+/**
+ * @kantr/types — shared TypeScript types across the Kantr monorepo.
+ *
+ * Add types here when they are shared by more than one app/package.
+ * App-specific types should live in the app that owns them.
+ */
+
 export type Node = {
   id: string
   label: string

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { DOCS_MAP } from '../docs-content'
 import { useLocale, STRINGS } from '../locale-context'
-import type { Node } from '../types'
+import type { Node } from '@kantr/types'
 
 type DocResult  = { kind: 'doc';  id: string; title: string; breadcrumb: string }
 type NodeResult = { kind: 'node'; id: string; label: string; phase: number; code?: string }

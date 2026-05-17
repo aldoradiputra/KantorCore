@@ -17,6 +17,9 @@ importers:
       '@kantr/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
+      '@kantr/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       next:
         specifier: ^15.0.0
         version: 15.5.18(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -38,6 +41,8 @@ importers:
         version: 5.9.3
 
   packages/design-tokens: {}
+
+  packages/types: {}
 
 packages:
 
