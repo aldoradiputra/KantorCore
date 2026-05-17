@@ -6,14 +6,14 @@ import SignOutButton from './SignOutButton'
 
 type SidebarSection = {
   label: string
-  items: { label: string; soon?: boolean; active?: boolean }[]
+  items: { label: string; href?: string; soon?: boolean; active?: boolean }[]
 }
 
 const SIDEBAR: SidebarSection[] = [
   {
     label: 'Operasi',
     items: [
-      { label: 'Beranda', active: true },
+      { label: 'Beranda', href: '/', active: true },
       { label: 'HR & Karyawan', soon: true },
       { label: 'Keuangan', soon: true },
       { label: 'Penjualan', soon: true },
@@ -24,7 +24,7 @@ const SIDEBAR: SidebarSection[] = [
   {
     label: 'Kolaborasi',
     items: [
-      { label: 'Chat', soon: true },
+      { label: 'Chat', href: '/chat' },
       { label: 'Proyek', soon: true },
       { label: 'Email', soon: true },
       { label: 'Telepon', soon: true },
@@ -168,41 +168,51 @@ export default async function Home() {
               <div className="t-micro" style={{ marginBottom: 'var(--s-3)' }}>
                 {section.label}
               </div>
-              {section.items.map((item) => (
-                <div
-                  key={item.label}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    height: 32,
-                    padding: '0 8px',
-                    borderRadius: 'var(--r-sm)',
-                    font: '500 13px/1 var(--font-sans)',
-                    color: item.active ? 'var(--indigo)' : item.soon ? 'var(--fg-3)' : 'var(--fg-2)',
-                    background: item.active ? 'var(--indigo-light)' : 'transparent',
-                    cursor: item.soon ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  <span>{item.label}</span>
-                  {item.soon && (
-                    <span
-                      style={{
-                        font: '700 9px/1 var(--font-sans)',
-                        letterSpacing: '0.8px',
-                        textTransform: 'uppercase',
-                        color: 'var(--fg-3)',
-                        background: 'var(--bg)',
-                        border: '1px solid var(--border)',
-                        padding: '3px 5px',
-                        borderRadius: 4,
-                      }}
-                    >
-                      Soon
-                    </span>
-                  )}
-                </div>
-              ))}
+              {section.items.map((item) => {
+                const rowStyle: React.CSSProperties = {
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  height: 32,
+                  padding: '0 8px',
+                  borderRadius: 'var(--r-sm)',
+                  font: '500 13px/1 var(--font-sans)',
+                  color: item.active ? 'var(--indigo)' : item.soon ? 'var(--fg-3)' : 'var(--fg-2)',
+                  background: item.active ? 'var(--indigo-light)' : 'transparent',
+                  cursor: item.soon ? 'not-allowed' : 'pointer',
+                  textDecoration: 'none',
+                }
+                const inner = (
+                  <>
+                    <span>{item.label}</span>
+                    {item.soon && (
+                      <span
+                        style={{
+                          font: '700 9px/1 var(--font-sans)',
+                          letterSpacing: '0.8px',
+                          textTransform: 'uppercase',
+                          color: 'var(--fg-3)',
+                          background: 'var(--bg)',
+                          border: '1px solid var(--border)',
+                          padding: '3px 5px',
+                          borderRadius: 4,
+                        }}
+                      >
+                        Soon
+                      </span>
+                    )}
+                  </>
+                )
+                return item.href && !item.soon ? (
+                  <a key={item.label} href={item.href} style={rowStyle}>
+                    {inner}
+                  </a>
+                ) : (
+                  <div key={item.label} style={rowStyle}>
+                    {inner}
+                  </div>
+                )
+              })}
             </div>
           ))}
         </nav>

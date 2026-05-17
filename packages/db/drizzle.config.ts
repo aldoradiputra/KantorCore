@@ -10,7 +10,7 @@ export default {
   out: './migrations',
   dialect: 'postgresql',
   dbCredentials: { url: databaseUrl },
-  schemaFilter: ['platform'],
+  schemaFilter: ['platform', 'chat'],
   verbose: true,
   strict: true,
 } satisfies Config
