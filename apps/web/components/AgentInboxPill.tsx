@@ -37,7 +37,7 @@ export default function AgentInboxPill() {
 
   return (
     <Link
-      href="/agent"
+      href="/agent/inbox"
       title="Agent Inbox"
       style={{
         display: 'flex',

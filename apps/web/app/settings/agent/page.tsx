@@ -4,6 +4,7 @@ import { getCurrentSession } from '../../../lib/auth'
 import { getCurrentTenant } from '../../../lib/tenants'
 import { listTools } from '../../../lib/agent'
 import { SettingsShell } from '../SettingsShell'
+import SeedToolsButton from './SeedToolsButton'
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
@@ -28,7 +29,10 @@ export default async function AgentSettingsPage() {
           </p>
 
           <div style={{ marginBottom: 'var(--s-5)' }}>
-            <div className="t-micro" style={{ marginBottom: 'var(--s-3)' }}>Tool Registry ({tools.length} tool terdaftar)</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--s-3)' }}>
+              <div className="t-micro">Tool Registry ({tools.length} tool terdaftar)</div>
+              {isAdmin && <SeedToolsButton disabled={false} />}
+            </div>
             {tools.length === 0 ? (
               <p style={{ font: '400 13px/1.5 var(--font-sans)', color: 'var(--fg-3)' }}>
                 Belum ada tool terdaftar. Tool didaftarkan oleh modul saat diaktifkan.
