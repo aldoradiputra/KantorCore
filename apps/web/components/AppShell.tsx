@@ -2,6 +2,8 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import React from 'react'
 import LiveBadge from './LiveBadge'
+import NotificationBell from './NotificationBell'
+import KeyboardChrome, { SearchTrigger } from './KeyboardChrome'
 
 // ── Icon primitives ───────────────────────────────────────────
 function IconHome() {
@@ -27,15 +29,6 @@ function IconProj() {
       <rect x="1" y="1" width="5" height="16" rx="1" />
       <rect x="8" y="1" width="5" height="11" rx="1" />
       <rect x="15" y="1" width="2" height="7" rx="1" />
-    </svg>
-  )
-}
-
-function IconBell() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8 1a5 5 0 0 1 5 5v3l1.5 1.5H1.5L3 9V6a5 5 0 0 1 5-5z" />
-      <path d="M6.5 13.5a1.5 1.5 0 0 0 3 0" />
     </svg>
   )
 }
@@ -67,6 +60,7 @@ export function AppShell({
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <KeyboardChrome />
       {/* ── Top bar ── */}
       <header
         style={{
@@ -110,58 +104,11 @@ export function AppShell({
 
         {/* Right: search · live · bell · avatar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-2)', flexShrink: 0 }}>
-          {/* Search */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '5px 10px',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--r-md)',
-              background: 'var(--bg)',
-              font: '500 12px/1 var(--font-sans)',
-              color: 'var(--fg-3)',
-              cursor: 'pointer',
-            }}
-          >
-            <span>Cari</span>
-            <kbd
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 10,
-                padding: '2px 5px',
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                borderRadius: 3,
-                color: 'var(--fg-3)',
-              }}
-            >
-              ⌘K
-            </kbd>
-          </div>
+          <SearchTrigger />
 
           <LiveBadge />
 
-          {/* Bell */}
-          <button
-            type="button"
-            title="Notifikasi"
-            style={{
-              width: 32,
-              height: 32,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'transparent',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--r-sm)',
-              color: 'var(--fg-3)',
-              cursor: 'pointer',
-            }}
-          >
-            <IconBell />
-          </button>
+          <NotificationBell />
 
           {/* User avatar */}
           <div

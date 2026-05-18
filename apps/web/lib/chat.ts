@@ -2,6 +2,7 @@ import 'server-only'
 import { and, asc, eq } from 'drizzle-orm'
 import { channels, messages, users, type Channel, type Message } from '@kantr/db'
 import { getDb } from './db'
+import { publish } from './chat-pubsub'
 
 const SLUG_RE = /^[a-z0-9]([a-z0-9-]{1,62}[a-z0-9])?$/
 
@@ -124,5 +125,14 @@ export async function sendMessage(input: {
       body,
     })
     .returning()
+
+  // Hydrate author once for fan-out so subscribers don't each round-trip.
+  const [author] = await db
+    .select({ id: users.id, name: users.name, email: users.email })
+    .from(users)
+    .where(eq(users.id, input.authorId))
+    .limit(1)
+  if (author) publish(input.channelId, { message, author })
+
   return { ok: true, message }
 }

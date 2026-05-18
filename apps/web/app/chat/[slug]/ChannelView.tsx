@@ -14,7 +14,7 @@ interface SerializedMessage {
   author: { id: string; name: string; email: string }
 }
 
-const POLL_INTERVAL_MS = 5000
+const POLL_FALLBACK_MS = 8000
 
 export default function ChannelView({
   channel,
@@ -41,19 +41,59 @@ export default function ChannelView({
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
   }, [messages.length])
 
-  // Refresh-based "realtime" until IS-CHAT Phase 12 ships WebSocket transport.
+  // SSE-based realtime. Falls back to slow polling if the EventSource errors
+  // out (e.g. behind a proxy that buffers `text/event-stream`).
   useEffect(() => {
-    const id = setInterval(async () => {
+    let cancelled = false
+    let pollTimer: ReturnType<typeof setInterval> | null = null
+
+    async function refresh() {
       try {
         const res = await fetch(`/api/chat/channels/${channel.id}/messages`)
-        if (!res.ok) return
+        if (!res.ok || cancelled) return
         const data = (await res.json()) as { messages: SerializedMessage[] }
         setMessages(data.messages)
       } catch {
         /* network blip — next tick will retry */
       }
-    }, POLL_INTERVAL_MS)
-    return () => clearInterval(id)
+    }
+
+    const es = new EventSource(`/api/chat/channels/${channel.id}/stream`)
+    es.onmessage = (evt) => {
+      try {
+        const data = JSON.parse(evt.data) as
+          | { type: 'ready' }
+          | ({ type: 'message' } & SerializedMessage)
+        if (data.type === 'message') {
+          setMessages((prev) => {
+            if (prev.some((m) => m.message.id === data.message.id)) return prev
+            return [
+              ...prev,
+              {
+                message: { ...data.message, createdAt: String(data.message.createdAt) },
+                author: data.author,
+              },
+            ]
+          })
+        }
+      } catch {
+        /* malformed payload — ignore */
+      }
+    }
+    es.onerror = () => {
+      // Proxy or network rejected SSE. Drop into slow polling so the user
+      // still sees new messages, just not instantly.
+      es.close()
+      if (pollTimer == null) {
+        pollTimer = setInterval(refresh, POLL_FALLBACK_MS)
+      }
+    }
+
+    return () => {
+      cancelled = true
+      es.close()
+      if (pollTimer) clearInterval(pollTimer)
+    }
   }, [channel.id])
 
   async function onSubmit(e: React.FormEvent) {
