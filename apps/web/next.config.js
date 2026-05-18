@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@kantr/ui'],
+  transpilePackages: ['@kantorcore/ui'],
   serverExternalPackages: ['@node-rs/argon2', 'postgres'],
   webpack: (config, { isServer }) => {
     if (isServer) {
