@@ -4,6 +4,7 @@ import React from 'react'
 import LiveBadge from './LiveBadge'
 import NotificationBell from './NotificationBell'
 import KeyboardChrome, { SearchTrigger } from './KeyboardChrome'
+import AgentInboxPill from './AgentInboxPill'
 
 // ── Icon primitives ───────────────────────────────────────────
 function IconHome() {
@@ -33,13 +34,25 @@ function IconProj() {
   )
 }
 
+function IconAgent() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="5" width="14" height="11" rx="2" />
+      <path d="M6 5V4a3 3 0 0 1 6 0v1" />
+      <circle cx="6.5" cy="10.5" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="11.5" cy="10.5" r="1.2" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
 // ── Module list ───────────────────────────────────────────────
-type ModuleId = 'home' | 'chat' | 'proj'
+type ModuleId = 'home' | 'chat' | 'proj' | 'agent'
 
 const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon: () => React.ReactElement }[] = [
   { id: 'home', label: 'Beranda', href: '/', hotkey: 'G H', Icon: IconHome },
   { id: 'chat', label: 'Chat', href: '/chat', hotkey: 'G C', Icon: IconChat },
   { id: 'proj', label: 'Proyek', href: '/proj', hotkey: 'G P', Icon: IconProj },
+  { id: 'agent', label: 'Agent', href: '/agent', hotkey: 'G A', Icon: IconAgent },
 ]
 
 // ── Shell ─────────────────────────────────────────────────────
@@ -107,6 +120,8 @@ export function AppShell({
           <SearchTrigger />
 
           <LiveBadge />
+
+          <AgentInboxPill />
 
           <NotificationBell />
 

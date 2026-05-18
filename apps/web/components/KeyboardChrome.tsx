@@ -102,6 +102,9 @@ export default function KeyboardChrome() {
         } else if (k === 'p') {
           leaderAt.current = 0
           router.push('/proj')
+        } else if (k === 'a') {
+          leaderAt.current = 0
+          router.push('/agent')
         }
       }
     }
