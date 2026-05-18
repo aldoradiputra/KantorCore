@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuthedContext } from '../../../../lib/requireSession'
 import { listMembers, createInvite, type InviteRole } from '../../../../lib/settings'
+import { recordAudit, auditMetaFromRequest } from '../../../../lib/audit'
 
 const VALID_ROLES: InviteRole[] = ['admin', 'member']
 
@@ -32,5 +33,16 @@ export async function POST(req: Request) {
     role,
   })
   if (!created.ok) return NextResponse.json({ error: created.error }, { status: 400 })
+
+  await recordAudit({
+    tenantId: result.ctx.tenant.id,
+    actorUserId: result.ctx.session.user.id,
+    action: 'member.invite_create',
+    resourceType: 'invite',
+    resourceId: created.invite.id,
+    payload: { email: created.invite.email, role: created.invite.role },
+    ...auditMetaFromRequest(req),
+  })
+
   return NextResponse.json({ invite: created.invite }, { status: 201 })
 }

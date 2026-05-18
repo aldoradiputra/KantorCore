@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuthedContext } from '../../../../../../lib/requireSession'
 import { getAgent, grantMandate, listMandates } from '../../../../../../lib/agent'
+import { recordAudit, auditMetaFromRequest } from '../../../../../../lib/audit'
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const result = await requireAuthedContext()
@@ -34,5 +35,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     grantedBy: result.ctx.session.user.id,
   })
   if (!granted.ok) return NextResponse.json({ error: granted.error }, { status: 400 })
+
+  await recordAudit({
+    tenantId: result.ctx.tenant.id,
+    actorUserId: result.ctx.session.user.id,
+    action: 'agent.mandate_grant',
+    resourceType: 'agent',
+    resourceId: agentId,
+    payload: { toolName },
+    ...auditMetaFromRequest(req),
+  })
+
   return NextResponse.json({ mandate: granted.mandate }, { status: 201 })
 }

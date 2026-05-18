@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuthedContext } from '../../../../lib/requireSession'
 import { listAgents, createAgent } from '../../../../lib/agent'
+import { recordAudit, auditMetaFromRequest } from '../../../../lib/audit'
 
 export async function GET() {
   const result = await requireAuthedContext()
@@ -31,5 +32,16 @@ export async function POST(req: Request) {
     systemPrompt: typeof systemPrompt === 'string' ? systemPrompt : undefined,
   })
   if (!created.ok) return NextResponse.json({ error: created.error }, { status: 400 })
+
+  await recordAudit({
+    tenantId: result.ctx.tenant.id,
+    actorUserId: result.ctx.session.user.id,
+    action: 'agent.create',
+    resourceType: 'agent',
+    resourceId: created.agent.id,
+    payload: { name: created.agent.name, model: created.agent.model },
+    ...auditMetaFromRequest(req),
+  })
+
   return NextResponse.json({ agent: created.agent }, { status: 201 })
 }
