@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['@kantr/ui'],
+  transpilePackages: ['@kantorcore/ui'],
 }
 module.exports = nextConfig
