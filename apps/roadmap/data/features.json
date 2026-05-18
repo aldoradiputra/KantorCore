@@ -6981,6 +6981,17 @@
       "milestone": "v1.0"
     },
     {
+      "id": "crm-meth-letter-chips",
+      "label": "Methodology Letter Chips",
+      "description": "Each methodology metric is rendered as the capital letter of its abbreviation in a colored chip — e.g. MEDDPICC shows M·E·D·D·P·I·C·C as eight chips on every deal card, kanban tile, and list row. Chip color encodes the per-field rating using the token-driven status scale: red (--red) for 1, amber (--amber) for 2, slate (--fg-3) for 3 (or unset), teal (--teal) for 4, indigo (--indigo) for 5. Same convention applies to BANT (B·A·N·T), SPICED (S·P·I·C·E·D), PEATS (P·E·A·T·S), and any custom methodology — the builder picks the first letter of each field name; on collision (e.g. two D's in MEDDPICC) the builder allows a manual override (D₁/D₂) or a two-letter chip. Empty chips render as outlined grey to signal 'not yet rated'. Hover surfaces field name, current rating, and coaching hint. Clicking a chip opens the inline rating editor. This visual is the at-a-glance qualification health indicator: a deal showing 'green-heavy' chips is well-qualified; a row of grey/red is a deal at risk. Shown alongside the numeric completion % and weighted score from IS-CRM-METH-005.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "crm-methodology",
+      "code": "IS-CRM-METH-007",
+      "milestone": "v1.0"
+    },
+    {
       "id": "fin-cashflow",
       "label": "Cashflow & Payment Schedule",
       "description": "Forward-looking cash calendar: every expected money-in and money-out event plotted on a timeline with running balance projection. Pulls real data from AR (invoice due dates), AP (vendor bills), IS-PAY (payroll runs), IS-PURCH (scheduled PO payments), IS-SUB (recurring revenue), and IS-COMP (tax obligation deadlines). Side-by-side with day-to-day finance work — not a separate report.",

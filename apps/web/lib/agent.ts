@@ -10,25 +10,25 @@ import {
   type Mandate,
   type AgentTool,
 } from '@kantorcore/db'
-import { getDb } from './db'
+import { withTenant } from './db'
 
 // ── Agents ────────────────────────────────────────────────────────────────────
 
 export async function listAgents(tenantId: string): Promise<Agent[]> {
-  return getDb()
-    .select()
-    .from(agents)
-    .where(eq(agents.tenantId, tenantId))
-    .orderBy(agents.createdAt)
+  return withTenant(tenantId, (tx) =>
+    tx.select().from(agents).where(eq(agents.tenantId, tenantId)).orderBy(agents.createdAt),
+  )
 }
 
 export async function getAgent(tenantId: string, agentId: string): Promise<Agent | null> {
-  const rows = await getDb()
-    .select()
-    .from(agents)
-    .where(and(eq(agents.tenantId, tenantId), eq(agents.id, agentId)))
-    .limit(1)
-  return rows[0] ?? null
+  return withTenant(tenantId, async (tx) => {
+    const rows = await tx
+      .select()
+      .from(agents)
+      .where(and(eq(agents.tenantId, tenantId), eq(agents.id, agentId)))
+      .limit(1)
+    return rows[0] ?? null
+  })
 }
 
 export async function createAgent(input: {
@@ -43,18 +43,20 @@ export async function createAgent(input: {
   if (!name) return { ok: false, error: 'Nama agen wajib diisi.' }
   if (name.length > 128) return { ok: false, error: 'Nama terlalu panjang (maks 128 karakter).' }
 
-  const [a] = await getDb()
-    .insert(agents)
-    .values({
-      tenantId: input.tenantId,
-      name,
-      description: input.description?.trim() || null,
-      model: input.model ?? 'claude-sonnet-4-6',
-      systemPrompt: input.systemPrompt?.trim() || null,
-      createdBy: input.userId,
-    })
-    .returning()
-  return { ok: true, agent: a }
+  return withTenant(input.tenantId, async (tx) => {
+    const [a] = await tx
+      .insert(agents)
+      .values({
+        tenantId: input.tenantId,
+        name,
+        description: input.description?.trim() || null,
+        model: input.model ?? 'claude-sonnet-4-6',
+        systemPrompt: input.systemPrompt?.trim() || null,
+        createdBy: input.userId,
+      })
+      .returning()
+    return { ok: true, agent: a } as const
+  })
 }
 
 export async function updateAgent(
@@ -62,32 +64,36 @@ export async function updateAgent(
   agentId: string,
   patch: { name?: string; description?: string; model?: string; systemPrompt?: string; enabled?: boolean },
 ): Promise<{ ok: true; agent: Agent } | { ok: false; error: string }> {
-  const rows = await getDb()
-    .update(agents)
-    .set({
-      ...(patch.name !== undefined ? { name: patch.name.trim() } : {}),
-      ...(patch.description !== undefined ? { description: patch.description.trim() || null } : {}),
-      ...(patch.model !== undefined ? { model: patch.model } : {}),
-      ...(patch.systemPrompt !== undefined
-        ? { systemPrompt: patch.systemPrompt.trim() || null }
-        : {}),
-      ...(patch.enabled !== undefined ? { enabled: patch.enabled } : {}),
-      updatedAt: new Date(),
-    })
-    .where(and(eq(agents.tenantId, tenantId), eq(agents.id, agentId)))
-    .returning()
-  if (!rows[0]) return { ok: false, error: 'Agen tidak ditemukan.' }
-  return { ok: true, agent: rows[0] }
+  return withTenant(tenantId, async (tx) => {
+    const rows = await tx
+      .update(agents)
+      .set({
+        ...(patch.name !== undefined ? { name: patch.name.trim() } : {}),
+        ...(patch.description !== undefined ? { description: patch.description.trim() || null } : {}),
+        ...(patch.model !== undefined ? { model: patch.model } : {}),
+        ...(patch.systemPrompt !== undefined
+          ? { systemPrompt: patch.systemPrompt.trim() || null }
+          : {}),
+        ...(patch.enabled !== undefined ? { enabled: patch.enabled } : {}),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(agents.tenantId, tenantId), eq(agents.id, agentId)))
+      .returning()
+    if (!rows[0]) return { ok: false, error: 'Agen tidak ditemukan.' } as const
+    return { ok: true, agent: rows[0] } as const
+  })
 }
 
 // ── Mandates ──────────────────────────────────────────────────────────────────
 
 export async function listMandates(tenantId: string, agentId: string): Promise<Mandate[]> {
-  return getDb()
-    .select()
-    .from(mandates)
-    .where(and(eq(mandates.tenantId, tenantId), eq(mandates.agentId, agentId)))
-    .orderBy(mandates.grantedAt)
+  return withTenant(tenantId, (tx) =>
+    tx
+      .select()
+      .from(mandates)
+      .where(and(eq(mandates.tenantId, tenantId), eq(mandates.agentId, agentId)))
+      .orderBy(mandates.grantedAt),
+  )
 }
 
 export async function grantMandate(input: {
@@ -97,19 +103,21 @@ export async function grantMandate(input: {
   grantedBy: string
   scope?: Record<string, unknown>
 }): Promise<{ ok: true; mandate: Mandate } | { ok: false; error: string }> {
-  const [m] = await getDb()
-    .insert(mandates)
-    .values({
-      tenantId: input.tenantId,
-      agentId: input.agentId,
-      toolName: input.toolName,
-      grantedBy: input.grantedBy,
-      scope: input.scope ?? {},
-    })
-    .onConflictDoNothing()
-    .returning()
-  if (!m) return { ok: false, error: 'Mandat sudah ada.' }
-  return { ok: true, mandate: m }
+  return withTenant(input.tenantId, async (tx) => {
+    const [m] = await tx
+      .insert(mandates)
+      .values({
+        tenantId: input.tenantId,
+        agentId: input.agentId,
+        toolName: input.toolName,
+        grantedBy: input.grantedBy,
+        scope: input.scope ?? {},
+      })
+      .onConflictDoNothing()
+      .returning()
+    if (!m) return { ok: false, error: 'Mandat sudah ada.' } as const
+    return { ok: true, mandate: m } as const
+  })
 }
 
 export async function revokeMandate(
@@ -117,25 +125,29 @@ export async function revokeMandate(
   agentId: string,
   toolName: string,
 ): Promise<void> {
-  await getDb()
-    .delete(mandates)
-    .where(
-      and(
-        eq(mandates.tenantId, tenantId),
-        eq(mandates.agentId, agentId),
-        eq(mandates.toolName, toolName),
+  await withTenant(tenantId, (tx) =>
+    tx
+      .delete(mandates)
+      .where(
+        and(
+          eq(mandates.tenantId, tenantId),
+          eq(mandates.agentId, agentId),
+          eq(mandates.toolName, toolName),
+        ),
       ),
-    )
+  )
 }
 
 // ── Tools ─────────────────────────────────────────────────────────────────────
 
 export async function listTools(tenantId: string): Promise<AgentTool[]> {
-  return getDb()
-    .select()
-    .from(tools)
-    .where(and(eq(tools.tenantId, tenantId), eq(tools.enabled, true)))
-    .orderBy(tools.module, tools.name)
+  return withTenant(tenantId, (tx) =>
+    tx
+      .select()
+      .from(tools)
+      .where(and(eq(tools.tenantId, tenantId), eq(tools.enabled, true)))
+      .orderBy(tools.module, tools.name),
+  )
 }
 
 /**
@@ -158,19 +170,21 @@ const DEFAULT_TOOLS: ReadonlyArray<{
 
 /** Idempotent — re-running on a populated tenant is a no-op. */
 export async function seedDefaultTools(tenantId: string): Promise<number> {
-  const result = await getDb()
-    .insert(tools)
-    .values(
-      DEFAULT_TOOLS.map((t) => ({
-        tenantId,
-        name: t.name,
-        module: t.module,
-        description: t.description,
-      })),
-    )
-    .onConflictDoNothing()
-    .returning({ id: tools.id })
-  return result.length
+  return withTenant(tenantId, async (tx) => {
+    const result = await tx
+      .insert(tools)
+      .values(
+        DEFAULT_TOOLS.map((t) => ({
+          tenantId,
+          name: t.name,
+          module: t.module,
+          description: t.description,
+        })),
+      )
+      .onConflictDoNothing()
+      .returning({ id: tools.id })
+    return result.length
+  })
 }
 
 // ── Runs ──────────────────────────────────────────────────────────────────────
@@ -180,12 +194,14 @@ export async function listRuns(
   agentId: string,
   limit = 50,
 ): Promise<AgentRun[]> {
-  return getDb()
-    .select()
-    .from(agentRuns)
-    .where(and(eq(agentRuns.tenantId, tenantId), eq(agentRuns.agentId, agentId)))
-    .orderBy(desc(agentRuns.createdAt))
-    .limit(limit)
+  return withTenant(tenantId, (tx) =>
+    tx
+      .select()
+      .from(agentRuns)
+      .where(and(eq(agentRuns.tenantId, tenantId), eq(agentRuns.agentId, agentId)))
+      .orderBy(desc(agentRuns.createdAt))
+      .limit(limit),
+  )
 }
 
 export interface ActiveRunRow {
@@ -195,34 +211,38 @@ export interface ActiveRunRow {
 
 /** Lists active runs (pending + running + awaiting_approval) across all agents. */
 export async function listActiveRuns(tenantId: string): Promise<ActiveRunRow[]> {
-  return getDb()
-    .select({
-      run: agentRuns,
-      agent: { id: agents.id, name: agents.name },
-    })
-    .from(agentRuns)
-    .innerJoin(agents, eq(agentRuns.agentId, agents.id))
-    .where(
-      and(
-        eq(agentRuns.tenantId, tenantId),
-        inArray(agentRuns.status, ['pending', 'running', 'awaiting_approval']),
-      ),
-    )
-    .orderBy(desc(agentRuns.createdAt))
-    .limit(100)
+  return withTenant(tenantId, (tx) =>
+    tx
+      .select({
+        run: agentRuns,
+        agent: { id: agents.id, name: agents.name },
+      })
+      .from(agentRuns)
+      .innerJoin(agents, eq(agentRuns.agentId, agents.id))
+      .where(
+        and(
+          eq(agentRuns.tenantId, tenantId),
+          inArray(agentRuns.status, ['pending', 'running', 'awaiting_approval']),
+        ),
+      )
+      .orderBy(desc(agentRuns.createdAt))
+      .limit(100),
+  )
 }
 
 /** Counts active runs (pending + running + awaiting_approval) for inbox badge. */
 export async function countActiveRuns(tenantId: string): Promise<number> {
-  const rows = await getDb()
-    .select({ id: agentRuns.id })
-    .from(agentRuns)
-    .where(
-      and(
-        eq(agentRuns.tenantId, tenantId),
-        inArray(agentRuns.status, ['pending', 'running', 'awaiting_approval']),
-      ),
-    )
-    .limit(99)
-  return rows.length
+  return withTenant(tenantId, async (tx) => {
+    const rows = await tx
+      .select({ id: agentRuns.id })
+      .from(agentRuns)
+      .where(
+        and(
+          eq(agentRuns.tenantId, tenantId),
+          inArray(agentRuns.status, ['pending', 'running', 'awaiting_approval']),
+        ),
+      )
+      .limit(99)
+    return rows.length
+  })
 }

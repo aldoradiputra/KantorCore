@@ -1,7 +1,7 @@
 import 'server-only'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, sql } from 'drizzle-orm'
 import { tenants, memberships, type Tenant, type Membership } from '@kantorcore/db'
-import { getDb } from './db'
+import { getDb, withUser } from './db'
 
 const SLUG_RE = /^[a-z0-9]([a-z0-9-]{1,62}[a-z0-9])?$/
 const RESERVED_SLUGS = new Set([
@@ -48,12 +48,15 @@ export async function provisionTenant(input: {
   if (existing.length > 0) return { ok: false, error: 'Slug sudah dipakai.' }
 
   // Tenant + owner membership in one transaction so a partial signup never
-  // leaves an ownerless workspace.
+  // leaves an ownerless workspace. The membership insert needs `app.tenant_id`
+  // set to the newly-created tenant so RLS's WITH CHECK clause passes.
   const result = await db.transaction(async (tx) => {
     const [tenant] = await tx
       .insert(tenants)
       .values({ slug, name, status: 'active' })
       .returning()
+
+    await tx.execute(sql.raw(`SET LOCAL app.tenant_id = '${tenant.id}'`))
 
     const [membership] = await tx
       .insert(memberships)
@@ -73,13 +76,14 @@ export async function provisionTenant(input: {
 export async function getCurrentTenant(userId: string): Promise<
   { tenant: Tenant; membership: Membership } | null
 > {
-  const db = getDb()
-  const rows = await db
-    .select({ tenant: tenants, membership: memberships })
-    .from(memberships)
-    .innerJoin(tenants, eq(memberships.tenantId, tenants.id))
-    .where(eq(memberships.userId, userId))
-    .orderBy(memberships.createdAt)
-    .limit(1)
-  return rows[0] ?? null
+  return withUser(userId, async (tx) => {
+    const rows = await tx
+      .select({ tenant: tenants, membership: memberships })
+      .from(memberships)
+      .innerJoin(tenants, eq(memberships.tenantId, tenants.id))
+      .where(eq(memberships.userId, userId))
+      .orderBy(memberships.createdAt)
+      .limit(1)
+    return rows[0] ?? null
+  })
 }

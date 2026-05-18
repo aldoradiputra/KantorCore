@@ -1,6 +1,6 @@
 import { requireAuthedContext } from '../../../../../../lib/requireSession'
 import { subscribe } from '../../../../../../lib/chat-pubsub'
-import { getDb } from '../../../../../../lib/db'
+import { withTenant } from '../../../../../../lib/db'
 import { channels } from '@kantorcore/db'
 import { and, eq } from 'drizzle-orm'
 
@@ -18,11 +18,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params
 
   // Tenant ownership check before opening the stream.
-  const rows = await getDb()
-    .select({ id: channels.id })
-    .from(channels)
-    .where(and(eq(channels.id, id), eq(channels.tenantId, result.ctx.tenant.id)))
-    .limit(1)
+  const rows = await withTenant(result.ctx.tenant.id, (tx) =>
+    tx
+      .select({ id: channels.id })
+      .from(channels)
+      .where(and(eq(channels.id, id), eq(channels.tenantId, result.ctx.tenant.id)))
+      .limit(1),
+  )
   if (rows.length === 0) {
     return new Response('Not found.', { status: 404 })
   }

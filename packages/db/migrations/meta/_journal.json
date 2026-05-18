@@ -50,6 +50,20 @@
       "when": 1779116940096,
       "tag": "0006_amused_serpent_society",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1779120782926,
+      "tag": "0007_audit_log",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1779120900000,
+      "tag": "0008_rls_tenant_isolation",
+      "breakpoints": true
     }
   ]
 }

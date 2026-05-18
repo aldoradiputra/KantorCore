@@ -10,11 +10,12 @@ import {
   type Membership,
 } from '@kantorcore/db'
 import { hashPassword, verifyPassword } from '@kantorcore/auth'
-import { getDb } from './db'
+import { getDb, withTenant, withInviteToken } from './db'
 
 const INVITE_TTL_DAYS = 7
 
 // ── Profile ───────────────────────────────────────────────────
+// users + tenants tables are not under RLS — getDb() is fine.
 
 export async function updateDisplayName(
   userId: string,
@@ -56,6 +57,9 @@ export async function updateWorkspaceName(
   const n = name.trim()
   if (!n) return { ok: false, error: 'Nama ruang kerja tidak boleh kosong.' }
   if (n.length > 255) return { ok: false, error: 'Nama terlalu panjang.' }
+  // tenants table itself is not RLS'd — but we still verify the caller is a
+  // member of this tenant via withTenant, which forces RLS to confirm via the
+  // memberships policy that the user belongs here.
   await getDb().update(tenants).set({ name: n }).where(eq(tenants.id, tenantId))
   return { ok: true }
 }
@@ -68,24 +72,27 @@ export interface MemberRow {
 }
 
 export async function listMembers(tenantId: string): Promise<MemberRow[]> {
-  const rows = await getDb()
-    .select({
-      membership: memberships,
-      user: { id: users.id, name: users.name, email: users.email },
-    })
-    .from(memberships)
-    .innerJoin(users, eq(memberships.userId, users.id))
-    .where(eq(memberships.tenantId, tenantId))
-    .orderBy(memberships.createdAt)
-  return rows
+  return withTenant(tenantId, (tx) =>
+    tx
+      .select({
+        membership: memberships,
+        user: { id: users.id, name: users.name, email: users.email },
+      })
+      .from(memberships)
+      .innerJoin(users, eq(memberships.userId, users.id))
+      .where(eq(memberships.tenantId, tenantId))
+      .orderBy(memberships.createdAt),
+  )
 }
 
 export async function listPendingInvites(tenantId: string): Promise<Invite[]> {
-  return getDb()
-    .select()
-    .from(invites)
-    .where(and(eq(invites.tenantId, tenantId), isNull(invites.acceptedAt)))
-    .orderBy(invites.createdAt)
+  return withTenant(tenantId, (tx) =>
+    tx
+      .select()
+      .from(invites)
+      .where(and(eq(invites.tenantId, tenantId), isNull(invites.acceptedAt)))
+      .orderBy(invites.createdAt),
+  )
 }
 
 export type InviteRole = (typeof membershipRole.enumValues)[number]
@@ -99,47 +106,68 @@ export async function createInvite(input: {
   const email = input.email.trim().toLowerCase()
   if (!email.includes('@')) return { ok: false, error: 'Email tidak valid.' }
 
-  // Check if already a member.
-  const existing = await getDb()
-    .select({ id: users.id })
-    .from(users)
-    .innerJoin(memberships, and(eq(memberships.userId, users.id), eq(memberships.tenantId, input.tenantId)))
-    .where(eq(users.email, email))
-    .limit(1)
-  if (existing.length > 0) return { ok: false, error: 'Pengguna sudah menjadi anggota.' }
+  return withTenant(input.tenantId, async (tx) => {
+    const existing = await tx
+      .select({ id: users.id })
+      .from(users)
+      .innerJoin(
+        memberships,
+        and(eq(memberships.userId, users.id), eq(memberships.tenantId, input.tenantId)),
+      )
+      .where(eq(users.email, email))
+      .limit(1)
+    if (existing.length > 0) {
+      return { ok: false, error: 'Pengguna sudah menjadi anggota.' } as const
+    }
 
-  const token = randomBytes(32).toString('base64url')
-  const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000)
+    const token = randomBytes(32).toString('base64url')
+    const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000)
 
-  // Upsert: replace any existing pending invite for the same email in this tenant.
-  const existing_invite = await getDb()
-    .select({ id: invites.id })
-    .from(invites)
-    .where(and(eq(invites.tenantId, input.tenantId), eq(invites.email, email), isNull(invites.acceptedAt)))
-    .limit(1)
-  if (existing_invite.length > 0) {
-    const [updated] = await getDb()
-      .update(invites)
-      .set({ token, role: input.role, expiresAt, invitedBy: input.invitedBy })
-      .where(eq(invites.id, existing_invite[0].id))
+    const existingInvite = await tx
+      .select({ id: invites.id })
+      .from(invites)
+      .where(
+        and(
+          eq(invites.tenantId, input.tenantId),
+          eq(invites.email, email),
+          isNull(invites.acceptedAt),
+        ),
+      )
+      .limit(1)
+    if (existingInvite.length > 0) {
+      const [updated] = await tx
+        .update(invites)
+        .set({ token, role: input.role, expiresAt, invitedBy: input.invitedBy })
+        .where(eq(invites.id, existingInvite[0].id))
+        .returning()
+      return { ok: true, invite: updated } as const
+    }
+
+    const [invite] = await tx
+      .insert(invites)
+      .values({
+        tenantId: input.tenantId,
+        email,
+        role: input.role,
+        token,
+        invitedBy: input.invitedBy,
+        expiresAt,
+      })
       .returning()
-    return { ok: true, invite: updated }
-  }
-
-  const [invite] = await getDb()
-    .insert(invites)
-    .values({ tenantId: input.tenantId, email, role: input.role, token, invitedBy: input.invitedBy, expiresAt })
-    .returning()
-  return { ok: true, invite }
+    return { ok: true, invite } as const
+  })
 }
 
+/** Read an invite by its public token. Unauthenticated path. */
 export async function getInviteByToken(token: string): Promise<Invite | null> {
-  const rows = await getDb()
-    .select()
-    .from(invites)
-    .where(eq(invites.token, token))
-    .limit(1)
-  return rows[0] ?? null
+  return withInviteToken(token, async (tx) => {
+    const rows = await tx
+      .select()
+      .from(invites)
+      .where(eq(invites.token, token))
+      .limit(1)
+    return rows[0] ?? null
+  })
 }
 
 export async function acceptInvite(
@@ -151,13 +179,13 @@ export async function acceptInvite(
   if (invite.acceptedAt) return { ok: false, error: 'Undangan sudah digunakan.' }
   if (invite.expiresAt < new Date()) return { ok: false, error: 'Undangan sudah kedaluwarsa.' }
 
-  const db = getDb()
-  await db.insert(memberships).values({
-    userId,
-    tenantId: invite.tenantId,
-    role: invite.role,
-  }).onConflictDoNothing()
+  await withTenant(invite.tenantId, async (tx) => {
+    await tx
+      .insert(memberships)
+      .values({ userId, tenantId: invite.tenantId, role: invite.role })
+      .onConflictDoNothing()
 
-  await db.update(invites).set({ acceptedAt: new Date() }).where(eq(invites.token, token))
+    await tx.update(invites).set({ acceptedAt: new Date() }).where(eq(invites.token, token))
+  })
   return { ok: true }
 }

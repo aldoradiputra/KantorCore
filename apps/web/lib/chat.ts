@@ -1,7 +1,7 @@
 import 'server-only'
 import { and, asc, eq } from 'drizzle-orm'
 import { channels, messages, users, type Channel, type Message } from '@kantorcore/db'
-import { getDb } from './db'
+import { withTenant } from './db'
 import { publish } from './chat-pubsub'
 
 const SLUG_RE = /^[a-z0-9]([a-z0-9-]{1,62}[a-z0-9])?$/
@@ -18,23 +18,23 @@ export function validateChannelSlug(slug: string): string | null {
 
 /** Lists every channel in the tenant. DM filtering layers in once we ship DMs. */
 export async function listChannels(tenantId: string): Promise<Channel[]> {
-  return getDb()
-    .select()
-    .from(channels)
-    .where(eq(channels.tenantId, tenantId))
-    .orderBy(asc(channels.createdAt))
+  return withTenant(tenantId, (tx) =>
+    tx.select().from(channels).where(eq(channels.tenantId, tenantId)).orderBy(asc(channels.createdAt)),
+  )
 }
 
 export async function getChannelBySlug(
   tenantId: string,
   slug: string,
 ): Promise<Channel | null> {
-  const rows = await getDb()
-    .select()
-    .from(channels)
-    .where(and(eq(channels.tenantId, tenantId), eq(channels.slug, slug)))
-    .limit(1)
-  return rows[0] ?? null
+  return withTenant(tenantId, async (tx) => {
+    const rows = await tx
+      .select()
+      .from(channels)
+      .where(and(eq(channels.tenantId, tenantId), eq(channels.slug, slug)))
+      .limit(1)
+    return rows[0] ?? null
+  })
 }
 
 export async function createChannel(input: {
@@ -51,26 +51,27 @@ export async function createChannel(input: {
   if (slugError) return { ok: false, error: slugError }
   if (name.length < 2) return { ok: false, error: 'Nama kanal terlalu pendek.' }
 
-  const db = getDb()
-  const existing = await db
-    .select({ id: channels.id })
-    .from(channels)
-    .where(and(eq(channels.tenantId, input.tenantId), eq(channels.slug, slug)))
-    .limit(1)
-  if (existing.length > 0) return { ok: false, error: 'Slug kanal sudah dipakai.' }
+  return withTenant(input.tenantId, async (tx) => {
+    const existing = await tx
+      .select({ id: channels.id })
+      .from(channels)
+      .where(and(eq(channels.tenantId, input.tenantId), eq(channels.slug, slug)))
+      .limit(1)
+    if (existing.length > 0) return { ok: false, error: 'Slug kanal sudah dipakai.' } as const
 
-  const [channel] = await db
-    .insert(channels)
-    .values({
-      tenantId: input.tenantId,
-      slug,
-      name,
-      description: input.description?.trim() || null,
-      createdBy: input.userId,
-      kind: 'public',
-    })
-    .returning()
-  return { ok: true, channel }
+    const [channel] = await tx
+      .insert(channels)
+      .values({
+        tenantId: input.tenantId,
+        slug,
+        name,
+        description: input.description?.trim() || null,
+        createdBy: input.userId,
+        kind: 'public',
+      })
+      .returning()
+    return { ok: true, channel } as const
+  })
 }
 
 export interface MessageWithAuthor {
@@ -83,17 +84,18 @@ export async function listMessages(input: {
   channelId: string
   limit?: number
 }): Promise<MessageWithAuthor[]> {
-  const rows = await getDb()
-    .select({
-      message: messages,
-      author: { id: users.id, name: users.name, email: users.email },
-    })
-    .from(messages)
-    .innerJoin(users, eq(messages.authorId, users.id))
-    .where(and(eq(messages.tenantId, input.tenantId), eq(messages.channelId, input.channelId)))
-    .orderBy(asc(messages.createdAt))
-    .limit(input.limit ?? 200)
-  return rows
+  return withTenant(input.tenantId, (tx) =>
+    tx
+      .select({
+        message: messages,
+        author: { id: users.id, name: users.name, email: users.email },
+      })
+      .from(messages)
+      .innerJoin(users, eq(messages.authorId, users.id))
+      .where(and(eq(messages.tenantId, input.tenantId), eq(messages.channelId, input.channelId)))
+      .orderBy(asc(messages.createdAt))
+      .limit(input.limit ?? 200),
+  )
 }
 
 export async function sendMessage(input: {
@@ -106,33 +108,37 @@ export async function sendMessage(input: {
   if (!body) return { ok: false, error: 'Pesan kosong.' }
   if (body.length > 4000) return { ok: false, error: 'Pesan terlalu panjang (maks 4000 karakter).' }
 
-  const db = getDb()
+  const result = await withTenant(input.tenantId, async (tx) => {
+    const channel = await tx
+      .select({ id: channels.id })
+      .from(channels)
+      .where(and(eq(channels.id, input.channelId), eq(channels.tenantId, input.tenantId)))
+      .limit(1)
+    if (channel.length === 0) {
+      return { ok: false, error: 'Kanal tidak ditemukan.' } as const
+    }
 
-  // Defense in depth: verify the channel belongs to the tenant before writing.
-  const channel = await db
-    .select({ id: channels.id })
-    .from(channels)
-    .where(and(eq(channels.id, input.channelId), eq(channels.tenantId, input.tenantId)))
-    .limit(1)
-  if (channel.length === 0) return { ok: false, error: 'Kanal tidak ditemukan.' }
+    const [message] = await tx
+      .insert(messages)
+      .values({
+        tenantId: input.tenantId,
+        channelId: input.channelId,
+        authorId: input.authorId,
+        body,
+      })
+      .returning()
 
-  const [message] = await db
-    .insert(messages)
-    .values({
-      tenantId: input.tenantId,
-      channelId: input.channelId,
-      authorId: input.authorId,
-      body,
-    })
-    .returning()
+    const [author] = await tx
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .where(eq(users.id, input.authorId))
+      .limit(1)
+    return { ok: true as const, message, author }
+  })
 
-  // Hydrate author once for fan-out so subscribers don't each round-trip.
-  const [author] = await db
-    .select({ id: users.id, name: users.name, email: users.email })
-    .from(users)
-    .where(eq(users.id, input.authorId))
-    .limit(1)
-  if (author) publish(input.channelId, { message, author })
-
-  return { ok: true, message }
+  if (result.ok) {
+    if (result.author) publish(input.channelId, { message: result.message, author: result.author })
+    return { ok: true, message: result.message }
+  }
+  return result
 }
