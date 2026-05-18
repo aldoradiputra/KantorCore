@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import type { Agent } from '@kantr/db'
+import type { Agent } from '@kantorcore/db'
 import { AppShell } from '../../components/AppShell'
 
 const RUN_STATUS_LABEL: Record<string, string> = {

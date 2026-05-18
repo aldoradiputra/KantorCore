@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@kantr/ui'
+import { Button } from '@kantorcore/ui'
 import { AuthShell, Field, ErrorBanner } from '../../components/AuthLayout'
 
 function slugify(input: string): string {
@@ -57,7 +57,7 @@ export default function SignUpForm() {
   return (
     <AuthShell
       title="Daftar"
-      subtitle="Buat akun Kantr dan workspace untuk perusahaan Anda."
+      subtitle="Buat akun KantorCore dan workspace untuk perusahaan Anda."
       footerHref="/sign-in"
       footerText="Sudah punya akun? Masuk"
     >
@@ -100,7 +100,7 @@ export default function SignUpForm() {
             value={workspaceSlug}
             onChange={onSlugChange}
             required
-            hint={workspaceSlug ? `${workspaceSlug}.kantr.com` : 'Akan menjadi subdomain Anda.'}
+            hint={workspaceSlug ? `${workspaceSlug}.kantorcore.com` : 'Akan menjadi subdomain Anda.'}
           />
         </div>
 

@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import '@kantr/design-tokens/tokens.css'
+import '@kantorcore/design-tokens/tokens.css'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Kantr — Sistem operasi korporat untuk Indonesia',
+  title: 'KantorCore — Sistem operasi korporat untuk Indonesia',
   description:
     'Sesederhana Odoo, sekuat SAP. Terintegrasi natif dengan BPJS, DJP CoreTax, QRIS, dan PrivyID.',
 }

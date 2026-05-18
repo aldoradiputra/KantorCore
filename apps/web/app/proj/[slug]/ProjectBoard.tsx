@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { Project, IssueStatus, IssuePriority } from '@kantr/db'
+import type { Project, IssueStatus, IssuePriority } from '@kantorcore/db'
 
 interface IssueRow {
   issue: {

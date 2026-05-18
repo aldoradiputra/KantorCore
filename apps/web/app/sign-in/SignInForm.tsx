@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@kantr/ui'
+import { Button } from '@kantorcore/ui'
 import { AuthShell, Field, ErrorBanner } from '../../components/AuthLayout'
 
 export default function SignInForm() {
@@ -29,7 +29,7 @@ export default function SignInForm() {
   }
 
   return (
-    <AuthShell title="Masuk" subtitle="Akses workspace Kantr Anda." footerHref="/sign-up" footerText="Belum punya akun? Daftar">
+    <AuthShell title="Masuk" subtitle="Akses workspace KantorCore Anda." footerHref="/sign-up" footerText="Belum punya akun? Daftar">
       <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-4)' }}>
         {error && <ErrorBanner>{error}</ErrorBanner>}
         <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" required />

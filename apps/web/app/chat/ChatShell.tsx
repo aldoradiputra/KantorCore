@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import type { Channel } from '@kantr/db'
+import type { Channel } from '@kantorcore/db'
 import { AppShell } from '../../components/AppShell'
 
 function ChatSidebar({

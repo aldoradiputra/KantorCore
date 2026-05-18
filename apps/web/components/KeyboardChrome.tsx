@@ -21,7 +21,7 @@ function isTypingTarget(el: EventTarget | null): boolean {
   return false
 }
 
-const OPEN_PALETTE_EVENT = 'kantr:open-palette'
+const OPEN_PALETTE_EVENT = 'kantorcore:open-palette'
 
 export function SearchTrigger() {
   function open() {

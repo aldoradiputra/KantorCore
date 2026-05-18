@@ -450,7 +450,7 @@ The tiers above are **defaults**. Sales is authorized to deviate within these bo
 **Date:** 2026-05-16
 
 ### Decision
-Kantr is built agent-native from the ground up. Agents are first-class actors alongside users — not a Phase 2 feature bolted on. This is an internal architectural decision, not a brand or positioning claim. The product is still "the corporate OS for Indonesia."
+KantorCore is built agent-native from the ground up. Agents are first-class actors alongside users — not a Phase 2 feature bolted on. This is an internal architectural decision, not a brand or positioning claim. The product is still "the corporate OS for Indonesia."
 
 ### Context
 Enterprise software is shifting from tools users operate to systems that do the work on users' behalf. Building agent support as a retrofit (Odoo's current path) creates brittle, inconsistent experiences. Starting native means every module is designed from day one to be driven by both humans and agents without special cases.
@@ -541,7 +541,7 @@ Outcome fees are opt-in — tenants choose the flows they want outcome-priced. A
 
 | Item | Owner | Deadline |
 |---|---|---|
-| ~~Brand name~~ | ~~Founder~~ | **Decided: Kantr** |
+| ~~Brand name~~ | ~~Founder~~ | **Decided: KantorCore** |
 | Exact v1.0 module scope (which Phase 1 modules ship at launch vs. trickle) | Founder + first design partners | Week 2 |
 | Design partner pipeline (3–5 confirmed companies) | Founder | Week 1 |
 | PT entity confirmation + NPWP | Legal | Before design partner contracts |

@@ -2,8 +2,8 @@ import 'server-only'
 import { NextResponse } from 'next/server'
 import { getCurrentSession } from './auth'
 import { getCurrentTenant } from './tenants'
-import type { SessionWithUser } from '@kantr/auth/server'
-import type { Tenant, Membership } from '@kantr/db'
+import type { SessionWithUser } from '@kantorcore/auth/server'
+import type { Tenant, Membership } from '@kantorcore/db'
 
 export interface AuthedContext {
   session: SessionWithUser

@@ -36,7 +36,7 @@ export const tenantStatus = pgEnum('tenant_status', [
 /**
  * The root identity for every customer workspace. Every other tenant-scoped
  * table joins to this via tenant_id. Slug becomes the subdomain at signup
- * (e.g. `pt-maju-jaya` → pt-maju-jaya.kantr.com).
+ * (e.g. `pt-maju-jaya` → pt-maju-jaya.kantorcore.com).
  */
 export const tenants = platform.table('tenants', {
   id: uuid('id').primaryKey().defaultRandom(),

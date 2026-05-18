@@ -44,7 +44,7 @@ export function AuthShell({
               marginBottom: 'var(--s-3)',
             }}
           >
-            Kantr
+            KantorCore
           </div>
           <h1 style={{ margin: 0, marginBottom: 'var(--s-2)' }}>{title}</h1>
           <p style={{ margin: 0, color: 'var(--fg-3)', font: '400 13px/1.5 var(--font-sans)' }}>

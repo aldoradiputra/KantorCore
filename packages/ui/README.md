@@ -1,18 +1,18 @@
-# @kantr/ui
+# @kantorcore/ui
 
-Shared React components for Kantr apps.
+Shared React components for KantorCore apps.
 
 ## Usage
 
 ```tsx
-import { Button } from '@kantr/ui'
+import { Button } from '@kantorcore/ui'
 
 export default function Page() {
   return <Button variant="primary" size="md">Simpan</Button>
 }
 ```
 
-Consumers must also import `@kantr/design-tokens/tokens.css` in their root
+Consumers must also import `@kantorcore/design-tokens/tokens.css` in their root
 layout — components reference design token CSS variables (`--indigo`,
 `--r-md`, `--font-sans`, etc.) and assume they are defined.
 

@@ -38,7 +38,7 @@ export default async function AcceptInvitePage({
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: 'var(--s-5)' }}>
       <div style={{ width: '100%', maxWidth: 440, padding: 'var(--s-6)', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)' }}>
         <span style={{ font: '800 15px/1 var(--font-sans)', color: 'var(--navy)', letterSpacing: '-0.3px', display: 'block', marginBottom: 'var(--s-5)' }}>
-          Kantr
+          KantorCore
         </span>
         <h2 style={{ marginBottom: 'var(--s-2)' }}>Anda diundang</h2>
         <p style={{ font: '400 13px/1.5 var(--font-sans)', color: 'var(--fg-3)', marginBottom: 'var(--s-5)' }}>

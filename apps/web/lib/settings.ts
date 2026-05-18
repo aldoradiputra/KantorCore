@@ -8,8 +8,8 @@ import {
   membershipRole,
   type Invite,
   type Membership,
-} from '@kantr/db'
-import { hashPassword, verifyPassword } from '@kantr/auth'
+} from '@kantorcore/db'
+import { hashPassword, verifyPassword } from '@kantorcore/auth'
 import { getDb } from './db'
 
 const INVITE_TTL_DAYS = 7
@@ -52,7 +52,7 @@ export async function updateWorkspaceName(
   tenantId: string,
   name: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { tenants } = await import('@kantr/db')
+  const { tenants } = await import('@kantorcore/db')
   const n = name.trim()
   if (!n) return { ok: false, error: 'Nama ruang kerja tidak boleh kosong.' }
   if (n.length > 255) return { ok: false, error: 'Nama terlalu panjang.' }

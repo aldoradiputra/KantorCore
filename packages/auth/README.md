@@ -1,11 +1,11 @@
-# @kantr/auth
+# @kantorcore/auth
 
-Authentication primitives for Kantr. Two surfaces:
+Authentication primitives for KantorCore. Two surfaces:
 
 | Subpath | Safe in | Contents |
 |---|---|---|
-| `@kantr/auth` | Anywhere (client or server) | Pure functions: password hashing, token generation, cookie serialisation. No DB. |
-| `@kantr/auth/server` | Server only | DB-backed session lifecycle: `createSession`, `validateSessionToken`, `invalidateSession`, `invalidateAllUserSessions`. Takes a `@kantr/db` `Database` instance. |
+| `@kantorcore/auth` | Anywhere (client or server) | Pure functions: password hashing, token generation, cookie serialisation. No DB. |
+| `@kantorcore/auth/server` | Server only | DB-backed session lifecycle: `createSession`, `validateSessionToken`, `invalidateSession`, `invalidateAllUserSessions`. Takes a `@kantorcore/db` `Database` instance. |
 
 ## Usage
 
@@ -15,12 +15,12 @@ import {
   verifyPassword,
   SESSION_COOKIE_NAME,
   sessionCookieOptions,
-} from '@kantr/auth'
+} from '@kantorcore/auth'
 import {
   createSession,
   validateSessionToken,
   invalidateSession,
-} from '@kantr/auth/server'
+} from '@kantorcore/auth/server'
 
 // Sign-up
 const hash = await hashPassword(plainText)
@@ -54,7 +54,7 @@ const { user, session } = result
   packages. We use `@node-rs/argon2` directly — same underlying library oslo
   would have called.
 - **Lucia** is deprecated upstream (the author migrated to oslo).
-- **NextAuth/Auth.js** is heavy and OAuth-first; Kantr's primary login is
+- **NextAuth/Auth.js** is heavy and OAuth-first; KantorCore's primary login is
   email+password with MFA layered later.
 
 ## Roadmap

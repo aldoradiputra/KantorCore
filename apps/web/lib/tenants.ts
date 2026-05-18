@@ -1,6 +1,6 @@
 import 'server-only'
 import { eq, and } from 'drizzle-orm'
-import { tenants, memberships, type Tenant, type Membership } from '@kantr/db'
+import { tenants, memberships, type Tenant, type Membership } from '@kantorcore/db'
 import { getDb } from './db'
 
 const SLUG_RE = /^[a-z0-9]([a-z0-9-]{1,62}[a-z0-9])?$/

@@ -49,7 +49,7 @@ export const projects = proj.table(
       .references(() => tenants.id, { onDelete: 'cascade' }),
     slug: varchar('slug', { length: 64 }).notNull(),
     /**
-     * Short issue prefix (e.g. "KAN" for Kantr, "OPS" for Operations).
+     * Short issue prefix (e.g. "KAN" for KantorCore, "OPS" for Operations).
      * Combined with `issues.number` to form human-readable IDs: KAN-42.
      */
     key: varchar('key', { length: 8 }).notNull(),

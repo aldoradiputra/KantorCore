@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { Button } from '@kantr/ui'
+import { Button } from '@kantorcore/ui'
 import { getCurrentSession } from '../lib/auth'
 import { getCurrentTenant } from '../lib/tenants'
 import { AppShell } from '../components/AppShell'
@@ -110,12 +110,12 @@ export default async function Home() {
             Proyek) sedang dipasang. Lihat roadmap untuk progres.
           </p>
           <div style={{ display: 'flex', gap: 'var(--s-3)', justifyContent: 'center' }}>
-            <a href="https://roadmap.kantr.com">
+            <a href="https://roadmap.kantorcore.com">
               <Button variant="primary" size="md">
                 Lihat Roadmap
               </Button>
             </a>
-            <a href="https://kantr.com">
+            <a href="https://kantorcore.com">
               <Button variant="secondary" size="md">
                 Beranda
               </Button>

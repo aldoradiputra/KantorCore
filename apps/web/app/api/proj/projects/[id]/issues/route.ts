@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuthedContext } from '../../../../../../lib/requireSession'
 import { listIssues, createIssue } from '../../../../../../lib/proj'
-import type { IssuePriority } from '@kantr/db'
+import type { IssuePriority } from '@kantorcore/db'
 
 const PRIORITIES: ReadonlyArray<IssuePriority> = ['none', 'low', 'medium', 'high', 'urgent']
 

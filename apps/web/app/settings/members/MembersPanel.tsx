@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { Invite } from '@kantr/db'
+import type { Invite } from '@kantorcore/db'
 import type { MemberRow } from '../../../lib/settings'
 
 const ROLE_LABEL: Record<string, string> = {

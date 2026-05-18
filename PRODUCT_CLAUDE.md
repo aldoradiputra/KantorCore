@@ -483,8 +483,8 @@ A "vertical mode" is a named bundle of feature-flag defaults and module presets.
 
 | Layer | Who | What they own |
 |---|---|---|
-| Platform | Kantr internal | Product, compliance, API, pricing, quality |
-| Certified Partners | Accredited implementation firms | Deployment, configuration, training, vertical solutions on top of Kantr |
+| Platform | KantorCore internal | Product, compliance, API, pricing, quality |
+| Certified Partners | Accredited implementation firms | Deployment, configuration, training, vertical solutions on top of KantorCore |
 | Customer | Tenant | Data, workflows, extensions (IS-EXT, tenant-private only) |
 
 **Partner types for Indonesia:**
@@ -492,21 +492,21 @@ A "vertical mode" is a named bundle of feature-flag defaults and module presets.
 | Type | Role | Geography |
 |---|---|---|
 | Implementation | Deploy + configure + train | Nationwide, language-local |
-| Vertical solution | Build palm oil / construction / klinik accelerators on Kantr | Industry-specific |
-| Managed service | Operate Kantr for SMEs with no IT staff | Tier 2/3 cities |
-| Telco-bundled | Bundle Kantr with connectivity | Telkom, Indosat, XL distribution |
+| Vertical solution | Build palm oil / construction / klinik accelerators on KantorCore | Industry-specific |
+| Managed service | Operate KantorCore for SMEs with no IT staff | Tier 2/3 cities |
+| Telco-bundled | Bundle KantorCore with connectivity | Telkom, Indosat, XL distribution |
 | Gov-adjacent | Navigate BPJS, pajak, procurement compliance | Jakarta + regional |
 
 **What partners cannot do:**
 - Write code that runs inside tenant workspaces (no plugin marketplace, no IS-EXT cross-tenant distribution)
-- Re-sell Kantr without certification
+- Re-sell KantorCore without certification
 - Modify platform schema or core tools
-- White-label Kantr as their own product
+- White-label KantorCore as their own product
 
 **What partners can do:**
 - Build vertical accelerator configurations (COA presets, workflow templates, IS-TPL bundles)
 - Implement, customise, and support customers
-- Co-sell with Kantr AEs on enterprise deals
+- Co-sell with KantorCore AEs on enterprise deals
 - Surface in the IS-PARTNER directory so tenants can discover and engage them
 
 **Why partner-built modules (code) remain rejected:**
@@ -519,7 +519,7 @@ Quality dilutes fast across a partner network. An implementation partner's mista
 | Rintis (free) | Pure PLG, self-serve | Nobody — product sells itself |
 | Tumbuh | PLG + inside sales | Small inside team (Jakarta) |
 | Pilih | Partner-assisted, AE co-sell | AE + certified partner |
-| Penuh / Gov | Partner-led | Partner owns relationship; Kantr provides platform + agent layer |
+| Penuh / Gov | Partner-led | Partner owns relationship; KantorCore provides platform + agent layer |
 
 **Hiring sequence:**
 1. Phase 1: product only — self-serve, dogfooding, no sales headcount
@@ -1276,11 +1276,11 @@ IS-TRIG is the glue between IS-PLAT-EVT (events emitted) and IS-AGENT / IS-FLOW 
 - A partner directory inside the IS admin/marketing surface: certified firms, their specialisations, service regions, case studies
 - A certification programme: partners pass a technical exam, sign a quality agreement, and get a badge visible to tenants
 - A co-sell coordination tool: AEs log deals with partner attribution; partner gets notified of relevant inbound leads
-- A vertical accelerator library: partners contribute IS-TPL configuration bundles (COA presets, workflow templates, onboarding packs) under Kantr review and curation
+- A vertical accelerator library: partners contribute IS-TPL configuration bundles (COA presets, workflow templates, onboarding packs) under KantorCore review and curation
 
 **IS-PARTNER is not:**
 - An app store (no executable code from partners runs inside tenant workspaces)
-- A revenue-share marketplace (partners are paid by customers directly; Kantr takes no cut on services)
+- A revenue-share marketplace (partners are paid by customers directly; KantorCore takes no cut on services)
 - A lead-gen pay-per-click directory (certification is merit-based, not purchased)
 
 **Phase assignment:** Phase 2 (ships alongside IS-AUTH IdP and first enterprise-tier features). Reason: enterprise sales (pilih/penuh) require partner availability at the point of deal; having no directory makes AEs weaker in competitive deals.
@@ -1298,9 +1298,9 @@ Partners who build and publish an accelerator for one of these three get "Vertic
 
 **Date:** 2026-05-18
 
-**Context:** IS-AGENT-003 (MCP Server) is Phase 1 but internal-only — it exposes Kantr tools to agents running *inside* the platform. IS-MCP-PUB would open this surface to external AI agents (Claude, ChatGPT, custom LLMs) acting with tenant-granted OAuth scopes.
+**Context:** IS-AGENT-003 (MCP Server) is Phase 1 but internal-only — it exposes KantorCore tools to agents running *inside* the platform. IS-MCP-PUB would open this surface to external AI agents (Claude, ChatGPT, custom LLMs) acting with tenant-granted OAuth scopes.
 
-**Why this is a moat:** "Any AI agent built outside the unified semantic layer operates blind." If Kantr's MCP server is the authoritative interface to Indonesian corporate data, external agents that want to act on that data must go through Kantr. This makes Kantr the orchestration layer, not just the storage layer.
+**Why this is a moat:** "Any AI agent built outside the unified semantic layer operates blind." If KantorCore's MCP server is the authoritative interface to Indonesian corporate data, external agents that want to act on that data must go through KantorCore. This makes KantorCore the orchestration layer, not just the storage layer.
 
 **Decision deferred:** IS-MCP-PUB moves to Phase 2 planning, not Phase 1 build. Conditions that must be met first:
 1. At least 3 modules with stable, data-rich schemas in production (HR, Finance, one operational module)
