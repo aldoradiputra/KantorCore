@@ -64,6 +64,10 @@ function ChatSidebar({
           })}
         </div>
       )}
+      <div style={{ flex: 1 }} />
+      <Link href="/settings/chat" style={{ display: 'flex', alignItems: 'center', height: 28, padding: '0 8px', borderRadius: 'var(--r-sm)', font: '500 11px/1 var(--font-sans)', color: 'var(--fg-3)', textDecoration: 'none' }}>
+        ⚙ Pengaturan Chat
+      </Link>
     </div>
   )
 }

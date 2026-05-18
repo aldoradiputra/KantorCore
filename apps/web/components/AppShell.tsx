@@ -5,6 +5,7 @@ import LiveBadge from './LiveBadge'
 import NotificationBell from './NotificationBell'
 import KeyboardChrome, { SearchTrigger } from './KeyboardChrome'
 import AgentInboxPill from './AgentInboxPill'
+import UserAvatar from './UserAvatar'
 
 // ── Icon primitives ───────────────────────────────────────────
 function IconHome() {
@@ -125,25 +126,7 @@ export function AppShell({
 
           <NotificationBell />
 
-          {/* User avatar */}
-          <div
-            title={userEmail}
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: '50%',
-              background: 'var(--indigo)',
-              color: 'var(--white)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              font: '600 11px/1 var(--font-sans)',
-              flexShrink: 0,
-              cursor: 'default',
-            }}
-          >
-            {userInitials}
-          </div>
+          <UserAvatar initials={userInitials} email={userEmail} />
         </div>
       </header>
 
