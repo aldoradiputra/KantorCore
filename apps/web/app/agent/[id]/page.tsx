@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation'
 import { getCurrentSession } from '../../../lib/auth'
 import { getCurrentTenant } from '../../../lib/tenants'
-import { listAgents, getAgent, listMandates, listRuns } from '../../../lib/agent'
+import { listAgents, getAgent, listMandates, listRuns, listTools } from '../../../lib/agent'
 import { AgentShell } from '../AgentShell'
 import AgentDetail from './AgentDetail'
 
@@ -26,11 +26,12 @@ export default async function AgentDetailPage({
 
   const { id } = await params
 
-  const [a, agentList, agentMandates, runs] = await Promise.all([
+  const [a, agentList, agentMandates, runs, allTools] = await Promise.all([
     getAgent(ctx.tenant.id, id),
     listAgents(ctx.tenant.id),
     listMandates(ctx.tenant.id, id),
     listRuns(ctx.tenant.id, id, 50),
+    listTools(ctx.tenant.id),
   ])
 
   if (!a) notFound()
@@ -42,7 +43,7 @@ export default async function AgentDetailPage({
       tenantName={ctx.tenant.name}
       userInitials={initials(session.user.name)}
     >
-      <AgentDetail agent={a} mandates={agentMandates} runs={runs} />
+      <AgentDetail agent={a} mandates={agentMandates} runs={runs} availableTools={allTools} />
     </AgentShell>
   )
 }

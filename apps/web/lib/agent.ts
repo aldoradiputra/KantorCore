@@ -138,6 +138,41 @@ export async function listTools(tenantId: string): Promise<AgentTool[]> {
     .orderBy(tools.module, tools.name)
 }
 
+/**
+ * Default tools available the moment a tenant is provisioned. Real modules
+ * will own their own registration once they need it; this baseline lets
+ * tenants experiment with mandates without waiting on module activation.
+ */
+const DEFAULT_TOOLS: ReadonlyArray<{
+  name: string
+  module: string
+  description: string
+}> = [
+  { name: 'chat.send_message', module: 'chat', description: 'Kirim pesan ke kanal chat.' },
+  { name: 'chat.list_channels', module: 'chat', description: 'Baca daftar kanal di ruang kerja.' },
+  { name: 'proj.create_issue', module: 'proj', description: 'Buat isu baru di sebuah proyek.' },
+  { name: 'proj.update_issue', module: 'proj', description: 'Ubah status, prioritas, atau assignee isu.' },
+  { name: 'proj.list_issues', module: 'proj', description: 'Cari isu berdasarkan filter.' },
+  { name: 'platform.search', module: 'platform', description: 'Cari entitas di ruang kerja.' },
+]
+
+/** Idempotent — re-running on a populated tenant is a no-op. */
+export async function seedDefaultTools(tenantId: string): Promise<number> {
+  const result = await getDb()
+    .insert(tools)
+    .values(
+      DEFAULT_TOOLS.map((t) => ({
+        tenantId,
+        name: t.name,
+        module: t.module,
+        description: t.description,
+      })),
+    )
+    .onConflictDoNothing()
+    .returning({ id: tools.id })
+  return result.length
+}
+
 // ── Runs ──────────────────────────────────────────────────────────────────────
 
 export async function listRuns(
@@ -151,6 +186,30 @@ export async function listRuns(
     .where(and(eq(agentRuns.tenantId, tenantId), eq(agentRuns.agentId, agentId)))
     .orderBy(desc(agentRuns.createdAt))
     .limit(limit)
+}
+
+export interface ActiveRunRow {
+  run: AgentRun
+  agent: { id: string; name: string }
+}
+
+/** Lists active runs (pending + running + awaiting_approval) across all agents. */
+export async function listActiveRuns(tenantId: string): Promise<ActiveRunRow[]> {
+  return getDb()
+    .select({
+      run: agentRuns,
+      agent: { id: agents.id, name: agents.name },
+    })
+    .from(agentRuns)
+    .innerJoin(agents, eq(agentRuns.agentId, agents.id))
+    .where(
+      and(
+        eq(agentRuns.tenantId, tenantId),
+        inArray(agentRuns.status, ['pending', 'running', 'awaiting_approval']),
+      ),
+    )
+    .orderBy(desc(agentRuns.createdAt))
+    .limit(100)
 }
 
 /** Counts active runs (pending + running + awaiting_approval) for inbox badge. */

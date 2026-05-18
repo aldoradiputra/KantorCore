@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import type { Agent, Mandate, AgentRun } from '@kantorcore/db'
+import { useMemo, useState } from 'react'
+import type { Agent, Mandate, AgentRun, AgentTool } from '@kantorcore/db'
 
 const RUN_STATUS_COLOR: Record<string, string> = {
   pending: 'var(--fg-3)',
@@ -25,15 +25,63 @@ const RUN_STATUS_LABEL: Record<string, string> = {
 
 export default function AgentDetail({
   agent: initial,
-  mandates,
+  mandates: initialMandates,
   runs,
+  availableTools,
 }: {
   agent: Agent
   mandates: Mandate[]
   runs: AgentRun[]
+  availableTools: AgentTool[]
 }) {
   const [agent, setAgent] = useState(initial)
   const [toggling, setToggling] = useState(false)
+  const [mandates, setMandates] = useState(initialMandates)
+  const [granting, setGranting] = useState(false)
+  const [revoking, setRevoking] = useState<string | null>(null)
+  const [mandateError, setMandateError] = useState<string | null>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
+
+  const grantableTools = useMemo(() => {
+    const granted = new Set(mandates.map((m) => m.toolName))
+    return availableTools.filter((t) => !granted.has(t.name))
+  }, [availableTools, mandates])
+
+  async function grantTool(toolName: string) {
+    if (granting) return
+    setGranting(true)
+    setMandateError(null)
+    const res = await fetch(`/api/agent/agents/${agent.id}/mandates`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ toolName }),
+    })
+    if (res.ok) {
+      const data = (await res.json()) as { mandate: Mandate }
+      setMandates((prev) => [...prev, data.mandate])
+      setPickerOpen(false)
+    } else {
+      const data = (await res.json().catch(() => ({}))) as { error?: string }
+      setMandateError(data.error ?? 'Gagal memberikan mandat.')
+    }
+    setGranting(false)
+  }
+
+  async function revokeTool(toolName: string) {
+    if (revoking) return
+    setRevoking(toolName)
+    setMandateError(null)
+    const res = await fetch(
+      `/api/agent/agents/${agent.id}/mandates/${encodeURIComponent(toolName)}`,
+      { method: 'DELETE' },
+    )
+    if (res.ok) {
+      setMandates((prev) => prev.filter((m) => m.toolName !== toolName))
+    } else {
+      setMandateError('Gagal mencabut mandat.')
+    }
+    setRevoking(null)
+  }
 
   async function toggleEnabled() {
     if (toggling) return
@@ -114,7 +162,107 @@ export default function AgentDetail({
         </div>
 
         {/* Mandates */}
-        <Section title="Mandat" hint="Tool yang boleh dipanggil agen ini">
+        <Section
+          title="Mandat"
+          hint="Tool yang boleh dipanggil agen ini"
+          action={
+            grantableTools.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setPickerOpen((v) => !v)
+                  setMandateError(null)
+                }}
+                style={{
+                  height: 26,
+                  padding: '0 var(--s-3)',
+                  border: '1px solid var(--border)',
+                  background: pickerOpen ? 'var(--indigo-light)' : 'var(--surface)',
+                  color: pickerOpen ? 'var(--indigo)' : 'var(--fg-2)',
+                  borderRadius: 'var(--r-sm)',
+                  font: '600 11px/1 var(--font-sans)',
+                  cursor: 'pointer',
+                }}
+              >
+                {pickerOpen ? 'Tutup' : '+ Beri mandat'}
+              </button>
+            )
+          }
+        >
+          {pickerOpen && (
+            <div
+              style={{
+                marginBottom: 'var(--s-3)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r-sm)',
+                background: 'var(--surface)',
+                maxHeight: 240,
+                overflow: 'auto',
+              }}
+            >
+              {grantableTools.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => grantTool(t.name)}
+                  disabled={granting}
+                  style={{
+                    display: 'flex',
+                    width: '100%',
+                    alignItems: 'center',
+                    gap: 'var(--s-3)',
+                    padding: '8px var(--s-3)',
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: '1px solid var(--border)',
+                    cursor: granting ? 'wait' : 'pointer',
+                    textAlign: 'left',
+                  }}
+                >
+                  <span style={{ font: '500 12px/1 var(--font-mono)', color: 'var(--fg-2)' }}>
+                    {t.name}
+                  </span>
+                  <span
+                    style={{
+                      font: '500 10px/1 var(--font-sans)',
+                      color: 'var(--fg-3)',
+                      background: 'var(--bg)',
+                      border: '1px solid var(--border)',
+                      padding: '2px 5px',
+                      borderRadius: 3,
+                    }}
+                  >
+                    {t.module}
+                  </span>
+                  {t.description && (
+                    <span
+                      style={{
+                        font: '400 12px/1 var(--font-sans)',
+                        color: 'var(--fg-3)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        flex: 1,
+                      }}
+                    >
+                      {t.description}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+          {availableTools.length === 0 && (
+            <Empty>
+              Belum ada tool yang terdaftar di ruang kerja. Buka <strong>Pengaturan Agent</strong>
+              {' '}untuk menambahkan tool default.
+            </Empty>
+          )}
+          {mandateError && (
+            <p style={{ color: 'var(--red)', font: '500 12px/1.4 var(--font-sans)', margin: '0 0 var(--s-3)' }}>
+              {mandateError}
+            </p>
+          )}
           {mandates.length === 0 ? (
             <Empty>
               Belum ada mandat. Agen tidak bisa melakukan apa pun sampai Anda memberikan izin tool.
@@ -145,7 +293,25 @@ export default function AgentDetail({
                       flexShrink: 0,
                     }}
                   />
-                  {m.toolName}
+                  <span style={{ flex: 1 }}>{m.toolName}</span>
+                  <button
+                    type="button"
+                    onClick={() => revokeTool(m.toolName)}
+                    disabled={revoking === m.toolName}
+                    title="Cabut mandat"
+                    style={{
+                      height: 22,
+                      padding: '0 8px',
+                      border: '1px solid var(--border)',
+                      background: 'var(--surface)',
+                      color: 'var(--fg-3)',
+                      borderRadius: 3,
+                      font: '500 10px/1 var(--font-sans)',
+                      cursor: revoking === m.toolName ? 'wait' : 'pointer',
+                    }}
+                  >
+                    {revoking === m.toolName ? '…' : 'Cabut'}
+                  </button>
                 </div>
               ))}
             </div>
@@ -226,14 +392,25 @@ export default function AgentDetail({
   )
 }
 
-function Section({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) {
+function Section({
+  title,
+  hint,
+  children,
+  action,
+}: {
+  title: string
+  hint: string
+  children: React.ReactNode
+  action?: React.ReactNode
+}) {
   return (
     <div style={{ marginBottom: 'var(--s-6)' }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--s-3)', marginBottom: 'var(--s-3)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)', marginBottom: 'var(--s-3)' }}>
         <span style={{ font: '600 12px/1 var(--font-sans)', color: 'var(--fg-2)' }}>{title}</span>
         {hint && (
           <span style={{ font: '400 11px/1 var(--font-sans)', color: 'var(--fg-3)' }}>{hint}</span>
         )}
+        {action && <div style={{ marginLeft: 'auto' }}>{action}</div>}
       </div>
       {children}
     </div>
