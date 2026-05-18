@@ -1,4 +1,4 @@
-import { Button } from '@kantr/ui'
+import { Button } from '@kantorcore/ui'
 
 export default function Home() {
   return (
@@ -27,7 +27,7 @@ export default function Home() {
             letterSpacing: '-0.2px',
           }}
         >
-          Kantr
+          KantorCore
         </span>
       </header>
 
@@ -79,7 +79,7 @@ export default function Home() {
           <Button variant="primary" size="lg">
             Mulai Gratis
           </Button>
-          <a href="https://roadmap.kantr.com">
+          <a href="https://roadmap.kantorcore.com">
             <Button variant="secondary" size="lg">
               Lihat Roadmap
             </Button>
@@ -98,7 +98,7 @@ export default function Home() {
           justifyContent: 'space-between',
         }}
       >
-        <span>© 2026 Kantr</span>
+        <span>© 2026 KantorCore</span>
         <span>v0.0.1 · Pre-launch</span>
       </footer>
     </main>

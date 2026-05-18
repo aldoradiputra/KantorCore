@@ -1,5 +1,5 @@
 import 'server-only'
-import { createDb, type Database } from '@kantr/db'
+import { createDb, type Database } from '@kantorcore/db'
 
 let cached: Database | undefined
 

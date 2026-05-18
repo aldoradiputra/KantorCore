@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { Agent, Mandate, AgentRun } from '@kantr/db'
+import type { Agent, Mandate, AgentRun } from '@kantorcore/db'
 
 const RUN_STATUS_COLOR: Record<string, string> = {
   pending: 'var(--fg-3)',

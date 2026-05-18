@@ -9,7 +9,7 @@ import {
   type Issue,
   type IssueStatus,
   type IssuePriority,
-} from '@kantr/db'
+} from '@kantorcore/db'
 import { getDb } from './db'
 
 const SLUG_RE = /^[a-z0-9]([a-z0-9-]{1,62}[a-z0-9])?$/

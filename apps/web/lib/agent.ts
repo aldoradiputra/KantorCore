@@ -9,7 +9,7 @@ import {
   type AgentRun,
   type Mandate,
   type AgentTool,
-} from '@kantr/db'
+} from '@kantorcore/db'
 import { getDb } from './db'
 
 // ── Agents ────────────────────────────────────────────────────────────────────

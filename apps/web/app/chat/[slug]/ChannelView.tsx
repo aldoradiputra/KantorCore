@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import type { Channel } from '@kantr/db'
+import type { Channel } from '@kantorcore/db'
 
 interface SerializedMessage {
   message: {

@@ -4,8 +4,8 @@
  * safe to import anywhere.
  */
 import { eq } from 'drizzle-orm'
-import type { Database } from '@kantr/db'
-import { sessions, users, type User, type Session } from '@kantr/db'
+import type { Database } from '@kantorcore/db'
+import { sessions, users, type User, type Session } from '@kantorcore/db'
 import {
   generateSessionToken,
   isSessionValid,

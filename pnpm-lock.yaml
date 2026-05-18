@@ -14,13 +14,13 @@ importers:
 
   apps/docs:
     dependencies:
-      '@kantr/design-tokens':
+      '@kantorcore/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
-      '@kantr/types':
+      '@kantorcore/types':
         specifier: workspace:*
         version: link:../../packages/types
-      '@kantr/ui':
+      '@kantorcore/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       next:
@@ -45,13 +45,13 @@ importers:
 
   apps/marketing:
     dependencies:
-      '@kantr/design-tokens':
+      '@kantorcore/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
-      '@kantr/types':
+      '@kantorcore/types':
         specifier: workspace:*
         version: link:../../packages/types
-      '@kantr/ui':
+      '@kantorcore/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       next:
@@ -76,13 +76,13 @@ importers:
 
   apps/roadmap:
     dependencies:
-      '@kantr/design-tokens':
+      '@kantorcore/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
-      '@kantr/types':
+      '@kantorcore/types':
         specifier: workspace:*
         version: link:../../packages/types
-      '@kantr/ui':
+      '@kantorcore/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       next:
@@ -107,19 +107,19 @@ importers:
 
   apps/web:
     dependencies:
-      '@kantr/auth':
+      '@kantorcore/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@kantr/db':
+      '@kantorcore/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@kantr/design-tokens':
+      '@kantorcore/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
-      '@kantr/types':
+      '@kantorcore/types':
         specifier: workspace:*
         version: link:../../packages/types
-      '@kantr/ui':
+      '@kantorcore/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       drizzle-orm:
@@ -154,7 +154,7 @@ importers:
         specifier: ^0.36.0
         version: 0.36.4(@types/react@19.2.14)(postgres@3.4.9)(react@19.2.6)
     devDependencies:
-      '@kantr/db':
+      '@kantorcore/db':
         specifier: workspace:*
         version: link:../db
       '@types/node':

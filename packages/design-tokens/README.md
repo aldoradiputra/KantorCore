@@ -1,12 +1,12 @@
-# @kantr/design-tokens
+# @kantorcore/design-tokens
 
-Single source of truth for Kantr's design tokens — colors, typography, spacing, radius, shadow, motion. Locked: changes require an ADR.
+Single source of truth for KantorCore's design tokens — colors, typography, spacing, radius, shadow, motion. Locked: changes require an ADR.
 
 ## Usage
 
 ```ts
 // In a Next.js app's root layout
-import '@kantr/design-tokens/tokens.css'
+import '@kantorcore/design-tokens/tokens.css'
 ```
 
 All CSS variables (`--navy`, `--indigo`, `--font-sans`, etc.) and semantic typography classes (`.t-h1`, `.t-body`, `.t-mono`) become globally available.

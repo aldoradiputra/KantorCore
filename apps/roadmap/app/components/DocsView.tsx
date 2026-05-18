@@ -4,7 +4,7 @@ import { useState } from 'react'
 import DocSidebar from './DocSidebar'
 import DocContent from './DocContent'
 import ChatPanel from './ChatPanel'
-import type { Node } from '@kantr/types'
+import type { Node } from '@kantorcore/types'
 
 type Props = {
   nodes: Node[]

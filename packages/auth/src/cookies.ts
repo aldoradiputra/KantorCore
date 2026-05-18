@@ -1,4 +1,4 @@
-export const SESSION_COOKIE_NAME = 'kantr_session'
+export const SESSION_COOKIE_NAME = 'kantorcore_session'
 
 export interface CookieOptions {
   secure: boolean

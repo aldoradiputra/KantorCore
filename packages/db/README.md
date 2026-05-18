@@ -1,6 +1,6 @@
-# @kantr/db
+# @kantorcore/db
 
-Postgres schema, Drizzle ORM client, and migrations for Kantr.
+Postgres schema, Drizzle ORM client, and migrations for KantorCore.
 
 ## Local development
 
@@ -16,9 +16,9 @@ This brings up a Postgres 16 container on `localhost:5432` with the
 Generate and apply migrations:
 
 ```bash
-pnpm --filter=@kantr/db db:generate   # create a new migration from schema diffs
-pnpm --filter=@kantr/db db:migrate    # apply pending migrations
-pnpm --filter=@kantr/db db:studio     # open Drizzle Studio GUI
+pnpm --filter=@kantorcore/db db:generate   # create a new migration from schema diffs
+pnpm --filter=@kantorcore/db db:migrate    # apply pending migrations
+pnpm --filter=@kantorcore/db db:studio     # open Drizzle Studio GUI
 ```
 
 ## Schema
@@ -45,7 +45,7 @@ shared environment — write a new one instead.
 ## Usage in apps
 
 ```ts
-import { createDb, tenants, type Tenant } from '@kantr/db'
+import { createDb, tenants, type Tenant } from '@kantorcore/db'
 
 const db = createDb(process.env.DATABASE_URL!)
 const result: Tenant[] = await db.select().from(tenants)

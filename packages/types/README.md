@@ -1,11 +1,11 @@
-# @kantr/types
+# @kantorcore/types
 
-Shared TypeScript types used across the Kantr monorepo.
+Shared TypeScript types used across the KantorCore monorepo.
 
 ## Usage
 
 ```ts
-import type { Node } from '@kantr/types'
+import type { Node } from '@kantorcore/types'
 ```
 
 ## When to add a type here

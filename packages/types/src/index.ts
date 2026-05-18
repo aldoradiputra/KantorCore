@@ -1,5 +1,5 @@
 /**
- * @kantr/types — shared TypeScript types across the Kantr monorepo.
+ * @kantorcore/types — shared TypeScript types across the KantorCore monorepo.
  *
  * Add types here when they are shared by more than one app/package.
  * App-specific types should live in the app that owns them.

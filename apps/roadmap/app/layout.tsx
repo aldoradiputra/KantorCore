@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import '@kantr/design-tokens/tokens.css'
+import '@kantorcore/design-tokens/tokens.css'
 import './globals.css'
 
 export const metadata: Metadata = {

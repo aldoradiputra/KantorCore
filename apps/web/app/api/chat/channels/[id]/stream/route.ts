@@ -1,7 +1,7 @@
 import { requireAuthedContext } from '../../../../../../lib/requireSession'
 import { subscribe } from '../../../../../../lib/chat-pubsub'
 import { getDb } from '../../../../../../lib/db'
-import { channels } from '@kantr/db'
+import { channels } from '@kantorcore/db'
 import { and, eq } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'

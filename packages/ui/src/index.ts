@@ -1,5 +1,5 @@
 /**
- * @kantr/ui — shared React components for Kantr apps.
+ * @kantorcore/ui — shared React components for KantorCore apps.
  *
  * Add a component here when it is consumed by more than one app/package.
  * Single-app UI lives in the app that owns it.

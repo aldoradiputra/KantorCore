@@ -1,6 +1,6 @@
 'use client'
 
-import type { Node } from '@kantr/types'
+import type { Node } from '@kantorcore/types'
 
 const PHASE_COLOR: Record<number, string> = {
   1: 'var(--indigo)',

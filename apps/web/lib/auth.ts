@@ -6,14 +6,14 @@ import {
   clearSessionCookieOptions,
   hashPassword,
   verifyPassword,
-} from '@kantr/auth'
+} from '@kantorcore/auth'
 import {
   createSession,
   validateSessionToken,
   invalidateSession,
   type SessionWithUser,
-} from '@kantr/auth/server'
-import { users } from '@kantr/db'
+} from '@kantorcore/auth/server'
+import { users } from '@kantorcore/db'
 import { eq } from 'drizzle-orm'
 import { getDb } from './db'
 import { provisionTenant, validateSlug } from './tenants'

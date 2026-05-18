@@ -101,7 +101,7 @@ export function AppShell({
               flexShrink: 0,
             }}
           >
-            Kantr
+            KantorCore
           </Link>
           <span
             style={{

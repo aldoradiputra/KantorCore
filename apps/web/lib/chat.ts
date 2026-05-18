@@ -1,6 +1,6 @@
 import 'server-only'
 import { and, asc, eq } from 'drizzle-orm'
-import { channels, messages, users, type Channel, type Message } from '@kantr/db'
+import { channels, messages, users, type Channel, type Message } from '@kantorcore/db'
 import { getDb } from './db'
 import { publish } from './chat-pubsub'
 

@@ -1,6 +1,6 @@
 'use client'
 
-import type { Node } from '@kantr/types'
+import type { Node } from '@kantorcore/types'
 import type { DocId } from './DocSidebar'
 import { DOCS_MAP, type Block, type DocPage } from '../docs-content'
 import { useLocale, STRINGS } from '../locale-context'

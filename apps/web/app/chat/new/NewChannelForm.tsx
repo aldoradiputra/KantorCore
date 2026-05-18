@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@kantr/ui'
+import { Button } from '@kantorcore/ui'
 
 function slugify(input: string): string {
   return input

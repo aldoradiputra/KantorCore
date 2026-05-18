@@ -1538,7 +1538,7 @@
     {
       "id": "docs-storage",
       "label": "Document Storage",
-      "description": "S3 Jakarta-backed file storage with metadata database. Folder hierarchy, per-document permissions (owner/editor/viewer), version history (auto-snapshot every 5 minutes during collaborative edit, manual named snapshots). Universal attachment surface: every Kantr module can attach IS-DOCS files to records via a single file picker. Search across file names and content (extracted text).",
+      "description": "S3 Jakarta-backed file storage with metadata database. Folder hierarchy, per-document permissions (owner/editor/viewer), version history (auto-snapshot every 5 minutes during collaborative edit, manual named snapshots). Universal attachment surface: every KantorCore module can attach IS-DOCS files to records via a single file picker. Search across file names and content (extracted text).",
       "type": "app",
       "status": "planned",
       "phase": 2,
@@ -1564,7 +1564,7 @@
     {
       "id": "docs-sign",
       "label": "E-Signing & E-Materai",
-      "description": "E-signing via PrivyID (Indonesian legally recognised digital signature). Multi-party signing flows (up to 10 signatories), signing order, deadline, email notifications. E-materai via Peruri integration — automatic application when document value > Rp 5jt and document type requires materai. Signed PDF auto-archived in IS-DOCS and linked to the related Kantr record (contract → CRM deal, payslip → HR record).",
+      "description": "E-signing via PrivyID (Indonesian legally recognised digital signature). Multi-party signing flows (up to 10 signatories), signing order, deadline, email notifications. E-materai via Peruri integration — automatic application when document value > Rp 5jt and document type requires materai. Signed PDF auto-archived in IS-DOCS and linked to the related KantorCore record (contract → CRM deal, payslip → HR record).",
       "type": "feature",
       "status": "planned",
       "phase": 2,
@@ -1993,7 +1993,7 @@
     {
       "id": "email-convert",
       "label": "Convert Email to Record",
-      "description": "The primary integration moat of IS-EMAIL. Right-click any email (or use action menu) to convert it into: Faktur Draft (IS-FIN), Tugas (IS-PROJ), Pengeluaran (IS-EXP), Lead CRM (IS-CRM), Tiket Dukungan (IS-HD), Pesanan Pembelian (IS-PROC). Form pre-populated from email content (AI extraction via IS-AIP). Converted email auto-attached to the created record. Makes Kantr's email client 10× more valuable than Gmail for operations.",
+      "description": "The primary integration moat of IS-EMAIL. Right-click any email (or use action menu) to convert it into: Faktur Draft (IS-FIN), Tugas (IS-PROJ), Pengeluaran (IS-EXP), Lead CRM (IS-CRM), Tiket Dukungan (IS-HD), Pesanan Pembelian (IS-PROC). Form pre-populated from email content (AI extraction via IS-AIP). Converted email auto-attached to the created record. Makes KantorCore's email client 10× more valuable than Gmail for operations.",
       "type": "feature",
       "status": "planned",
       "phase": 2,
@@ -2006,7 +2006,7 @@
     {
       "id": "email-linked-records",
       "label": "Email Record Linking",
-      "description": "Every inbound and outbound email auto-linked to matching Kantr records by email address, NPWP, NIK, or phone match. Linked records shown as chips on the email. Click chip to open record. The email appears in the record's activity timeline. Unmatched emails can be manually linked or used to create a new record. Eliminates manual CRM entry for email-driven workflows.",
+      "description": "Every inbound and outbound email auto-linked to matching KantorCore records by email address, NPWP, NIK, or phone match. Linked records shown as chips on the email. Click chip to open record. The email appears in the record's activity timeline. Unmatched emails can be manually linked or used to create a new record. Eliminates manual CRM entry for email-driven workflows.",
       "type": "feature",
       "status": "planned",
       "phase": 2,
@@ -2032,7 +2032,7 @@
     {
       "id": "email-basic-phase1",
       "label": "Basic SMTP/IMAP (Phase 1)",
-      "description": "Lightweight Phase 1 milestone: Kantr-hosted email at @{tenant}.kantr.com or custom domain, IMAP/SMTP access for email clients, basic web client (send/receive/folders/search). Full Workspace-grade web client and all IS-EMAIL sub-features ship in Phase 2. Phase 1 version is used internally by Kantr team and early design partners. Powered by Stalwart Mail (Rust-based, self-hosted).",
+      "description": "Lightweight Phase 1 milestone: KantorCore-hosted email at @{tenant}.kantorcore.com or custom domain, IMAP/SMTP access for email clients, basic web client (send/receive/folders/search). Full Workspace-grade web client and all IS-EMAIL sub-features ship in Phase 2. Phase 1 version is used internally by KantorCore team and early design partners. Powered by Stalwart Mail (Rust-based, self-hosted).",
       "type": "feature",
       "status": "planned",
       "phase": 1,
@@ -2708,7 +2708,7 @@
     {
       "id": "kms-public",
       "label": "Public Documentation Surface",
-      "description": "Pages can be marked public (no login required). Public pages served at docs.kantr.com/{tenant-slug}/{page-slug} or on a custom domain. SEO-optimised (SSG or ISR). Used for: customer-facing help center, product changelog, public API docs. Kantr's own docs.kantr.com dogfoods this surface when IS-KMS ships.",
+      "description": "Pages can be marked public (no login required). Public pages served at docs.kantorcore.com/{tenant-slug}/{page-slug} or on a custom domain. SEO-optimised (SSG or ISR). Used for: customer-facing help center, product changelog, public API docs. KantorCore's own docs.kantorcore.com dogfoods this surface when IS-KMS ships.",
       "type": "feature",
       "status": "planned",
       "phase": 2,
@@ -6173,7 +6173,7 @@
     {
       "id": "plat-provision-loading",
       "label": "Provisioning Loading State",
-      "description": "After form submit, redirect to {slug}.kantr.com/setup which polls /api/provision/status?job_id=xxx every 1.5s. Shows branded loading screen ('Menyiapkan workspace Anda…') with progress indicators. On status=active redirects to /dashboard. On failure shows retry with support contact.",
+      "description": "After form submit, redirect to {slug}.kantorcore.com/setup which polls /api/provision/status?job_id=xxx every 1.5s. Shows branded loading screen ('Menyiapkan workspace Anda…') with progress indicators. On status=active redirects to /dashboard. On failure shows retry with support contact.",
       "type": "feature",
       "status": "planned",
       "phase": 1,
@@ -6186,7 +6186,7 @@
     {
       "id": "plat-subdomain",
       "label": "Subdomain Routing",
-      "description": "Wildcard DNS *.kantr.com → server. Next.js middleware extracts slug from req.headers.host, resolves tenant_id from platform.tenants (cached 5min in Valkey), injects into request context. All downstream queries are RLS-scoped to tenant_id. Custom domain support (CNAME to kantr.com) for Penuh tier only.",
+      "description": "Wildcard DNS *.kantorcore.com → server. Next.js middleware extracts slug from req.headers.host, resolves tenant_id from platform.tenants (cached 5min in Valkey), injects into request context. All downstream queries are RLS-scoped to tenant_id. Custom domain support (CNAME to kantorcore.com) for Penuh tier only.",
       "type": "feature",
       "status": "planned",
       "phase": 1,
@@ -6537,7 +6537,7 @@
     {
       "id": "plat-onboarding",
       "label": "Onboarding Engine",
-      "description": "The first 60 minutes determine whether a trial customer returns. Three-path welcome screen (sample data / import / clean start), 7-step setup wizard, per-module first-run cards, persistent progress tracker on home dashboard, and design partner programme management. Both the 5-minute test (see Kantr work with data) and the first-week test (invite a colleague) are built as explicit outcomes of this flow.",
+      "description": "The first 60 minutes determine whether a trial customer returns. Three-path welcome screen (sample data / import / clean start), 7-step setup wizard, per-module first-run cards, persistent progress tracker on home dashboard, and design partner programme management. Both the 5-minute test (see KantorCore work with data) and the first-week test (invite a colleague) are built as explicit outcomes of this flow.",
       "type": "app",
       "status": "planned",
       "phase": 1,
@@ -6615,7 +6615,7 @@
     {
       "id": "plat-obd-partner",
       "label": "Design Partner Programme",
-      "description": "Special tenant flag for pre-launch design partners. Perks: Pilih tier features free for 12 months, priority support routing, direct Slack channel to founding team, feature requests fast-tracked. Obligations: weekly 30-min product review call, logo as reference customer, quarterly testimonial. Partner flag visible in admin.kantr.com ops panel. Target: 5–10 companies recruited before v1.0 launch.",
+      "description": "Special tenant flag for pre-launch design partners. Perks: Pilih tier features free for 12 months, priority support routing, direct Slack channel to founding team, feature requests fast-tracked. Obligations: weekly 30-min product review call, logo as reference customer, quarterly testimonial. Partner flag visible in admin.kantorcore.com ops panel. Target: 5–10 companies recruited before v1.0 launch.",
       "type": "feature",
       "status": "planned",
       "phase": 1,
@@ -6849,7 +6849,7 @@
     {
       "id": "chat-wa-outbound",
       "label": "Outbound WA from Records",
-      "description": "Send WhatsApp messages from any customer, contact, or lead record in Kantr. Pre-approved message templates (Meta requires template approval for outbound). Personalised with record fields (nama, nomor invoice, jatuh tempo). Delivery status tracked (sent/delivered/read). Outbound messages logged to record activity timeline.",
+      "description": "Send WhatsApp messages from any customer, contact, or lead record in KantorCore. Pre-approved message templates (Meta requires template approval for outbound). Personalised with record fields (nama, nomor invoice, jatuh tempo). Delivery status tracked (sent/delivered/read). Outbound messages logged to record activity timeline.",
       "type": "feature",
       "status": "planned",
       "phase": 1,
@@ -7590,7 +7590,7 @@
     {
       "id": "telephony",
       "label": "Telephony",
-      "description": "Integrated business telephony powered by Telkom SIP Trunk as primary provider. Click-to-call from any Kantr record, auto-call logging, WebRTC browser softphone, IVR, call queues, and voicemail. IS-TEL brings the phone into the CRM/ERP loop — every call is automatically linked to the matching customer, vendor, or employee record. Telkom SIP Trunk chosen for nationwide PSTN coverage, local number availability (021/031 prefixes), and Indonesian data residency.",
+      "description": "Integrated business telephony powered by Telkom SIP Trunk as primary provider. Click-to-call from any KantorCore record, auto-call logging, WebRTC browser softphone, IVR, call queues, and voicemail. IS-TEL brings the phone into the CRM/ERP loop — every call is automatically linked to the matching customer, vendor, or employee record. Telkom SIP Trunk chosen for nationwide PSTN coverage, local number availability (021/031 prefixes), and Indonesian data residency.",
       "type": "module",
       "status": "planned",
       "phase": 1,
@@ -7772,7 +7772,7 @@
     {
       "id": "tel-pbx-voicemail",
       "label": "Voicemail",
-      "description": "Per-extension and per-queue voicemail. Email delivery: audio file + IS-AIP transcript. Visual voicemail inbox in Kantr. Transcripts searchable. Auto-link voicemail to caller's record. Voicemail-to-task: one click creates IS-PROJ task or IS-HD ticket from a voicemail.",
+      "description": "Per-extension and per-queue voicemail. Email delivery: audio file + IS-AIP transcript. Visual voicemail inbox in KantorCore. Transcripts searchable. Auto-link voicemail to caller's record. Voicemail-to-task: one click creates IS-PROJ task or IS-HD ticket from a voicemail.",
       "type": "feature",
       "status": "planned",
       "phase": 1,
@@ -7785,7 +7785,7 @@
     {
       "id": "migration",
       "label": "Migration & Data Import",
-      "description": "The tool that makes switching to Kantr painless. Import from Accurate Online (P0), Zahir Accounting (P0), MYOB, Odoo, Google Workspace, or any Excel/CSV. Visual field mapping wizard, validation engine (NIK/NPWP/currency/date formats), dry-run preview, background import jobs, and 7-day rollback. Duplicate detection via IS-PLAT-MDM runs at import time. Migration Concierge service for Pilih/Penuh tier. This is the primary competitive weapon for taking Accurate and Zahir's installed base.",
+      "description": "The tool that makes switching to KantorCore painless. Import from Accurate Online (P0), Zahir Accounting (P0), MYOB, Odoo, Google Workspace, or any Excel/CSV. Visual field mapping wizard, validation engine (NIK/NPWP/currency/date formats), dry-run preview, background import jobs, and 7-day rollback. Duplicate detection via IS-PLAT-MDM runs at import time. Migration Concierge service for Pilih/Penuh tier. This is the primary competitive weapon for taking Accurate and Zahir's installed base.",
       "type": "module",
       "status": "planned",
       "phase": 1,
@@ -7811,7 +7811,7 @@
     {
       "id": "mig-mapping",
       "label": "Field Mapping Wizard",
-      "description": "Drag columns from source to Kantr fields. Smart auto-map suggests matches by name similarity. Required fields highlighted. Custom field support (map to IS-PLAT-SCH custom fields). Mapping templates saved per source system for reuse. Preview: first 10 rows shown with mapped + transformed values before committing.",
+      "description": "Drag columns from source to KantorCore fields. Smart auto-map suggests matches by name similarity. Required fields highlighted. Custom field support (map to IS-PLAT-SCH custom fields). Mapping templates saved per source system for reuse. Preview: first 10 rows shown with mapped + transformed values before committing.",
       "type": "feature",
       "status": "planned",
       "phase": 1,
@@ -7837,7 +7837,7 @@
     {
       "id": "mig-dryrun",
       "label": "Dry Run & Preview",
-      "description": "Full import simulation without writing to production. Reports: total records, expected creates/updates, validation errors, duplicate candidates (via IS-PLAT-MDM), estimated import time. First 100 rows previewed in a Kantr list view so user sees exactly how data will look. Must pass dry run before live import is unlocked.",
+      "description": "Full import simulation without writing to production. Reports: total records, expected creates/updates, validation errors, duplicate candidates (via IS-PLAT-MDM), estimated import time. First 100 rows previewed in a KantorCore list view so user sees exactly how data will look. Must pass dry run before live import is unlocked.",
       "type": "feature",
       "status": "planned",
       "phase": 1,
@@ -7902,7 +7902,7 @@
     {
       "id": "mig-myob",
       "label": "MYOB Connector",
-      "description": "MYOB Premier and MYOB AccountRight. Export via MYOB's Excel/CSV export. Connector maps MYOB's account structure to PSAK-aligned Kantr CoA. Customers, suppliers, payroll history where applicable.",
+      "description": "MYOB Premier and MYOB AccountRight. Export via MYOB's Excel/CSV export. Connector maps MYOB's account structure to PSAK-aligned KantorCore CoA. Customers, suppliers, payroll history where applicable.",
       "type": "feature",
       "status": "planned",
       "phase": 1,
@@ -7915,7 +7915,7 @@
     {
       "id": "mig-odoo",
       "label": "Odoo Connector",
-      "description": "Import from Odoo 16/17 via Odoo's built-in XML/CSV export or REST API (Enterprise). Handles Odoo's multi-company structure → Kantr tenant mapping. Modules imported: contacts, products, invoices, POs, employees, journal entries. Tested against Odoo Community and Enterprise.",
+      "description": "Import from Odoo 16/17 via Odoo's built-in XML/CSV export or REST API (Enterprise). Handles Odoo's multi-company structure → KantorCore tenant mapping. Modules imported: contacts, products, invoices, POs, employees, journal entries. Tested against Odoo Community and Enterprise.",
       "type": "feature",
       "status": "planned",
       "phase": 1,
@@ -7928,7 +7928,7 @@
     {
       "id": "mig-google-workspace",
       "label": "Google Workspace Connector",
-      "description": "Migrate email (via IMAP copy to IS-EMAIL), calendar events (CalDAV import), contacts (CardDAV/vCard), and Drive files (bulk download → IS-DOCS upload). OAuth-based — customer authorizes Kantr to read their Google account. Chunked background import for large mailboxes. Delta sync option: import only last 90 days.",
+      "description": "Migrate email (via IMAP copy to IS-EMAIL), calendar events (CalDAV import), contacts (CardDAV/vCard), and Drive files (bulk download → IS-DOCS upload). OAuth-based — customer authorizes KantorCore to read their Google account. Chunked background import for large mailboxes. Delta sync option: import only last 90 days.",
       "type": "feature",
       "status": "planned",
       "phase": 1,
@@ -7941,7 +7941,7 @@
     {
       "id": "mig-concierge",
       "label": "Migration Concierge",
-      "description": "White-glove migration service for Pilih+ tier. Kantr team member executes the migration alongside the customer: 4–8 hours, maps CoA, validates data, runs dry run, resolves errors, confirms go-live. Priced at Rp 5jt one-time for Pilih; included in Penuh. Concierge requests tracked as internal tickets with SLA. Accelerates conversion of larger, more complex customers who won't self-serve an ERP migration.",
+      "description": "White-glove migration service for Pilih+ tier. KantorCore team member executes the migration alongside the customer: 4–8 hours, maps CoA, validates data, runs dry run, resolves errors, confirms go-live. Priced at Rp 5jt one-time for Pilih; included in Penuh. Concierge requests tracked as internal tickets with SLA. Accelerates conversion of larger, more complex customers who won't self-serve an ERP migration.",
       "type": "feature",
       "status": "planned",
       "phase": 1,
@@ -8174,7 +8174,7 @@
     {
       "id": "partner-cosell",
       "label": "Co-Sell Coordination",
-      "description": "AE-partner deal attribution and lead routing. Partners log opportunities; Kantr AEs see partner-sourced pipeline. Inbound leads matched to relevant certified partners by industry + region. AE comp tied to partner-sourced deals to incentivise ecosystem behaviour.",
+      "description": "AE-partner deal attribution and lead routing. Partners log opportunities; KantorCore AEs see partner-sourced pipeline. Inbound leads matched to relevant certified partners by industry + region. AE comp tied to partner-sourced deals to incentivise ecosystem behaviour.",
       "type": "feature",
       "status": "planned",
       "phase": 2,
@@ -8185,7 +8185,7 @@
     {
       "id": "partner-accelerators",
       "label": "Vertical Accelerators",
-      "description": "Partner-contributed IS-TPL configuration bundles reviewed and curated by Kantr. First three verticals: palm oil/plantation (yield payroll, harvest ops), construction/contractor (project procurement, multi-entity), klinik/clinic (BPJS reconciliation, scheduling). Partners who publish an accelerator earn Vertical Specialist badge.",
+      "description": "Partner-contributed IS-TPL configuration bundles reviewed and curated by KantorCore. First three verticals: palm oil/plantation (yield payroll, harvest ops), construction/contractor (project procurement, multi-entity), klinik/clinic (BPJS reconciliation, scheduling). Partners who publish an accelerator earn Vertical Specialist badge.",
       "type": "feature",
       "status": "planned",
       "phase": 2,

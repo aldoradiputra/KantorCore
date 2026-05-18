@@ -1,4 +1,4 @@
-import { Button } from '@kantr/ui'
+import { Button } from '@kantorcore/ui'
 
 type Section = {
   label: string
@@ -9,7 +9,7 @@ const NAV: Section[] = [
   {
     label: 'Pengenalan',
     items: [
-      { label: 'Apa itu Kantr', href: '#', soon: true },
+      { label: 'Apa itu KantorCore', href: '#', soon: true },
       { label: 'Filosofi produk', href: '#', soon: true },
       { label: 'Posisi Indonesia', href: '#', soon: true },
     ],
@@ -63,9 +63,9 @@ export default function Home() {
             letterSpacing: '-0.2px',
           }}
         >
-          Kantr <span style={{ color: 'var(--fg-3)', fontWeight: 500 }}>· docs</span>
+          KantorCore <span style={{ color: 'var(--fg-3)', fontWeight: 500 }}>· docs</span>
         </span>
-        <a href="https://kantr.com" style={{ font: '500 13px/1 var(--font-sans)', color: 'var(--fg-2)' }}>
+        <a href="https://kantorcore.com" style={{ font: '500 13px/1 var(--font-sans)', color: 'var(--fg-2)' }}>
           ← Beranda
         </a>
       </header>
@@ -138,7 +138,7 @@ export default function Home() {
           <span className="t-micro" style={{ marginBottom: 'var(--s-3)', display: 'block' }}>
             Pengenalan
           </span>
-          <h1 style={{ marginBottom: 'var(--s-4)' }}>Dokumentasi Kantr</h1>
+          <h1 style={{ marginBottom: 'var(--s-4)' }}>Dokumentasi KantorCore</h1>
           <p className="t-body-l" style={{ marginBottom: 'var(--s-5)' }}>
             Selamat datang. Dokumentasi lengkap sedang disiapkan dan akan rilis
             bersama versi 1.0. Sementara itu, lihat roadmap publik untuk fitur
@@ -156,20 +156,20 @@ export default function Home() {
           >
             <h3 style={{ marginBottom: 'var(--s-3)' }}>Status pra-rilis</h3>
             <p style={{ marginBottom: 'var(--s-4)' }}>
-              Kantr sedang dibangun. Dokumentasi resmi ini akan dipindahkan ke
-              IS-KMS — modul Knowledge Management milik Kantr sendiri — ketika
+              KantorCore sedang dibangun. Dokumentasi resmi ini akan dipindahkan ke
+              IS-KMS — modul Knowledge Management milik KantorCore sendiri — ketika
               modul tersebut rilis di Fase 2. Sampai saat itu, halaman ini
               menjadi tempat singgah.
             </p>
             <div style={{ display: 'flex', gap: 'var(--s-3)' }}>
-              <a href="https://roadmap.kantr.com">
+              <a href="https://roadmap.kantorcore.com">
                 <Button variant="primary" size="md">
                   Lihat Roadmap
                 </Button>
               </a>
-              <a href="https://kantr.com">
+              <a href="https://kantorcore.com">
                 <Button variant="secondary" size="md">
-                  Beranda Kantr
+                  Beranda KantorCore
                 </Button>
               </a>
             </div>
@@ -205,7 +205,7 @@ export default function Home() {
           justifyContent: 'space-between',
         }}
       >
-        <span>© 2026 Kantr</span>
+        <span>© 2026 KantorCore</span>
         <span>Dokumentasi v0.0.1 · pra-rilis</span>
       </footer>
     </main>

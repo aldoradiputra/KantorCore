@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuthedContext } from '../../../../../lib/requireSession'
 import { updateIssue } from '../../../../../lib/proj'
-import type { IssueStatus, IssuePriority } from '@kantr/db'
+import type { IssueStatus, IssuePriority } from '@kantorcore/db'
 
 const STATUSES: ReadonlyArray<IssueStatus> = [
   'backlog',

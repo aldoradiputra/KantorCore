@@ -7,7 +7,7 @@ import { platform } from './tenants'
  * separately in `platform.memberships` (Phase 10).
  *
  * Email is the only login handle for now. Password is Argon2id-hashed via
- * `@kantr/auth`; never store plaintext, never log this column.
+ * `@kantorcore/auth`; never store plaintext, never log this column.
  */
 export const users = platform.table(
   'users',

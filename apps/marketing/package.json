@@ -1,5 +1,5 @@
 {
-  "name": "@kantr/marketing",
+  "name": "@kantorcore/marketing",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -10,9 +10,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@kantr/design-tokens": "workspace:*",
-    "@kantr/types": "workspace:*",
-    "@kantr/ui": "workspace:*",
+    "@kantorcore/design-tokens": "workspace:*",
+    "@kantorcore/types": "workspace:*",
+    "@kantorcore/ui": "workspace:*",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

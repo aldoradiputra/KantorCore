@@ -1,6 +1,6 @@
 import 'server-only'
 import { and, eq, ilike, or } from 'drizzle-orm'
-import { channels, projects } from '@kantr/db'
+import { channels, projects } from '@kantorcore/db'
 import { getDb } from './db'
 
 export interface SearchHit {

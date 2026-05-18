@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import type { Project } from '@kantr/db'
+import type { Project } from '@kantorcore/db'
 import { AppShell } from '../../components/AppShell'
 
 function ProjSidebar({
