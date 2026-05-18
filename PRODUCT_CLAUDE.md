@@ -471,13 +471,67 @@ A "vertical mode" is a named bundle of feature-flag defaults and module presets.
 
 **Rule for the future:** a feature only earns "vertical mode" status when ≥3 customers in that industry pay for it and ≥1 specialized module is required. Otherwise it stays a per-module setting.
 
-### Distribution model: internal-centric, no partner ecosystem
+### Distribution model: hybrid GTM — internal core, partner ecosystem for reach
 
-**Date:** 2026-05-10
+**Date:** 2026-05-10 · **Revised:** 2026-05-18
 
-**Context:** Considered two distribution strategies: (1) internal-centric — strong internal dev, delivery, and sales teams own all customer touchpoints; (2) partner-centric — regional/industry partners build packs, implement, and sell. SAP, Salesforce, and Dynamics all leaned heavily on partners. Evaluated trade-offs.
+**Context:** Originally decided "internal-centric, no partner ecosystem." Revised after deeper analysis of Indonesian market structure and the ecosystem-vs-ecosystem competitive shift. The original decision optimised for quality control; the revised decision adds geographic scale and vertical depth without sacrificing quality on the core product.
 
-**Decision:** Internal-centric distribution, permanently. No partner-built modules, no plugin marketplace.
+**Decision:** Hybrid distribution. Internal team owns platform, product, and direct sales for self-serve and inside-sales tiers. Implementation and vertical-solution partners handle geographic reach, industry specialisation, and enterprise deployment. No plugin marketplace (code extension by third parties) — but a certified partner directory and vertical accelerator programme (IS-PARTNER) ships Phase 2.
+
+**The three-layer model:**
+
+| Layer | Who | What they own |
+|---|---|---|
+| Platform | Kantr internal | Product, compliance, API, pricing, quality |
+| Certified Partners | Accredited implementation firms | Deployment, configuration, training, vertical solutions on top of Kantr |
+| Customer | Tenant | Data, workflows, extensions (IS-EXT, tenant-private only) |
+
+**Partner types for Indonesia:**
+
+| Type | Role | Geography |
+|---|---|---|
+| Implementation | Deploy + configure + train | Nationwide, language-local |
+| Vertical solution | Build palm oil / construction / klinik accelerators on Kantr | Industry-specific |
+| Managed service | Operate Kantr for SMEs with no IT staff | Tier 2/3 cities |
+| Telco-bundled | Bundle Kantr with connectivity | Telkom, Indosat, XL distribution |
+| Gov-adjacent | Navigate BPJS, pajak, procurement compliance | Jakarta + regional |
+
+**What partners cannot do:**
+- Write code that runs inside tenant workspaces (no plugin marketplace, no IS-EXT cross-tenant distribution)
+- Re-sell Kantr without certification
+- Modify platform schema or core tools
+- White-label Kantr as their own product
+
+**What partners can do:**
+- Build vertical accelerator configurations (COA presets, workflow templates, IS-TPL bundles)
+- Implement, customise, and support customers
+- Co-sell with Kantr AEs on enterprise deals
+- Surface in the IS-PARTNER directory so tenants can discover and engage them
+
+**Why partner-built modules (code) remain rejected:**
+Quality dilutes fast across a partner network. An implementation partner's mistake in an Indonesian payroll run is a brand failure, not a partner failure. In regulated domains (tax, BPJS, e-Faktur) the liability and brand risk outweigh the distribution speed. Configuration and templates are safe to partner-build; code is not.
+
+**GTM motion by tier:**
+
+| Tier | Motion | Who sells |
+|---|---|---|
+| Rintis (free) | Pure PLG, self-serve | Nobody — product sells itself |
+| Tumbuh | PLG + inside sales | Small inside team (Jakarta) |
+| Pilih | Partner-assisted, AE co-sell | AE + certified partner |
+| Penuh / Gov | Partner-led | Partner owns relationship; Kantr provides platform + agent layer |
+
+**Hiring sequence:**
+1. Phase 1: product only — self-serve, dogfooding, no sales headcount
+2. Phase 2: 1 Partner Success hire — recruit 3–5 Jakarta implementation partners
+3. Phase 3: 2–3 Inside Sales — handle inbound tumbuh-tier; KPI is time-to-close not call volume
+4. Phase 4: Field sales + partner co-sell for pilih/penuh demand
+5. Government track: strategic alliance only (Telkom or Lintasarta), not a direct sales team
+
+**AE incentive rules:**
+- No commission on deals sourced without a certified partner (forces ecosystem behaviour)
+- Bonus on partner-sourced pipeline
+- Clawback if customer churns in < 12 months (forces quality over volume)
 
 **Trade-off table:**
 
@@ -1161,3 +1215,97 @@ ERPs fail at customization for tail-of-distribution needs (a logistics firm's cu
 | Compliance scope expansion (PDP law, cybersecurity law on identity data) | Engage legal counsel before Phase 2 IdP launch; design audit log to satisfy regulator requests by default |
 | Support burden — "I can't log into Slack" becomes an IS ticket | Clear scoping in admin docs; admin-facing diagnostics dashboard showing SAML/OIDC handshake errors per external app |
 | External app vendor lock-in to IS | Standards-based (OIDC, SAML, SCIM); no proprietary protocols — tenants can replace IS with another IdP without breaking external apps |
+
+---
+
+### ADR-011: Shared Context Layer (IS-PLAT-CTX) + Event Triggers (IS-TRIG)
+
+**Date:** 2026-05-18
+
+**Context:** As modules accumulate (chat, projects, HR, finance, inventory…) each builds its own representation of the same real-world entities: a "user" in platform.users, an "employee" in hr.employees, a "contact" in crm.contacts may all refer to the same human. Agents operating across modules today must query each schema independently and reconcile manually. This creates: (1) agent context fragmentation — agents don't know that `project.assigneeId` and `hr.employee.id` are the same person; (2) cross-module query complexity; (3) no event-driven trigger layer to connect module events to agents or workflows automatically.
+
+**Decisions:**
+
+**IS-PLAT-CTX (Semantic Context Layer) — Phase 1:**
+
+A thin `platform.entities` table — the canonical entity registry. Every module registers its records here on creation. No graph database required; this is a foreign key map and a kind classification.
+
+```sql
+platform.entities (
+  id          uuid PK,
+  tenant_id   uuid NOT NULL,
+  kind        text NOT NULL,   -- 'user' | 'employee' | 'contact' | 'project' | 'invoice' | ...
+  module      text NOT NULL,   -- 'platform' | 'hr' | 'crm' | 'proj' | 'finance' | ...
+  module_id   uuid NOT NULL,   -- the record's PK in its own schema
+  canonical_id uuid,           -- points to the "authoritative" entity when two records are resolved as the same
+  created_at  timestamptz NOT NULL DEFAULT now()
+)
+```
+
+Agents query: "give me all entities of kind=user for this tenant" and get back cross-module references. When IS-HR creates an employee record for a user, it registers a `kind=employee` entity pointing back to `platform.users.id` as the canonical. Cross-module semantic lookup becomes one join.
+
+**IS-TRIG (Event & Schedule Triggers) — Phase 1:**
+
+IS-AGENT + IS-FLOW define *what* agents/workflows do. IS-TRIG defines *when* they fire without a human pressing a button:
+
+- **Domain event triggers**: subscribe to `EventBus` topics (e.g. `invoice.overdue` → fire AR dunning agent)
+- **Schedule triggers**: cron-based (e.g. `0 8 1 * *` → fire monthly payroll run agent)
+- **Webhook triggers**: inbound webhook from third-party systems fires a workflow or agent
+- **Threshold triggers**: "when `platform.entities` count of kind=invoice status=overdue > 10" — data-condition polling
+
+IS-TRIG is the glue between IS-PLAT-EVT (events emitted) and IS-AGENT / IS-FLOW (actors that handle them). Without it, agents are reactive only when a human explicitly invokes them — which misses the autonomous-agent value entirely.
+
+**Why Phase 1 (not later):**
+- IS-PLAT-CTX retrofitted after 8+ modules exist = weeks of migration. Enforcing it now = one convention during schema creation.
+- IS-TRIG without domain events is useless; domain events start flowing in Phase 1. The trigger registration surface needs to exist before module teams start building — otherwise every module invents its own scheduler.
+- The interview insight: "System of Action Platform" only works if actions fire from *state*, not only from human input.
+
+**Implementation constraint:**
+- IS-PLAT-CTX adds one `platform.entities` registration call per module `create` tool. This is 3 lines per module. Not a framework change.
+- IS-TRIG ships as a trigger management UI inside IS-FLOW's settings pane — users manage both automation and triggers from one place.
+
+---
+
+### ADR-012: Partner Ecosystem Model (IS-PARTNER)
+
+**Date:** 2026-05-18
+
+**Context:** IS-PARTNER was not on the roadmap. It is now added to Phase 2 as a direct consequence of the distribution model revision (see Distribution ADR above). This ADR specifies what IS-PARTNER is and is not.
+
+**IS-PARTNER is:**
+- A partner directory inside the IS admin/marketing surface: certified firms, their specialisations, service regions, case studies
+- A certification programme: partners pass a technical exam, sign a quality agreement, and get a badge visible to tenants
+- A co-sell coordination tool: AEs log deals with partner attribution; partner gets notified of relevant inbound leads
+- A vertical accelerator library: partners contribute IS-TPL configuration bundles (COA presets, workflow templates, onboarding packs) under Kantr review and curation
+
+**IS-PARTNER is not:**
+- An app store (no executable code from partners runs inside tenant workspaces)
+- A revenue-share marketplace (partners are paid by customers directly; Kantr takes no cut on services)
+- A lead-gen pay-per-click directory (certification is merit-based, not purchased)
+
+**Phase assignment:** Phase 2 (ships alongside IS-AUTH IdP and first enterprise-tier features). Reason: enterprise sales (pilih/penuh) require partner availability at the point of deal; having no directory makes AEs weaker in competitive deals.
+
+**Initial vertical accelerator priority (informed by Indonesia market analysis):**
+1. Palm oil / plantation (yield payroll, harvest ops, estate structure)
+2. Construction / contractor (project-linked procurement, multi-entity consolidation)
+3. Klinik / clinic (BPJS reconciliation, scheduling, billing compliance)
+
+Partners who build and publish an accelerator for one of these three get "Vertical Specialist" badge in IS-PARTNER.
+
+---
+
+### Public MCP Server (IS-MCP-PUB) — Phase 2 signal, deferred decision
+
+**Date:** 2026-05-18
+
+**Context:** IS-AGENT-003 (MCP Server) is Phase 1 but internal-only — it exposes Kantr tools to agents running *inside* the platform. IS-MCP-PUB would open this surface to external AI agents (Claude, ChatGPT, custom LLMs) acting with tenant-granted OAuth scopes.
+
+**Why this is a moat:** "Any AI agent built outside the unified semantic layer operates blind." If Kantr's MCP server is the authoritative interface to Indonesian corporate data, external agents that want to act on that data must go through Kantr. This makes Kantr the orchestration layer, not just the storage layer.
+
+**Decision deferred:** IS-MCP-PUB moves to Phase 2 planning, not Phase 1 build. Conditions that must be met first:
+1. At least 3 modules with stable, data-rich schemas in production (HR, Finance, one operational module)
+2. IS-AUTH OAuth Resource Server live and battle-tested
+3. IS-AGENT-003 internal MCP Server operating for ≥6 months without breaking changes
+
+**When it ships:** Read-heavy first — external agents can query ("what are my open invoices?", "who is on leave this week?"). Write operations require explicit per-tool OAuth grants with tenant-admin approval. Audit trail identical to internal agent calls.
+

@@ -8038,6 +8038,171 @@
       "parent": "ext",
       "code": "IS-EXT-007",
       "milestone": "v3.0"
+    },
+    {
+      "id": "plat-ctx",
+      "label": "Semantic Context Layer",
+      "description": "platform.entities registry — every module registers its records here on creation with a kind classification (user, employee, contact, project, invoice…). Agents and cross-module queries resolve the same real-world entity across schemas via canonical_id. Prevents context fragmentation as modules multiply.",
+      "type": "app",
+      "status": "planned",
+      "phase": 1,
+      "parent": "platform-core",
+      "code": "IS-PLAT-CTX",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "plat-ctx-registry",
+      "label": "Entity Registry",
+      "description": "platform.entities table: id, tenant_id, kind, module, module_id, canonical_id. Every module create-tool registers a row. Lookup API: get all entities of kind X for tenant Y across all modules.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "plat-ctx",
+      "code": "IS-PLAT-CTX-001",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "plat-ctx-resolve",
+      "label": "Cross-Module Resolution",
+      "description": "canonical_id linking: when IS-HR creates an employee for an existing platform user, it sets canonical_id = platform.users.id. Agents query once and get cross-module references. Powers the shared context agents inherit at runtime.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "plat-ctx",
+      "code": "IS-PLAT-CTX-002",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "plat-ctx-agent-context",
+      "label": "Agent Context Injection",
+      "description": "At agent invocation, IS-AGENT injects a resolved entity context window: the current user's cross-module identity, active project, active company/branch. Agents inherit organisational brain without querying each module.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "plat-ctx",
+      "code": "IS-PLAT-CTX-003",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "trig",
+      "label": "Event & Schedule Triggers",
+      "description": "Glue layer between IS-PLAT-EVT (domain events) and IS-AGENT / IS-FLOW (actors). Defines when agents and workflows fire without human input: domain event triggers, cron schedule triggers, inbound webhook triggers, and data-threshold triggers. Without this, agents are reactive only when humans invoke them — which misses the autonomous value entirely.",
+      "type": "module",
+      "status": "planned",
+      "phase": 1,
+      "parent": "core",
+      "code": "IS-TRIG",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "trig-event",
+      "label": "Domain Event Triggers",
+      "description": "Subscribe to EventBus topics and fire a workflow or agent run on match. e.g. invoice.overdue → AR dunning agent, leave.approved → payroll adjustment workflow. Filter by event payload fields. Idempotency key prevents double-firing on bus retry.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "trig",
+      "code": "IS-TRIG-001",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "trig-schedule",
+      "label": "Schedule Triggers",
+      "description": "Cron-based triggers per tenant timezone. e.g. 0 8 1 * * → monthly payroll run agent; 0 7 * * 1 → weekly cash position report. Tenant admin configures; IS-PLAT-PERM scopes what the fired agent/workflow may do.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "trig",
+      "code": "IS-TRIG-002",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "trig-webhook",
+      "label": "Inbound Webhook Triggers",
+      "description": "Signed inbound webhooks from third-party systems (bank callbacks, government API push, Tokopedia order events) fire a workflow or agent. Payload validated against registered schema. Secret rotation without downtime.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "trig",
+      "code": "IS-TRIG-003",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "trig-threshold",
+      "label": "Data Threshold Triggers",
+      "description": "Polling-based: fire when a data condition is met (overdue invoices > 10, stock level < reorder point, agent approval queue > 5 pending). Configurable poll interval. Deduplication window prevents repeated firing until condition clears.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 1,
+      "parent": "trig",
+      "code": "IS-TRIG-004",
+      "milestone": "v1.0"
+    },
+    {
+      "id": "partner",
+      "label": "Partner Ecosystem",
+      "description": "Certified partner directory + vertical accelerator programme. Implementation partners, vertical solution builders, managed service providers, and telco-bundled distributors. No code marketplace — partners build configuration accelerators (IS-TPL bundles) and provide services. Enables geographic reach and industry depth without diluting core product quality.",
+      "type": "module",
+      "status": "planned",
+      "phase": 2,
+      "parent": "core",
+      "code": "IS-PARTNER",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "partner-directory",
+      "label": "Partner Directory",
+      "description": "Public-facing partner profiles: firm name, specialisations (industry verticals, module expertise), service regions, certification tier, case studies. Tenants discover and engage partners from here. Partners cannot pay for placement — ranking is merit-based (certification level + customer reviews).",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "partner",
+      "code": "IS-PARTNER-001",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "partner-certification",
+      "label": "Certification Programme",
+      "description": "Technical exam + quality agreement + annual renewal. Tiers: Associate (deployment), Professional (customisation + vertical solutions), Expert (enterprise + gov track). Certification badge displayed on partner directory profile and in-product partner recommendation cards.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "partner",
+      "code": "IS-PARTNER-002",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "partner-cosell",
+      "label": "Co-Sell Coordination",
+      "description": "AE-partner deal attribution and lead routing. Partners log opportunities; Kantr AEs see partner-sourced pipeline. Inbound leads matched to relevant certified partners by industry + region. AE comp tied to partner-sourced deals to incentivise ecosystem behaviour.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "partner",
+      "code": "IS-PARTNER-003",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "partner-accelerators",
+      "label": "Vertical Accelerators",
+      "description": "Partner-contributed IS-TPL configuration bundles reviewed and curated by Kantr. First three verticals: palm oil/plantation (yield payroll, harvest ops), construction/contractor (project procurement, multi-entity), klinik/clinic (BPJS reconciliation, scheduling). Partners who publish an accelerator earn Vertical Specialist badge.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "partner",
+      "code": "IS-PARTNER-004",
+      "milestone": "v2.0"
+    },
+    {
+      "id": "partner-portal",
+      "label": "Partner Portal",
+      "description": "Authenticated partner workspace: deal registration, sandbox tenant management, certification exam access, accelerator submission, co-sell pipeline visibility. Not customer-facing — internal tool for certified partners.",
+      "type": "feature",
+      "status": "planned",
+      "phase": 2,
+      "parent": "partner",
+      "code": "IS-PARTNER-005",
+      "milestone": "v2.0"
     }
   ]
 }
