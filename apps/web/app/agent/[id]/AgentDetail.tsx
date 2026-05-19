@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { Agent, Mandate, AgentRun, AgentTool } from '@kantorcore/db'
 
 const RUN_STATUS_COLOR: Record<string, string> = {
@@ -42,6 +43,12 @@ export default function AgentDetail({
   const [mandateError, setMandateError] = useState<string | null>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
 
+  // Run panel
+  const [runPrompt, setRunPrompt] = useState('')
+  const [running, setRunning] = useState(false)
+  const [runError, setRunError] = useState<string | null>(null)
+  const router = useRouter()
+
   const grantableTools = useMemo(() => {
     const granted = new Set(mandates.map((m) => m.toolName))
     return availableTools.filter((t) => !granted.has(t.name))
@@ -81,6 +88,24 @@ export default function AgentDetail({
       setMandateError('Gagal mencabut mandat.')
     }
     setRevoking(null)
+  }
+
+  async function startRun() {
+    if (running || !runPrompt.trim()) return
+    setRunning(true)
+    setRunError(null)
+    const res = await fetch('/api/agent/runs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agentId: agent.id, prompt: runPrompt }),
+    })
+    const data = await res.json().catch(() => ({})) as Record<string, unknown>
+    if (!res.ok) {
+      setRunError((data.error as string) ?? 'Gagal menjalankan agen.')
+      setRunning(false)
+      return
+    }
+    router.push(`/agent/runs/${data.runId}`)
   }
 
   async function toggleEnabled() {
@@ -338,6 +363,56 @@ export default function AgentDetail({
           </Section>
         )}
 
+        {/* Run panel */}
+        <Section title="Jalankan Agen" hint="kirim prompt ke agen">
+          {runError && (
+            <p style={{ font: '13px/1 var(--font-sans)', color: '#C13D3D', marginBottom: 'var(--s-3)' }}>
+              {runError}
+            </p>
+          )}
+          <textarea
+            value={runPrompt}
+            onChange={(e) => setRunPrompt(e.target.value)}
+            placeholder="Apa yang ingin Anda minta dari agen ini?"
+            rows={4}
+            disabled={running}
+            style={{
+              width: '100%',
+              padding: 'var(--s-3)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--r-sm)',
+              font: '14px/1.6 var(--font-sans)',
+              color: 'var(--fg-1)',
+              background: 'var(--bg-1)',
+              resize: 'vertical',
+              boxSizing: 'border-box',
+              marginBottom: 'var(--s-3)',
+            }}
+          />
+          <button
+            type="button"
+            onClick={startRun}
+            disabled={running || !runPrompt.trim() || !agent.enabled}
+            style={{
+              padding: '8px 20px',
+              background: 'var(--indigo)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 'var(--r-sm)',
+              font: '600 14px/1 var(--font-sans)',
+              cursor: running || !runPrompt.trim() || !agent.enabled ? 'not-allowed' : 'pointer',
+              opacity: running || !runPrompt.trim() || !agent.enabled ? 0.6 : 1,
+            }}
+          >
+            {running ? 'Menjalankan…' : 'Jalankan'}
+          </button>
+          {!agent.enabled && (
+            <p style={{ font: '12px/1 var(--font-sans)', color: 'var(--fg-3)', marginTop: 'var(--s-2)' }}>
+              Aktifkan agen terlebih dahulu.
+            </p>
+          )}
+        </Section>
+
         {/* Run history */}
         <Section title="Riwayat eksekusi" hint="50 run terakhir">
           {runs.length === 0 ? (
@@ -345,8 +420,9 @@ export default function AgentDetail({
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {runs.map((r) => (
-                <div
+                <a
                   key={r.id}
+                  href={`/agent/runs/${r.id}`}
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '1fr 120px 160px',
@@ -358,6 +434,7 @@ export default function AgentDetail({
                     borderRadius: 'var(--r-sm)',
                     font: '400 12px/1 var(--font-sans)',
                     color: 'var(--fg-2)',
+                    textDecoration: 'none',
                   }}
                 >
                   <span
@@ -382,7 +459,7 @@ export default function AgentDetail({
                       minute: '2-digit',
                     })}
                   </span>
-                </div>
+                </a>
               ))}
             </div>
           )}
