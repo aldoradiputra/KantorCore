@@ -3,7 +3,9 @@
    Single source of truth: colors, type, spacing, radius, shadow, motion.
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Fonts (Inter + JetBrains Mono) are self-hosted per app — see
+   apps/web/app/globals.css for @font-face declarations and the
+   woff2 assets under apps/web/public/fonts/. */
 
 :root {
   /* ---------- COLOR (locked) ---------- */
