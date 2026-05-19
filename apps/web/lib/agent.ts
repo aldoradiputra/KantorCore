@@ -172,6 +172,9 @@ const DEFAULT_TOOLS: ReadonlyArray<{
   { name: 'hr.get_employee', module: 'hr', description: 'Ambil detail satu karyawan berdasarkan UUID.' },
   { name: 'hr.create_employee', module: 'hr', description: 'Daftarkan karyawan baru.' },
   { name: 'hr.update_employee', module: 'hr', description: 'Ubah jabatan, status, departemen, atau tanggal berakhir karyawan.' },
+  { name: 'time.log_hours', module: 'time', description: 'Catat jam kerja karyawan untuk suatu tanggal.' },
+  { name: 'time.get_weekly_summary', module: 'time', description: 'Ringkasan total jam kerja per karyawan dalam satu minggu.' },
+  { name: 'time.list_entries', module: 'time', description: 'Daftar entri timesheet dengan filter karyawan/tanggal.' },
 ]
 
 /** Idempotent — re-running on a populated tenant is a no-op. */

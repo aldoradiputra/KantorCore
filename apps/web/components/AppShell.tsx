@@ -64,14 +64,24 @@ function IconRent() {
   )
 }
 
+function IconTime() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="9" r="7.5" />
+      <path d="M9 5v4l2.5 2.5" />
+    </svg>
+  )
+}
+
 // ── Module list ───────────────────────────────────────────────
-type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent'
+type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time'
 
 const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon: () => React.ReactElement }[] = [
   { id: 'home', label: 'Beranda', href: '/', hotkey: 'G H', Icon: IconHome },
   { id: 'chat', label: 'Chat', href: '/chat', hotkey: 'G C', Icon: IconChat },
   { id: 'proj', label: 'Proyek', href: '/proj', hotkey: 'G P', Icon: IconProj },
   { id: 'hr', label: 'SDM', href: '/hr', hotkey: 'G R', Icon: IconHR },
+  { id: 'time', label: 'Waktu', href: '/time', hotkey: 'G W', Icon: IconTime },
   { id: 'rent', label: 'Sewa', href: '/rent', hotkey: 'G S', Icon: IconRent },
   { id: 'agent', label: 'Agent', href: '/agent', hotkey: 'G A', Icon: IconAgent },
 ]
