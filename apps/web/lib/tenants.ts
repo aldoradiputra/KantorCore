@@ -2,6 +2,7 @@ import 'server-only'
 import { eq, and, sql } from 'drizzle-orm'
 import { tenants, memberships, type Tenant, type Membership } from '@kantorcore/db'
 import { getDb, withUser } from './db'
+import { seedDefaultProcesses } from './processes'
 
 const SLUG_RE = /^[a-z0-9]([a-z0-9-]{1,62}[a-z0-9])?$/
 const RESERVED_SLUGS = new Set([
@@ -65,6 +66,15 @@ export async function provisionTenant(input: {
 
     return { tenant, membership }
   })
+
+  // Seed the Process Library so every new workspace gets the canonical
+  // multi-record workflow docs out of the box. Failures here are non-fatal —
+  // the tenant is already provisioned; users can re-seed via the API endpoint.
+  try {
+    await seedDefaultProcesses(result.tenant.id)
+  } catch (err) {
+    console.error('[provisionTenant] seedDefaultProcesses failed', err)
+  }
 
   return { ok: true, ...result }
 }
