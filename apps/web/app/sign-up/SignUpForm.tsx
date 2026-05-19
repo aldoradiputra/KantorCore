@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@kantorcore/ui'
 import { AuthShell, Field, ErrorBanner } from '../../components/AuthLayout'
+import { useTurnstile } from '../../hooks/useTurnstile'
 
 function slugify(input: string): string {
   return input
@@ -26,6 +27,8 @@ export default function SignUpForm() {
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
 
+  const { containerRef: turnstileRef, token: turnstileToken, reset: resetTurnstile } = useTurnstile()
+
   function onWorkspaceNameChange(v: string) {
     setWorkspaceName(v)
     if (!slugTouched) setWorkspaceSlug(slugify(v))
@@ -43,7 +46,7 @@ export default function SignUpForm() {
     const res = await fetch('/api/auth/sign-up', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, workspaceName, workspaceSlug }),
+      body: JSON.stringify({ name, email, password, workspaceName, workspaceSlug, cfTurnstileToken: turnstileToken }),
     })
     if (res.ok) {
       window.location.href = '/'
@@ -51,6 +54,7 @@ export default function SignUpForm() {
     }
     const data = await res.json().catch(() => ({ error: 'Gagal mendaftar.' }))
     setError(data.error ?? 'Gagal mendaftar.')
+    resetTurnstile()
     setPending(false)
   }
 
@@ -107,6 +111,7 @@ export default function SignUpForm() {
         <Button variant="primary" size="md" fullWidth disabled={pending}>
           {pending ? 'Memproses…' : 'Daftar & buat workspace'}
         </Button>
+        <div ref={turnstileRef} />
       </form>
     </AuthShell>
   )
