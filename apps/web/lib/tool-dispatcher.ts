@@ -23,6 +23,14 @@ import {
   weekEnd,
   formatDuration,
 } from './timesheet'
+import {
+  listAccounts,
+  listInvoices,
+  listBills,
+  createInvoice,
+  createBill,
+  formatIDR,
+} from './finance'
 import { recordAudit } from './audit'
 import type { IssuePriority, IssueStatus, EmploymentType, EmployeeStatus } from '@kantorcore/db'
 
@@ -269,6 +277,93 @@ const TOOL_IMPLS: Record<string, ToolImpl> = {
     }
   },
 
+  'fin.list_accounts': async ({ tenantId }, input) => {
+    const type = input['type'] ? String(input['type']) : undefined
+    const list = await listAccounts(tenantId)
+    const filtered = type ? list.filter((a) => a.type === type) : list
+    return {
+      ok: true,
+      result: filtered.map((a) => ({ id: a.id, code: a.code, name: a.name, type: a.type })),
+    }
+  },
+
+  'fin.list_invoices': async ({ tenantId }, input) => {
+    const status = input['status'] ? (String(input['status']) as 'draft' | 'confirmed' | 'paid' | 'cancelled') : undefined
+    const list = await listInvoices(tenantId, status ? { status } : {}, 50)
+    return {
+      ok: true,
+      result: list.map((i) => ({
+        id: i.id,
+        number: i.invoiceNumber,
+        customer: i.customerName,
+        date: i.date,
+        dueDate: i.dueDate,
+        total: formatIDR(i.total),
+        status: i.status,
+      })),
+    }
+  },
+
+  'fin.list_bills': async ({ tenantId }, input) => {
+    const status = input['status'] ? (String(input['status']) as 'draft' | 'confirmed' | 'paid' | 'cancelled') : undefined
+    const list = await listBills(tenantId, status ? { status } : {}, 50)
+    return {
+      ok: true,
+      result: list.map((b) => ({
+        id: b.id,
+        number: b.billNumber,
+        vendor: b.vendorName,
+        date: b.date,
+        dueDate: b.dueDate,
+        total: formatIDR(b.total),
+        status: b.status,
+      })),
+    }
+  },
+
+  'fin.create_invoice': async ({ tenantId, actorUserId }, input) => {
+    const customerName = String(input['customer_name'] ?? '').trim()
+    if (!customerName) return { ok: false, error: 'customer_name wajib diisi.' }
+    const lines = (input['lines'] as Array<Record<string, unknown>>) ?? []
+    if (!Array.isArray(lines) || lines.length === 0) return { ok: false, error: 'lines wajib berisi minimal satu baris.' }
+
+    const today = new Date().toISOString().slice(0, 10)
+    const date = input['date'] ? String(input['date']) : today
+    const dueDate = input['due_date'] ? String(input['due_date']) : today
+
+    const parsedLines = lines.map((l) => ({
+      description: String(l['description'] ?? ''),
+      quantity: Number(l['quantity'] ?? 1),
+      unitPrice: Number(l['unit_price'] ?? 0),
+      accountId: String(l['account_id'] ?? ''),
+    }))
+    for (const l of parsedLines) {
+      if (!l.description || !l.accountId || l.quantity <= 0 || l.unitPrice < 0) {
+        return { ok: false, error: 'Baris faktur tidak valid (description, account_id, quantity > 0, unit_price >= 0 wajib).' }
+      }
+    }
+
+    const inv = await createInvoice({
+      tenantId,
+      userId: actorUserId,
+      customerName,
+      customerEmail: input['customer_email'] ? String(input['customer_email']) : null,
+      date,
+      dueDate,
+      notes: input['notes'] ? String(input['notes']) : null,
+      lines: parsedLines,
+    })
+    void recordAudit({
+      tenantId,
+      actorUserId,
+      action: 'fin.invoice_create',
+      resourceType: 'invoice',
+      resourceId: inv.id,
+      payload: { invoiceNumber: inv.invoiceNumber, via: 'agent' },
+    })
+    return { ok: true, result: { id: inv.id, invoiceNumber: inv.invoiceNumber } }
+  },
+
   'hr.update_employee': async ({ tenantId, actorUserId }, input) => {
     const id = String(input['employee_id'] ?? '')
     if (!id) return { ok: false, error: 'employee_id wajib diisi.' }
@@ -437,5 +532,48 @@ export const TOOL_SCHEMAS: Record<string, object> = {
       date_from: { type: 'string', description: 'Dari tanggal (YYYY-MM-DD)' },
       date_to: { type: 'string', description: 'Sampai tanggal (YYYY-MM-DD)' },
     },
+  },
+  'fin.list_accounts': {
+    type: 'object',
+    properties: {
+      type: { type: 'string', enum: ['asset', 'liability', 'equity', 'revenue', 'expense'], description: 'Filter berdasarkan jenis akun (opsional)' },
+    },
+  },
+  'fin.list_invoices': {
+    type: 'object',
+    properties: {
+      status: { type: 'string', enum: ['draft', 'confirmed', 'paid', 'cancelled'], description: 'Filter status (opsional)' },
+    },
+  },
+  'fin.list_bills': {
+    type: 'object',
+    properties: {
+      status: { type: 'string', enum: ['draft', 'confirmed', 'paid', 'cancelled'], description: 'Filter status (opsional)' },
+    },
+  },
+  'fin.create_invoice': {
+    type: 'object',
+    properties: {
+      customer_name: { type: 'string', description: 'Nama pelanggan' },
+      customer_email: { type: 'string' },
+      date: { type: 'string', description: 'Tanggal faktur (YYYY-MM-DD, default: hari ini)' },
+      due_date: { type: 'string', description: 'Tanggal jatuh tempo (YYYY-MM-DD, default: hari ini)' },
+      notes: { type: 'string' },
+      lines: {
+        type: 'array',
+        description: 'Baris faktur',
+        items: {
+          type: 'object',
+          properties: {
+            description: { type: 'string' },
+            quantity: { type: 'integer', minimum: 1 },
+            unit_price: { type: 'integer', description: 'Harga satuan dalam IDR (tanpa desimal)' },
+            account_id: { type: 'string', description: 'UUID akun pendapatan (gunakan fin.list_accounts type=revenue)' },
+          },
+          required: ['description', 'quantity', 'unit_price', 'account_id'],
+        },
+      },
+    },
+    required: ['customer_name', 'lines'],
   },
 }
