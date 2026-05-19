@@ -46,13 +46,23 @@ function IconAgent() {
   )
 }
 
+function IconHR() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="6" r="3.5" />
+      <path d="M2 16c0-3.314 3.134-6 7-6s7 2.686 7 6" />
+    </svg>
+  )
+}
+
 // ── Module list ───────────────────────────────────────────────
-type ModuleId = 'home' | 'chat' | 'proj' | 'agent'
+type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr'
 
 const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon: () => React.ReactElement }[] = [
   { id: 'home', label: 'Beranda', href: '/', hotkey: 'G H', Icon: IconHome },
   { id: 'chat', label: 'Chat', href: '/chat', hotkey: 'G C', Icon: IconChat },
   { id: 'proj', label: 'Proyek', href: '/proj', hotkey: 'G P', Icon: IconProj },
+  { id: 'hr', label: 'SDM', href: '/hr', hotkey: 'G R', Icon: IconHR },
   { id: 'agent', label: 'Agent', href: '/agent', hotkey: 'G A', Icon: IconAgent },
 ]
 
