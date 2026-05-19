@@ -7,8 +7,11 @@ import {
   date,
   pgEnum,
   index,
+  integer,
+  boolean,
 } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
+import { users } from './users'
 
 /**
  * IS-HR — HR & Employees (Phase 1).
@@ -91,3 +94,38 @@ export type Employee = typeof employees.$inferSelect
 export type NewEmployee = typeof employees.$inferInsert
 export type EmploymentType = (typeof employmentType.enumValues)[number]
 export type EmployeeStatus = (typeof employeeStatus.enumValues)[number]
+
+// ── Timesheet Entries ─────────────────────────────────────────────────────────
+export const timesheetEntries = hr.table(
+  'timesheet_entries',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    employeeId: uuid('employee_id')
+      .notNull()
+      .references(() => employees.id, { onDelete: 'cascade' }),
+    // Optional project + issue linkage (nullable for non-project time)
+    projectId: uuid('project_id'),
+    issueId: uuid('issue_id'),
+    date: date('date').notNull(),
+    durationMinutes: integer('duration_minutes').notNull(),
+    description: text('description'),
+    billable: boolean('billable').notNull().default(true),
+    createdBy: uuid('created_by')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    tenantIdx: index('ts_tenant_idx').on(t.tenantId),
+    employeeIdx: index('ts_employee_idx').on(t.tenantId, t.employeeId),
+    dateIdx: index('ts_date_idx').on(t.tenantId, t.date),
+    projectIdx: index('ts_project_idx').on(t.projectId),
+  }),
+)
+
+export type TimesheetEntry = typeof timesheetEntries.$inferSelect
+export type NewTimesheetEntry = typeof timesheetEntries.$inferInsert

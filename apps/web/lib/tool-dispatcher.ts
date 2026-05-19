@@ -15,6 +15,14 @@ import {
   createEmployee,
   updateEmployee,
 } from './hr'
+import {
+  listTimesheetEntries,
+  createTimesheetEntry,
+  getWeeklySummary,
+  weekStart,
+  weekEnd,
+  formatDuration,
+} from './timesheet'
 import { recordAudit } from './audit'
 import type { IssuePriority, IssueStatus, EmploymentType, EmployeeStatus } from '@kantorcore/db'
 
@@ -181,6 +189,86 @@ const TOOL_IMPLS: Record<string, ToolImpl> = {
     return { ok: true, result: { id: result.employee.id, name: result.employee.name } }
   },
 
+  // ── IS-TIME tools ─────────────────────────────────────────────────────────────
+  'time.log_hours': async ({ tenantId, actorUserId }, input) => {
+    const employeeId = String(input['employee_id'] ?? '')
+    if (!employeeId) return { ok: false, error: 'employee_id wajib diisi.' }
+    const date = input['date'] ? String(input['date']) : new Date().toISOString().slice(0, 10)
+    const durationMinutes = input['duration_minutes']
+      ? Math.round(Number(input['duration_minutes']))
+      : input['hours']
+      ? Math.round(Number(input['hours']) * 60)
+      : 0
+
+    if (durationMinutes <= 0) return { ok: false, error: 'Durasi harus lebih dari 0.' }
+
+    const result = await createTimesheetEntry(tenantId, actorUserId, {
+      employeeId,
+      date,
+      durationMinutes,
+      description: input['description'] ? String(input['description']) : null,
+      billable: input['billable'] !== false,
+      projectId: input['project_id'] ? String(input['project_id']) : null,
+    })
+    if (!result.ok) return { ok: false, error: result.error }
+    void recordAudit({
+      tenantId,
+      actorUserId,
+      action: 'time.entry_create',
+      resourceType: 'timesheet_entry',
+      resourceId: result.entry.id,
+      payload: { employeeId, date, durationMinutes, via: 'agent' },
+    })
+    return { ok: true, result: { id: result.entry.id, date, durationMinutes: formatDuration(durationMinutes) } }
+  },
+
+  'time.get_weekly_summary': async ({ tenantId }, input) => {
+    const dateStr = input['date'] ? String(input['date']) : new Date().toISOString().slice(0, 10)
+    const ws = weekStart(dateStr)
+    const we = weekEnd(ws)
+    const employeeId = input['employee_id'] ? String(input['employee_id']) : undefined
+
+    const rows = await getWeeklySummary(tenantId, ws, we, employeeId)
+    const byEmployee = new Map<string, { name: string; totalMinutes: number; billableMinutes: number }>()
+    for (const r of rows) {
+      const e = byEmployee.get(r.employeeId) ?? { name: r.employeeName, totalMinutes: 0, billableMinutes: 0 }
+      e.totalMinutes += r.totalMinutes
+      e.billableMinutes += r.billableMinutes
+      byEmployee.set(r.employeeId, e)
+    }
+
+    return {
+      ok: true,
+      result: {
+        week: `${ws} — ${we}`,
+        employees: [...byEmployee.entries()].map(([id, v]) => ({
+          employeeId: id,
+          name: v.name,
+          total: formatDuration(v.totalMinutes),
+          billable: formatDuration(v.billableMinutes),
+        })),
+      },
+    }
+  },
+
+  'time.list_entries': async ({ tenantId }, input) => {
+    const employeeId = input['employee_id'] ? String(input['employee_id']) : undefined
+    const dateFrom = input['date_from'] ? String(input['date_from']) : undefined
+    const dateTo = input['date_to'] ? String(input['date_to']) : undefined
+    const list = await listTimesheetEntries(tenantId, { employeeId, dateFrom, dateTo }, 50)
+    return {
+      ok: true,
+      result: list.map((e) => ({
+        id: e.id,
+        employee: e.employeeName,
+        date: e.date,
+        duration: formatDuration(e.durationMinutes),
+        billable: e.billable,
+        description: e.description,
+      })),
+    }
+  },
+
   'hr.update_employee': async ({ tenantId, actorUserId }, input) => {
     const id = String(input['employee_id'] ?? '')
     if (!id) return { ok: false, error: 'employee_id wajib diisi.' }
@@ -321,5 +409,33 @@ export const TOOL_SCHEMAS: Record<string, object> = {
       termination_date: { type: 'string', description: 'Tanggal berakhir (YYYY-MM-DD)' },
     },
     required: ['employee_id'],
+  },
+  'time.log_hours': {
+    type: 'object',
+    properties: {
+      employee_id: { type: 'string', description: 'UUID karyawan' },
+      date: { type: 'string', description: 'Tanggal (YYYY-MM-DD, default: hari ini)' },
+      hours: { type: 'number', description: 'Jumlah jam (misal: 1.5 untuk 90 menit)' },
+      duration_minutes: { type: 'integer', description: 'Durasi dalam menit (alternatif dari hours)' },
+      description: { type: 'string', description: 'Deskripsi pekerjaan (opsional)' },
+      billable: { type: 'boolean', description: 'Apakah billable? (default: true)' },
+      project_id: { type: 'string', description: 'UUID proyek (opsional)' },
+    },
+    required: ['employee_id'],
+  },
+  'time.get_weekly_summary': {
+    type: 'object',
+    properties: {
+      date: { type: 'string', description: 'Tanggal dalam minggu yang ingin dilihat (YYYY-MM-DD, default: hari ini)' },
+      employee_id: { type: 'string', description: 'Filter ke satu karyawan (opsional)' },
+    },
+  },
+  'time.list_entries': {
+    type: 'object',
+    properties: {
+      employee_id: { type: 'string', description: 'Filter ke satu karyawan (opsional)' },
+      date_from: { type: 'string', description: 'Dari tanggal (YYYY-MM-DD)' },
+      date_to: { type: 'string', description: 'Sampai tanggal (YYYY-MM-DD)' },
+    },
   },
 }
