@@ -63,8 +63,21 @@ function IconTime() {
   )
 }
 
+function IconProses() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="4" cy="4" r="2" />
+      <circle cx="14" cy="9" r="2" />
+      <circle cx="4" cy="14" r="2" />
+      <path d="M4 6v6" />
+      <path d="M6 4h6" />
+      <path d="M12 9H6" />
+    </svg>
+  )
+}
+
 // ── Module list ───────────────────────────────────────────────
-type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time'
+type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'proses'
 
 const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon: () => React.ReactElement }[] = [
   { id: 'home', label: 'Beranda', href: '/', hotkey: 'G H', Icon: IconHome },
@@ -73,6 +86,7 @@ const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon
   { id: 'hr', label: 'SDM', href: '/hr', hotkey: 'G R', Icon: IconHR },
   { id: 'time', label: 'Waktu', href: '/time', hotkey: 'G W', Icon: IconTime },
   { id: 'rent', label: 'Sewa', href: '/rent', hotkey: 'G S', Icon: IconRent },
+  { id: 'proses', label: 'Proses', href: '/proses', hotkey: 'G O', Icon: IconProses },
   { id: 'agent', label: 'Agent', href: '/agent', hotkey: 'G A', Icon: IconAgent },
 ]
 
