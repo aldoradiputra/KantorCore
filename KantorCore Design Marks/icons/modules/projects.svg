@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="KantorCore Projects module icon">
+  <rect width="48" height="48" rx="11" fill="#3B4FC4"></rect>
+  <rect x="6" y="8" width="11" height="32" rx="2" fill="#2A3A95"></rect>
+    <rect x="18.5" y="8" width="11" height="32" rx="2" fill="#2A3A95"></rect>
+    <rect x="31" y="8" width="11" height="32" rx="2" fill="#2A3A95"></rect>
+    <rect x="8" y="11" width="7" height="9" rx="1.5" fill="#FFFFFF"></rect>
+    <rect x="8" y="22" width="7" height="6" rx="1.5" fill="#8590D5"></rect>
+    <rect x="20.5" y="11" width="7" height="6" rx="1.5" fill="#8590D5"></rect>
+    <rect x="20.5" y="19" width="7" height="9" rx="1.5" fill="#FFFFFF"></rect>
+    <rect x="33" y="11" width="7" height="6" rx="1.5" fill="#8590D5"></rect>
+    <rect x="33" y="19" width="7" height="6" rx="1.5" fill="#8590D5"></rect>
+    <rect x="33" y="27" width="7" height="9" rx="1.5" fill="#FFFFFF"></rect>
+</svg>

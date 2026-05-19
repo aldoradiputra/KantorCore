@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="KantorCore Inventory module icon">
+  <rect width="48" height="48" rx="11" fill="#3B4FC4"></rect>
+  <path d="M11 18 L24 25 L24 41 L11 33 Z" fill="#8590D5"></path>
+    <path d="M37 18 L24 25 L24 41 L37 33 Z" fill="#2A3A95"></path>
+    <path d="M11 18 L24 11 L37 18 L24 25 Z" fill="#FFFFFF"></path>
+    <path d="M11 18 L24 25 L37 18" stroke="#3B4FC4" stroke-width="0.8" fill="none" opacity="0.6"></path>
+    <path d="M24 11 V25" stroke="#3B4FC4" stroke-width="0.8" opacity="0.6"></path>
+</svg>
