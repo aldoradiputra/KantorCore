@@ -226,6 +226,33 @@ export async function updateIssue(input: {
  * Tenant member directory, used to populate the assignee picker. Returns
  * lightweight rows — full user records aren't needed in the UI.
  */
+/** Resolves "KAN-42" → the issue row. Returns null if not found or bad format. */
+export async function getIssueByKey(
+  tenantId: string,
+  issueKey: string,
+): Promise<Issue | null> {
+  const m = /^([A-Z][A-Z0-9]{1,7})-(\d+)$/.exec(issueKey.trim().toUpperCase())
+  if (!m) return null
+  const [, projectKey, numberStr] = m
+  const number = parseInt(numberStr, 10)
+
+  return withTenant(tenantId, async (tx) => {
+    const [project] = await tx
+      .select({ id: projects.id })
+      .from(projects)
+      .where(and(eq(projects.tenantId, tenantId), eq(projects.key, projectKey!)))
+      .limit(1)
+    if (!project) return null
+
+    const [issue] = await tx
+      .select()
+      .from(issues)
+      .where(and(eq(issues.projectId, project.id), eq(issues.number, number)))
+      .limit(1)
+    return issue ?? null
+  })
+}
+
 export async function listTenantMembers(
   tenantId: string,
 ): Promise<{ id: string; name: string; email: string }[]> {

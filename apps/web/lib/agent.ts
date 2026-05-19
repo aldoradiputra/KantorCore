@@ -10,7 +10,9 @@ import {
   type Mandate,
   type AgentTool,
 } from '@kantorcore/db'
-import { withTenant } from './db'
+import { withTenant, getDb } from './db'
+import { TOOL_SCHEMAS } from './tool-dispatcher'
+import type { ToolCallEvent } from './agent-runner'
 
 // ── Agents ────────────────────────────────────────────────────────────────────
 
@@ -179,12 +181,130 @@ export async function seedDefaultTools(tenantId: string): Promise<number> {
           name: t.name,
           module: t.module,
           description: t.description,
+          inputSchema: TOOL_SCHEMAS[t.name] ?? {},
         })),
       )
       .onConflictDoNothing()
       .returning({ id: tools.id })
     return result.length
   })
+}
+
+// ── Run management ─────────────────────────────────────────────────────────────
+
+export async function createRun(input: {
+  tenantId: string
+  agentId: string
+  userId: string
+  prompt: string
+}): Promise<{ ok: true; runId: string } | { ok: false; error: string }> {
+  const prompt = input.prompt.trim()
+  if (!prompt) return { ok: false, error: 'Prompt tidak boleh kosong.' }
+  if (prompt.length > 8000) return { ok: false, error: 'Prompt terlalu panjang (maks 8000 karakter).' }
+
+  return withTenant(input.tenantId, async (tx) => {
+    const [agent] = await tx
+      .select({ id: agents.id, enabled: agents.enabled })
+      .from(agents)
+      .where(and(eq(agents.tenantId, input.tenantId), eq(agents.id, input.agentId)))
+      .limit(1)
+    if (!agent) return { ok: false, error: 'Agen tidak ditemukan.' } as const
+    if (!agent.enabled) return { ok: false, error: 'Agen dinonaktifkan.' } as const
+
+    const [run] = await tx
+      .insert(agentRuns)
+      .values({
+        tenantId: input.tenantId,
+        agentId: input.agentId,
+        createdBy: input.userId,
+        status: 'pending',
+        input: { prompt },
+      })
+      .returning({ id: agentRuns.id })
+
+    return { ok: true, runId: run.id } as const
+  })
+}
+
+export interface RunDetail {
+  run: AgentRun
+  toolCalls: ToolCallEvent[]
+}
+
+export async function getRun(tenantId: string, runId: string): Promise<RunDetail | null> {
+  const rows = await withTenant(tenantId, (tx) =>
+    tx
+      .select()
+      .from(agentRuns)
+      .where(and(eq(agentRuns.tenantId, tenantId), eq(agentRuns.id, runId)))
+      .limit(1),
+  )
+  const run = rows[0]
+  if (!run) return null
+  return { run, toolCalls: (run.toolCalls as ToolCallEvent[]) ?? [] }
+}
+
+export async function approveRun(
+  tenantId: string,
+  runId: string,
+  approvalOutput?: unknown,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const db = getDb()
+  const [run] = await db
+    .select({ status: agentRuns.status, pendingToolCallId: agentRuns.pendingToolCallId, toolCalls: agentRuns.toolCalls })
+    .from(agentRuns)
+    .where(and(eq(agentRuns.tenantId, tenantId), eq(agentRuns.id, runId)))
+    .limit(1)
+
+  if (!run) return { ok: false, error: 'Run tidak ditemukan.' }
+  if (run.status !== 'awaiting_approval') return { ok: false, error: 'Run tidak dalam status awaiting_approval.' }
+
+  // Update the pending tool call's output in the history
+  const history = (run.toolCalls as ToolCallEvent[]).map((tc) =>
+    tc.id === run.pendingToolCallId
+      ? { ...tc, output: approvalOutput ?? { approved: true }, completedAt: new Date().toISOString() }
+      : tc,
+  )
+
+  await db
+    .update(agentRuns)
+    .set({ status: 'approved', toolCalls: history })
+    .where(eq(agentRuns.id, runId))
+
+  return { ok: true }
+}
+
+export async function rejectRun(
+  tenantId: string,
+  runId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const db = getDb()
+  const [run] = await db
+    .select({ status: agentRuns.status, pendingToolCallId: agentRuns.pendingToolCallId, toolCalls: agentRuns.toolCalls })
+    .from(agentRuns)
+    .where(and(eq(agentRuns.tenantId, tenantId), eq(agentRuns.id, runId)))
+    .limit(1)
+
+  if (!run) return { ok: false, error: 'Run tidak ditemukan.' }
+  if (run.status !== 'awaiting_approval') return { ok: false, error: 'Run tidak dalam status awaiting_approval.' }
+
+  const history = (run.toolCalls as ToolCallEvent[]).map((tc) =>
+    tc.id === run.pendingToolCallId
+      ? { ...tc, output: { rejected: true }, error: 'Ditolak oleh pengguna.', completedAt: new Date().toISOString() }
+      : tc,
+  )
+
+  await db
+    .update(agentRuns)
+    .set({
+      status: 'failed',
+      error: 'Run ditolak oleh pengguna pada langkah persetujuan.',
+      toolCalls: history,
+      completedAt: new Date(),
+    })
+    .where(eq(agentRuns.id, runId))
+
+  return { ok: true }
 }
 
 // ── Runs ──────────────────────────────────────────────────────────────────────

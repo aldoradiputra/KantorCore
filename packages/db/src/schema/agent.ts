@@ -109,7 +109,7 @@ export const mandates = agent.table(
 // ── Runs ──────────────────────────────────────────────────────────────────────
 // Execution log. One row per agent invocation. Status progresses:
 //   pending → running → done | failed
-//   pending → awaiting_approval → approved/rejected → running → done | failed
+//   pending → running → awaiting_approval → running → done | failed
 export const agentRuns = agent.table(
   'runs',
   {
@@ -124,6 +124,14 @@ export const agentRuns = agent.table(
     input: jsonb('input').notNull().default({}),
     output: jsonb('output'),
     error: text('error'),
+    /** Ordered array of ToolCallEvent objects — the execution timeline. */
+    toolCalls: jsonb('tool_calls').notNull().default([]),
+    /** Anthropic message array serialized for resume after awaiting_approval. */
+    pendingMessages: jsonb('pending_messages'),
+    /** tool_use block ID currently awaiting approval. */
+    pendingToolCallId: text('pending_tool_call_id'),
+    inputTokens: text('input_tokens'),
+    outputTokens: text('output_tokens'),
     startedAt: timestamp('started_at', { withTimezone: true }),
     completedAt: timestamp('completed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -131,7 +139,6 @@ export const agentRuns = agent.table(
   },
   (t) => ({
     agentCreatedIdx: index('agent_runs_agent_created_idx').on(t.agentId, t.createdAt),
-    // For fast inbox: pending/running/awaiting_approval runs per tenant.
     tenantStatusIdx: index('agent_runs_tenant_status_idx').on(t.tenantId, t.status),
   }),
 )
