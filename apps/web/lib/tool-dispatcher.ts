@@ -9,7 +9,14 @@ import {
   getIssueByKey,
 } from './proj'
 import { searchTenant } from './search'
-import type { IssuePriority, IssueStatus } from '@kantorcore/db'
+import {
+  listEmployees,
+  getEmployee,
+  createEmployee,
+  updateEmployee,
+} from './hr'
+import { recordAudit } from './audit'
+import type { IssuePriority, IssueStatus, EmploymentType, EmployeeStatus } from '@kantorcore/db'
 
 export interface ToolDispatchContext {
   tenantId: string
@@ -119,6 +126,88 @@ const TOOL_IMPLS: Record<string, ToolImpl> = {
     const hits = await searchTenant(tenantId, query)
     return { ok: true, result: hits }
   },
+
+  // ── IS-HR tools ─────────────────────────────────────────────────────────────
+  'hr.list_employees': async ({ tenantId }, input) => {
+    const status = input['status'] ? String(input['status']) as EmployeeStatus : undefined
+    const search = input['search'] ? String(input['search']) : undefined
+    const list = await listEmployees(tenantId, { status, search }, 50)
+    return {
+      ok: true,
+      result: list.map((e) => ({
+        id: e.id,
+        employeeCode: e.employeeCode,
+        name: e.name,
+        email: e.email,
+        position: e.position,
+        department: e.departmentName,
+        employmentType: e.employmentType,
+        status: e.status,
+        hireDate: e.hireDate,
+      })),
+    }
+  },
+
+  'hr.get_employee': async ({ tenantId }, input) => {
+    const id = String(input['employee_id'] ?? '')
+    if (!id) return { ok: false, error: 'employee_id wajib diisi.' }
+    const emp = await getEmployee(tenantId, id)
+    if (!emp) return { ok: false, error: `Karyawan "${id}" tidak ditemukan.` }
+    return { ok: true, result: emp }
+  },
+
+  'hr.create_employee': async ({ tenantId, actorUserId }, input) => {
+    const name = String(input['name'] ?? '').trim()
+    if (!name) return { ok: false, error: 'name wajib diisi.' }
+    const result = await createEmployee(tenantId, {
+      name,
+      employeeCode: input['employee_code'] ? String(input['employee_code']) : null,
+      email: input['email'] ? String(input['email']) : null,
+      phone: input['phone'] ? String(input['phone']) : null,
+      position: input['position'] ? String(input['position']) : null,
+      departmentId: input['department_id'] ? String(input['department_id']) : null,
+      employmentType: (input['employment_type'] as EmploymentType) ?? 'full_time',
+      hireDate: input['hire_date'] ? String(input['hire_date']) : null,
+    })
+    if (!result.ok) return { ok: false, error: result.error }
+    void recordAudit({
+      tenantId,
+      actorUserId,
+      action: 'hr.employee_create',
+      resourceType: 'employee',
+      resourceId: result.employee.id,
+      payload: { name: result.employee.name, via: 'agent' },
+    })
+    return { ok: true, result: { id: result.employee.id, name: result.employee.name } }
+  },
+
+  'hr.update_employee': async ({ tenantId, actorUserId }, input) => {
+    const id = String(input['employee_id'] ?? '')
+    if (!id) return { ok: false, error: 'employee_id wajib diisi.' }
+    const patch: Parameters<typeof updateEmployee>[2] = {}
+    if (input['name']) patch.name = String(input['name'])
+    if (input['position']) patch.position = String(input['position'])
+    if (input['department_id'] !== undefined) {
+      patch.departmentId = input['department_id'] ? String(input['department_id']) : null
+    }
+    if (input['status']) patch.status = input['status'] as EmployeeStatus
+    if (input['employment_type']) patch.employmentType = input['employment_type'] as EmploymentType
+    if (input['termination_date'] !== undefined) {
+      patch.terminationDate = input['termination_date'] ? String(input['termination_date']) : null
+    }
+
+    const result = await updateEmployee(tenantId, id, patch)
+    if (!result.ok) return { ok: false, error: result.error }
+    void recordAudit({
+      tenantId,
+      actorUserId,
+      action: 'hr.employee_update',
+      resourceType: 'employee',
+      resourceId: id,
+      payload: { changes: Object.keys(patch), via: 'agent' },
+    })
+    return { ok: true, result: { id, status: result.employee.status } }
+  },
 }
 
 export async function dispatchTool(
@@ -191,5 +280,46 @@ export const TOOL_SCHEMAS: Record<string, object> = {
       query: { type: 'string', description: 'Kata kunci pencarian' },
     },
     required: ['query'],
+  },
+  'hr.list_employees': {
+    type: 'object',
+    properties: {
+      status: { type: 'string', enum: ['active', 'inactive', 'terminated'], description: 'Filter status (opsional)' },
+      search: { type: 'string', description: 'Cari berdasarkan nama, email, jabatan, atau kode' },
+    },
+  },
+  'hr.get_employee': {
+    type: 'object',
+    properties: {
+      employee_id: { type: 'string', description: 'UUID karyawan' },
+    },
+    required: ['employee_id'],
+  },
+  'hr.create_employee': {
+    type: 'object',
+    properties: {
+      name: { type: 'string', description: 'Nama lengkap karyawan' },
+      employee_code: { type: 'string', description: 'Kode karyawan (opsional, contoh: EMP-001)' },
+      email: { type: 'string' },
+      phone: { type: 'string' },
+      position: { type: 'string', description: 'Jabatan' },
+      department_id: { type: 'string', description: 'UUID departemen (opsional)' },
+      employment_type: { type: 'string', enum: ['full_time', 'part_time', 'contract', 'intern'] },
+      hire_date: { type: 'string', description: 'Tanggal bergabung (YYYY-MM-DD)' },
+    },
+    required: ['name'],
+  },
+  'hr.update_employee': {
+    type: 'object',
+    properties: {
+      employee_id: { type: 'string', description: 'UUID karyawan' },
+      name: { type: 'string' },
+      position: { type: 'string' },
+      department_id: { type: 'string', description: 'UUID departemen baru (null untuk lepas dari dept)' },
+      status: { type: 'string', enum: ['active', 'inactive', 'terminated'] },
+      employment_type: { type: 'string', enum: ['full_time', 'part_time', 'contract', 'intern'] },
+      termination_date: { type: 'string', description: 'Tanggal berakhir (YYYY-MM-DD)' },
+    },
+    required: ['employee_id'],
   },
 }

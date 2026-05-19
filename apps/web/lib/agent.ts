@@ -168,6 +168,10 @@ const DEFAULT_TOOLS: ReadonlyArray<{
   { name: 'proj.update_issue', module: 'proj', description: 'Ubah status, prioritas, atau assignee isu.' },
   { name: 'proj.list_issues', module: 'proj', description: 'Cari isu berdasarkan filter.' },
   { name: 'platform.search', module: 'platform', description: 'Cari entitas di ruang kerja.' },
+  { name: 'hr.list_employees', module: 'hr', description: 'Cari karyawan dengan filter status/keyword.' },
+  { name: 'hr.get_employee', module: 'hr', description: 'Ambil detail satu karyawan berdasarkan UUID.' },
+  { name: 'hr.create_employee', module: 'hr', description: 'Daftarkan karyawan baru.' },
+  { name: 'hr.update_employee', module: 'hr', description: 'Ubah jabatan, status, departemen, atau tanggal berakhir karyawan.' },
 ]
 
 /** Idempotent — re-running on a populated tenant is a no-op. */
