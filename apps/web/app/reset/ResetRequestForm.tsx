@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@kantorcore/ui'
 import { AuthShell, Field, ErrorBanner } from '../../components/AuthLayout'
+import { useTurnstile } from '../../hooks/useTurnstile'
 
 export function ResetRequestForm() {
   const [email, setEmail] = useState('')
@@ -10,6 +11,7 @@ export function ResetRequestForm() {
   const [done, setDone] = useState(false)
   const [devToken, setDevToken] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  const { containerRef: turnstileRef, token: turnstileToken, reset: resetTurnstile } = useTurnstile()
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -18,11 +20,12 @@ export function ResetRequestForm() {
     const res = await fetch('/api/auth/reset-request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, cfTurnstileToken: turnstileToken }),
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
       setError(data.error ?? 'Terjadi kesalahan.')
+      resetTurnstile()
       setPending(false)
       return
     }
@@ -73,6 +76,7 @@ export function ResetRequestForm() {
         <Button variant="primary" size="md" fullWidth disabled={pending}>
           {pending ? 'Memproses…' : 'Kirim instruksi reset'}
         </Button>
+        <div ref={turnstileRef} />
       </form>
     </AuthShell>
   )

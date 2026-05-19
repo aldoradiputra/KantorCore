@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@kantorcore/ui'
 import { AuthShell, Field, ErrorBanner } from '../../components/AuthLayout'
+import { useTurnstile } from '../../hooks/useTurnstile'
 
 export default function SignInForm() {
   const [email, setEmail] = useState('')
@@ -16,6 +17,8 @@ export default function SignInForm() {
   const [challengeToken, setChallengeToken] = useState<string | null>(null)
   const [totpCode, setTotpCode] = useState('')
 
+  const { containerRef: turnstileRef, token: turnstileToken, reset: resetTurnstile } = useTurnstile()
+
   async function onCredentialsSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
@@ -23,7 +26,7 @@ export default function SignInForm() {
     const res = await fetch('/api/auth/sign-in', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, cfTurnstileToken: turnstileToken }),
     })
     if (res.ok) {
       window.location.href = '/'
@@ -38,6 +41,7 @@ export default function SignInForm() {
     }
     const data = await res.json().catch(() => ({ error: 'Gagal masuk.' }))
     setError(data.error ?? 'Gagal masuk.')
+    resetTurnstile()
     setPending(false)
   }
 
@@ -111,6 +115,7 @@ export default function SignInForm() {
         <Button variant="primary" size="md" fullWidth disabled={pending}>
           {pending ? 'Memproses…' : 'Masuk'}
         </Button>
+        <div ref={turnstileRef} />
       </form>
     </AuthShell>
   )

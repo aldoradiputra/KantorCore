@@ -1,6 +1,6 @@
 import 'server-only'
-import { sql } from 'drizzle-orm'
-import { createDb, type Database } from '@kantorcore/db'
+import { sql, eq } from 'drizzle-orm'
+import { createDb, type Database, tenants } from '@kantorcore/db'
 
 let cached: Database | undefined
 
@@ -24,15 +24,70 @@ type TxClient = Parameters<Parameters<Database['transaction']>[0]>[0]
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+// ---------------------------------------------------------------------------
+// Phase 20: per-tenant DB routing
+// Shared tenants use the default pool. Dedicated tenants get their own
+// connection (pointed at db_url) — the Hyperdrive slot for CF migration.
+// ---------------------------------------------------------------------------
+
+interface TenantMeta {
+  dbMode: 'shared' | 'dedicated'
+  dbUrl: string | null
+  cachedAt: number
+}
+
+interface DedicatedEntry {
+  db: Database
+  lastUsed: number
+}
+
+const META_TTL_MS = 60_000
+const CLIENT_TTL_MS = 5 * 60_000
+const metaCache = new Map<string, TenantMeta>()
+const clientCache = new Map<string, DedicatedEntry>()
+
+async function getTenantMeta(tenantId: string): Promise<Pick<TenantMeta, 'dbMode' | 'dbUrl'>> {
+  const hit = metaCache.get(tenantId)
+  if (hit && Date.now() - hit.cachedAt < META_TTL_MS) {
+    return { dbMode: hit.dbMode, dbUrl: hit.dbUrl }
+  }
+  const [row] = await getDb()
+    .select({ dbMode: tenants.dbMode, dbUrl: tenants.dbUrl })
+    .from(tenants)
+    .where(eq(tenants.id, tenantId))
+    .limit(1)
+  const meta: TenantMeta = {
+    dbMode: row?.dbMode ?? 'shared',
+    dbUrl: row?.dbUrl ?? null,
+    cachedAt: Date.now(),
+  }
+  metaCache.set(tenantId, meta)
+  return { dbMode: meta.dbMode, dbUrl: meta.dbUrl }
+}
+
+function getDedicatedDb(tenantId: string, dbUrl: string): Database {
+  const hit = clientCache.get(tenantId)
+  if (hit) {
+    hit.lastUsed = Date.now()
+    return hit.db
+  }
+  // Evict idle connections
+  const now = Date.now()
+  for (const [id, entry] of clientCache) {
+    if (now - entry.lastUsed > CLIENT_TTL_MS) clientCache.delete(id)
+  }
+  const db = createDb(dbUrl)
+  clientCache.set(tenantId, { db, lastUsed: now })
+  return db
+}
+
 /**
  * Runs `fn` inside a Postgres transaction with the right RLS GUCs set, so
  * that every policy on tenant-scoped tables evaluates correctly.
  *
- * Pass `tenantId` for normal tenant-scoped work. Pass `userId` as well when
- * the work also needs to read the caller's memberships (rare — most flows
- * already know their tenant). The session-level GUC is set via SET LOCAL —
- * scoped to the transaction so it can't leak across requests when connection
- * pooling reuses a backend.
+ * For `db_mode = 'dedicated'` tenants the transaction runs against their
+ * private database (the Hyperdrive slot for CF migration). Shared tenants
+ * use the default pool — behaviour identical to before Phase 20.
  */
 export async function withTenant<T>(
   tenantId: string,
@@ -43,7 +98,9 @@ export async function withTenant<T>(
   if (opts?.userId && !UUID_RE.test(opts.userId)) {
     throw new Error('withTenant: invalid userId')
   }
-  return getDb().transaction(async (tx) => {
+  const { dbMode, dbUrl } = await getTenantMeta(tenantId)
+  const db = dbMode === 'dedicated' && dbUrl ? getDedicatedDb(tenantId, dbUrl) : getDb()
+  return db.transaction(async (tx) => {
     await tx.execute(sql.raw(`SET LOCAL app.tenant_id = '${tenantId}'`))
     if (opts?.userId) {
       await tx.execute(sql.raw(`SET LOCAL app.user_id = '${opts.userId}'`))

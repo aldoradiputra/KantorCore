@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server'
 import { createPasswordResetToken } from '../../../../lib/password-reset'
+import { verifyTurnstile } from '../../../../lib/turnstile'
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null)
   if (!body || typeof body.email !== 'string') {
     return NextResponse.json({ error: 'Missing email.' }, { status: 400 })
   }
+
+  const turnstileOk = await verifyTurnstile(typeof body.cfTurnstileToken === 'string' ? body.cfTurnstileToken : undefined)
+  if (!turnstileOk) return NextResponse.json({ error: 'Verifikasi keamanan gagal. Muat ulang halaman dan coba lagi.' }, { status: 400 })
 
   const result = await createPasswordResetToken(body.email)
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 500 })
