@@ -1,4 +1,5 @@
 import 'server-only'
+import { randomBytes } from 'crypto'
 import { cookies } from 'next/headers'
 import {
   SESSION_COOKIE_NAME,
@@ -13,8 +14,8 @@ import {
   invalidateSession,
   type SessionWithUser,
 } from '@kantorcore/auth/server'
-import { users } from '@kantorcore/db'
-import { eq } from 'drizzle-orm'
+import { users, sessions, totpChallenges } from '@kantorcore/db'
+import { eq, and, gt, isNull } from 'drizzle-orm'
 import { getDb } from './db'
 import { provisionTenant, validateSlug } from './tenants'
 
@@ -32,6 +33,7 @@ export async function signUp(input: {
   password: string
   workspaceName: string
   workspaceSlug: string
+  meta?: { ip?: string | null; userAgent?: string | null }
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const email = input.email.trim().toLowerCase()
   const name = input.name.trim()
@@ -69,19 +71,29 @@ export async function signUp(input: {
   }
 
   const session = await createSession(db, user.id)
+  await db
+    .update(sessions)
+    .set({ ip: input.meta?.ip ?? null, userAgent: input.meta?.userAgent ?? null, lastSeenAt: new Date() })
+    .where(eq(sessions.token, session.token))
   await setSessionCookie(session.token, session.expiresAt)
   return { ok: true }
 }
 
+export type SignInResult =
+  | { ok: true }
+  | { ok: false; error: string }
+  | { ok: false; totpRequired: true; challengeToken: string }
+
 export async function signIn(input: {
   email: string
   password: string
-}): Promise<{ ok: true } | { ok: false; error: string }> {
+  meta?: { ip?: string | null; userAgent?: string | null }
+}): Promise<SignInResult> {
   const email = input.email.trim().toLowerCase()
   const db = getDb()
 
   const [user] = await db
-    .select({ id: users.id, passwordHash: users.passwordHash })
+    .select({ id: users.id, passwordHash: users.passwordHash, totpEnabled: users.totpEnabled })
     .from(users)
     .where(eq(users.email, email))
     .limit(1)
@@ -91,7 +103,18 @@ export async function signIn(input: {
   const ok = await verifyPassword(input.password, user.passwordHash)
   if (!ok) return { ok: false, error: 'Email atau kata sandi salah.' }
 
+  if (user.totpEnabled) {
+    const challengeToken = randomBytes(32).toString('hex')
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000)
+    await db.insert(totpChallenges).values({ token: challengeToken, userId: user.id, expiresAt })
+    return { ok: false, totpRequired: true, challengeToken }
+  }
+
   const session = await createSession(db, user.id)
+  await db
+    .update(sessions)
+    .set({ ip: input.meta?.ip ?? null, userAgent: input.meta?.userAgent ?? null, lastSeenAt: new Date() })
+    .where(eq(sessions.token, session.token))
   await setSessionCookie(session.token, session.expiresAt)
   return { ok: true }
 }

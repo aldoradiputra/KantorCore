@@ -1,4 +1,4 @@
-import { uuid, text, timestamp, index } from 'drizzle-orm/pg-core'
+import { uuid, varchar, text, timestamp, index } from 'drizzle-orm/pg-core'
 import { platform } from './tenants'
 import { users } from './users'
 
@@ -19,6 +19,9 @@ export const sessions = platform.table(
       .references(() => users.id, { onDelete: 'cascade' }),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    ip: varchar('ip', { length: 64 }),
+    userAgent: text('user_agent'),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
   },
   (t) => ({
     userIdx: index('sessions_user_id_idx').on(t.userId),

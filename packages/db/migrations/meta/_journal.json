@@ -64,6 +64,13 @@
       "when": 1779120900000,
       "tag": "0008_rls_tenant_isolation",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1747699200000,
+      "tag": "0009_auth_hardening",
+      "breakpoints": true
     }
   ]
 }
