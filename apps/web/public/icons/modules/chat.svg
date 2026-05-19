@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="KantorCore Chat module icon">
+  <rect width="48" height="48" rx="11" fill="#0F7B6C"></rect>
+  <path d="M19 8 H39 Q41 8 41 10 V23 Q41 25 39 25 H32 L33 31 L26 25 H19 Q17 25 17 23 V10 Q17 8 19 8 Z" fill="#2D9588"></path>
+    <path d="M9 19 H28 Q30 19 30 21 V34 Q30 36 28 36 H17 L11 41 L13 36 H9 Q7 36 7 34 V21 Q7 19 9 19 Z" fill="#FFFFFF"></path>
+    <circle cx="13" cy="27.5" r="1.8" fill="#0F7B6C"></circle>
+    <circle cx="19" cy="27.5" r="1.8" fill="#0F7B6C"></circle>
+    <circle cx="25" cy="27.5" r="1.8" fill="#0F7B6C"></circle>
+</svg>

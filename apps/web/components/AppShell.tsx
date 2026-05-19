@@ -17,22 +17,17 @@ function IconHome() {
   )
 }
 
+/**
+ * Design-mark module icons (multi-tone tile, 48×48 from
+ * /public/icons/modules/). Rendered at 22×22 in the sidebar per spec.
+ * Modules without a design mark fall back to inline currentColor SVGs.
+ */
 function IconChat() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 2H2a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h3l4 3 4-3h3a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z" />
-    </svg>
-  )
+  return <img src="/icons/modules/chat.svg" alt="" width={22} height={22} />
 }
 
 function IconProj() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="1" y="1" width="5" height="16" rx="1" />
-      <rect x="8" y="1" width="5" height="11" rx="1" />
-      <rect x="15" y="1" width="2" height="7" rx="1" />
-    </svg>
-  )
+  return <img src="/icons/modules/projects.svg" alt="" width={22} height={22} />
 }
 
 function IconAgent() {
@@ -47,12 +42,7 @@ function IconAgent() {
 }
 
 function IconHR() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="9" cy="6" r="3.5" />
-      <path d="M2 16c0-3.314 3.134-6 7-6s7 2.686 7 6" />
-    </svg>
-  )
+  return <img src="/icons/modules/hr.svg" alt="" width={22} height={22} />
 }
 
 function IconRent() {
@@ -123,15 +113,15 @@ export function AppShell({
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)', minWidth: 0 }}>
           <Link
             href="/"
-            style={{
-              font: '800 15px/1 var(--font-sans)',
-              color: 'var(--navy)',
-              letterSpacing: '-0.3px',
-              textDecoration: 'none',
-              flexShrink: 0,
-            }}
+            aria-label="KantorCore"
+            style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}
           >
-            KantorCore
+            <img
+              src="/brand/kantorcore-lockup.svg"
+              alt="KantorCore"
+              height={20}
+              style={{ display: 'block', height: 20, width: 'auto' }}
+            />
           </Link>
           <span
             style={{

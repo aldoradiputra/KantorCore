@@ -36,16 +36,12 @@ export function AuthShell({
         }}
       >
         <div style={{ marginBottom: 'var(--s-5)' }}>
-          <div
-            style={{
-              font: '700 18px/1 var(--font-sans)',
-              color: 'var(--navy)',
-              letterSpacing: '-0.2px',
-              marginBottom: 'var(--s-3)',
-            }}
-          >
-            KantorCore
-          </div>
+          <img
+            src="/brand/kantorcore-lockup.svg"
+            alt="KantorCore"
+            height={22}
+            style={{ display: 'block', height: 22, width: 'auto', marginBottom: 'var(--s-4)' }}
+          />
           <h1 style={{ margin: 0, marginBottom: 'var(--s-2)' }}>{title}</h1>
           <p style={{ margin: 0, color: 'var(--fg-3)', font: '400 13px/1.5 var(--font-sans)' }}>
             {subtitle}
