@@ -4,6 +4,7 @@ import { AppShell } from '../../components/AppShell'
 
 type SettingsSection =
   | 'profile'
+  | 'security'
   | 'workspace'
   | 'members'
   | 'chat'
@@ -21,7 +22,10 @@ interface NavItem {
 const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: 'Personal',
-    items: [{ section: 'profile', label: 'Profil & Keamanan', href: '/settings/profile' }],
+    items: [
+      { section: 'profile', label: 'Profil', href: '/settings/profile' },
+      { section: 'security', label: 'Keamanan', href: '/settings/security' },
+    ],
   },
   {
     group: 'Ruang Kerja',

@@ -1,4 +1,4 @@
-import { uuid, varchar, text, timestamp, index } from 'drizzle-orm/pg-core'
+import { uuid, varchar, text, boolean, timestamp, index } from 'drizzle-orm/pg-core'
 import { platform } from './tenants'
 
 /**
@@ -8,6 +8,10 @@ import { platform } from './tenants'
  *
  * Email is the only login handle for now. Password is Argon2id-hashed via
  * `@kantorcore/auth`; never store plaintext, never log this column.
+ *
+ * Phase 17: totpSecret (base32, stored plaintext — provider-level encryption
+ * at rest until BYOK ships in Phase 18+), totpEnabled flag, backupCodeHashes
+ * (SHA-256 hex of each one-time backup code).
  */
 export const users = platform.table(
   'users',
@@ -16,6 +20,9 @@ export const users = platform.table(
     email: varchar('email', { length: 255 }).notNull().unique(),
     name: varchar('name', { length: 255 }).notNull(),
     passwordHash: text('password_hash').notNull(),
+    totpSecret: text('totp_secret'),
+    totpEnabled: boolean('totp_enabled').notNull().default(false),
+    backupCodeHashes: text('backup_code_hashes').array(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
