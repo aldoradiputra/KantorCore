@@ -175,6 +175,10 @@ const DEFAULT_TOOLS: ReadonlyArray<{
   { name: 'time.log_hours', module: 'time', description: 'Catat jam kerja karyawan untuk suatu tanggal.' },
   { name: 'time.get_weekly_summary', module: 'time', description: 'Ringkasan total jam kerja per karyawan dalam satu minggu.' },
   { name: 'time.list_entries', module: 'time', description: 'Daftar entri timesheet dengan filter karyawan/tanggal.' },
+  { name: 'fin.list_accounts', module: 'fin', description: 'Daftar akun dari Bagan Akun (Chart of Accounts).' },
+  { name: 'fin.list_invoices', module: 'fin', description: 'Daftar faktur pelanggan dengan filter status.' },
+  { name: 'fin.list_bills', module: 'fin', description: 'Daftar tagihan vendor dengan filter status.' },
+  { name: 'fin.create_invoice', module: 'fin', description: 'Buat faktur pelanggan baru (status draf). Perlu account_id pendapatan.' },
 ]
 
 /** Idempotent — re-running on a populated tenant is a no-op. */

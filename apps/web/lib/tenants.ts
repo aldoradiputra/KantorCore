@@ -3,6 +3,7 @@ import { eq, and, sql } from 'drizzle-orm'
 import { tenants, memberships, type Tenant, type Membership } from '@kantorcore/db'
 import { getDb, withUser } from './db'
 import { seedDefaultProcesses } from './processes'
+import { seedDefaultAccounts } from './finance'
 
 const SLUG_RE = /^[a-z0-9]([a-z0-9-]{1,62}[a-z0-9])?$/
 const RESERVED_SLUGS = new Set([
@@ -74,6 +75,14 @@ export async function provisionTenant(input: {
     await seedDefaultProcesses(result.tenant.id)
   } catch (err) {
     console.error('[provisionTenant] seedDefaultProcesses failed', err)
+  }
+
+  // Seed the default Chart of Accounts so the Finance module is usable
+  // immediately. Idempotent — re-runs only insert missing default accounts.
+  try {
+    await seedDefaultAccounts(result.tenant.id)
+  } catch (err) {
+    console.error('[provisionTenant] seedDefaultAccounts failed', err)
   }
 
   return { ok: true, ...result }
