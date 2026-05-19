@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="KantorCore CRM module icon">
+  <rect width="48" height="48" rx="11" fill="#1A2B5A"></rect>
+  <path d="M10 28 V22 C10 14, 16 8, 24 8 C32 8, 38 14, 38 22 V28" stroke="#FFFFFF" stroke-width="3" fill="none" stroke-linecap="round"></path>
+    <rect x="6" y="24" width="10" height="15" rx="3" fill="#FFFFFF"></rect>
+    <rect x="32" y="24" width="10" height="15" rx="3" fill="#FFFFFF"></rect>
+    <rect x="8" y="26" width="6" height="11" rx="2" fill="#3B4FC4"></rect>
+    <rect x="34" y="26" width="6" height="11" rx="2" fill="#3B4FC4"></rect>
+    <path d="M40 37 Q43 38, 41 41 L34 41" stroke="#FFFFFF" stroke-width="1.8" fill="none" stroke-linecap="round"></path>
+    <circle cx="32" cy="41" r="1.5" fill="#FFFFFF"></circle>
+</svg>

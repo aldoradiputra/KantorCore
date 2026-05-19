@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-label="KantorCore Documents module icon">
+  <rect width="48" height="48" rx="11" fill="#1A2B5A"></rect>
+  <rect x="10" y="9" width="22" height="30" rx="2" fill="#3B4FC4" transform="rotate(-7 21 24)"></rect>
+    <path d="M14 10 H30 L36 16 V40 H14 Z" fill="#FFFFFF"></path>
+    <path d="M30 10 V16 H36 Z" fill="#B8C0E5"></path>
+    <rect x="18" y="22" width="14" height="1.6" rx="0.8" fill="#3B4FC4" opacity="0.55"></rect>
+    <rect x="18" y="26" width="14" height="1.6" rx="0.8" fill="#3B4FC4" opacity="0.55"></rect>
+    <rect x="18" y="30" width="9" height="1.6" rx="0.8" fill="#3B4FC4" opacity="0.55"></rect>
+</svg>
