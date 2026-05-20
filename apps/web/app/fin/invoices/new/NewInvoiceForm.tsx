@@ -14,6 +14,7 @@ interface TaxOpt {
   name: string
   amount: number
   amountType: 'percent' | 'fixed'
+  isWithholding: boolean
 }
 
 const inputStyle: React.CSSProperties = {
@@ -45,21 +46,23 @@ const addDays = (d: string, n: number) => {
 
 const fmtIDR = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
 
-function computeLine(subtotal: number, applied: TaxOpt[]): { base: number; taxAmount: number; total: number; byTax: { id: string; name: string; amount: number }[] } {
-  // All taxes here are exclusive (price_include defaults false in form scope)
+function computeLine(subtotal: number, applied: TaxOpt[]): { base: number; regularTax: number; withholdingTax: number; total: number; byTax: { id: string; name: string; amount: number; isWithholding: boolean }[] } {
   const byTax = applied.map((t) => ({
     id: t.id,
     name: t.name,
     amount: t.amountType === 'percent' ? Math.round(subtotal * (t.amount / 10000)) : t.amount,
+    isWithholding: t.isWithholding,
   }))
-  const taxAmount = byTax.reduce((s, t) => s + t.amount, 0)
-  return { base: subtotal, taxAmount, total: subtotal + taxAmount, byTax }
+  const regularTax = byTax.filter((t) => !t.isWithholding).reduce((s, t) => s + t.amount, 0)
+  const withholdingTax = byTax.filter((t) => t.isWithholding).reduce((s, t) => s + t.amount, 0)
+  return { base: subtotal, regularTax, withholdingTax, total: subtotal + regularTax, byTax }
 }
 
 export function NewInvoiceForm({ revenueAccounts, taxes }: { revenueAccounts: AccountOpt[]; taxes: TaxOpt[] }) {
   const router = useRouter()
   const defaultAcct = revenueAccounts[0]?.id ?? ''
-  const defaultTaxIds = taxes.length > 0 ? [taxes[0]!.id] : []
+  const firstRegularTax = taxes.find((t) => !t.isWithholding)
+  const defaultTaxIds = firstRegularTax ? [firstRegularTax.id] : []
   const [customerName, setCustomerName] = useState('')
   const [customerEmail, setCustomerEmail] = useState('')
   const [date, setDate] = useState(today())
@@ -79,16 +82,17 @@ export function NewInvoiceForm({ revenueAccounts, taxes }: { revenueAccounts: Ac
     return { line: l, ...computeLine(subtotal, applied) }
   })
   const subtotal = computed.reduce((s, c) => s + c.base, 0)
-  const totalTax = computed.reduce((s, c) => s + c.taxAmount, 0)
-  const grandTotal = subtotal + totalTax
+  const totalRegularTax = computed.reduce((s, c) => s + c.regularTax, 0)
+  const totalWithholding = computed.reduce((s, c) => s + c.withholdingTax, 0)
+  const grandTotal = subtotal + totalRegularTax
+  const netSettlement = grandTotal - totalWithholding
 
-  // Aggregate tax by id for summary footer
-  const taxSummary = new Map<string, { name: string; amount: number }>()
+  const taxSummary = new Map<string, { name: string; amount: number; isWithholding: boolean }>()
   for (const c of computed) {
     for (const t of c.byTax) {
       const cur = taxSummary.get(t.id)
       if (cur) cur.amount += t.amount
-      else taxSummary.set(t.id, { name: t.name, amount: t.amount })
+      else taxSummary.set(t.id, { name: t.name, amount: t.amount, isWithholding: t.isWithholding })
     }
   }
 
@@ -197,9 +201,12 @@ export function NewInvoiceForm({ revenueAccounts, taxes }: { revenueAccounts: Ac
                       </button>
                     )
                   })}
-                  {c.taxAmount > 0 && (
+                  {(c.regularTax > 0 || c.withholdingTax > 0) && (
                     <span style={{ marginLeft: 'auto', font: '11px/1 var(--font-mono, monospace)', color: 'var(--fg-3)' }}>
-                      Subtotal {fmtIDR(c.base)} · Pajak {fmtIDR(c.taxAmount)} · Total {fmtIDR(c.total)}
+                      Subtotal {fmtIDR(c.base)}
+                      {c.regularTax > 0 && <> · Pajak {fmtIDR(c.regularTax)}</>}
+                      {c.withholdingTax > 0 && <> · PWH −{fmtIDR(c.withholdingTax)}</>}
+                      {' '}· Total {fmtIDR(c.total)}
                     </span>
                   )}
                 </div>
@@ -224,10 +231,14 @@ export function NewInvoiceForm({ revenueAccounts, taxes }: { revenueAccounts: Ac
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '12px 14px', background: 'var(--bg)', borderRadius: 'var(--r-md)' }}>
         <Row label="Subtotal" value={fmtIDR(subtotal)} muted />
-        {Array.from(taxSummary.values()).map((t) => (
+        {Array.from(taxSummary.values()).filter((t) => !t.isWithholding).map((t) => (
           <Row key={t.name} label={t.name} value={fmtIDR(t.amount)} muted />
         ))}
-        <Row label="Total" value={fmtIDR(grandTotal)} />
+        <Row label="Total Faktur" value={fmtIDR(grandTotal)} />
+        {Array.from(taxSummary.values()).filter((t) => t.isWithholding).map((t) => (
+          <Row key={t.name} label={`${t.name} (potong)`} value={`−${fmtIDR(t.amount)}`} muted />
+        ))}
+        {totalWithholding > 0 && <Row label="Diterima (net)" value={fmtIDR(netSettlement)} />}
       </div>
 
       {error && (

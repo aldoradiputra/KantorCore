@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface AccountOpt { id: string; code: string; name: string }
-interface TaxOpt { id: string; name: string; amount: number; amountType: 'percent' | 'fixed' }
+interface TaxOpt { id: string; name: string; amount: number; amountType: 'percent' | 'fixed'; isWithholding: boolean }
 
 const inputStyle: React.CSSProperties = {
   height: 34,
@@ -26,19 +26,23 @@ const addDays = (d: string, n: number) => {
 }
 const fmtIDR = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
 
-function lineTaxAmount(subtotal: number, applied: TaxOpt[]): { tax: number; byTax: { id: string; name: string; amount: number }[] } {
+function lineTaxAmount(subtotal: number, applied: TaxOpt[]): { regular: number; withholding: number; byTax: { id: string; name: string; amount: number; isWithholding: boolean }[] } {
   const byTax = applied.map((t) => ({
     id: t.id,
     name: t.name,
     amount: t.amountType === 'percent' ? Math.round(subtotal * (t.amount / 10000)) : t.amount,
+    isWithholding: t.isWithholding,
   }))
-  return { tax: byTax.reduce((s, t) => s + t.amount, 0), byTax }
+  const regular = byTax.filter((t) => !t.isWithholding).reduce((s, t) => s + t.amount, 0)
+  const withholding = byTax.filter((t) => t.isWithholding).reduce((s, t) => s + t.amount, 0)
+  return { regular, withholding, byTax }
 }
 
 export function NewBillForm({ expenseAccounts, taxes }: { expenseAccounts: AccountOpt[]; taxes: TaxOpt[] }) {
   const router = useRouter()
   const defaultAcct = expenseAccounts[0]?.id ?? ''
-  const defaultTaxIds = taxes.length > 0 ? [taxes[0]!.id] : []
+  const firstRegularTax = taxes.find((t) => !t.isWithholding)
+  const defaultTaxIds = firstRegularTax ? [firstRegularTax.id] : []
   const [vendorName, setVendorName] = useState('')
   const [vendorRef, setVendorRef] = useState('')
   const [date, setDate] = useState(today())
@@ -52,17 +56,19 @@ export function NewBillForm({ expenseAccounts, taxes }: { expenseAccounts: Accou
   const computed = lines.map((l) => {
     const subtotal = l.quantity * l.unitPrice
     const applied = taxes.filter((t) => l.taxIds.includes(t.id))
-    const { tax, byTax } = lineTaxAmount(subtotal, applied)
-    return { base: subtotal, tax, total: subtotal + tax, byTax }
+    const { regular, withholding, byTax } = lineTaxAmount(subtotal, applied)
+    return { base: subtotal, regular, withholding, total: subtotal + regular, byTax }
   })
   const subtotal = computed.reduce((s, c) => s + c.base, 0)
-  const totalTax = computed.reduce((s, c) => s + c.tax, 0)
-  const grandTotal = subtotal + totalTax
-  const taxSummary = new Map<string, { name: string; amount: number }>()
+  const totalRegular = computed.reduce((s, c) => s + c.regular, 0)
+  const totalWithholding = computed.reduce((s, c) => s + c.withholding, 0)
+  const grandTotal = subtotal + totalRegular
+  const netSettlement = grandTotal - totalWithholding
+  const taxSummary = new Map<string, { name: string; amount: number; isWithholding: boolean }>()
   for (const c of computed) for (const t of c.byTax) {
     const cur = taxSummary.get(t.id)
     if (cur) cur.amount += t.amount
-    else taxSummary.set(t.id, { name: t.name, amount: t.amount })
+    else taxSummary.set(t.id, { name: t.name, amount: t.amount, isWithholding: t.isWithholding })
   }
 
   function updateLine(i: number, patch: Partial<Line>) { setLines((ls) => ls.map((l, idx) => idx === i ? { ...l, ...patch } : l)) }
@@ -144,9 +150,12 @@ export function NewBillForm({ expenseAccounts, taxes }: { expenseAccounts: Accou
                       </button>
                     )
                   })}
-                  {c.tax > 0 && (
+                  {(c.regular > 0 || c.withholding > 0) && (
                     <span style={{ marginLeft: 'auto', font: '11px/1 var(--font-mono, monospace)', color: 'var(--fg-3)' }}>
-                      Subtotal {fmtIDR(c.base)} · Pajak {fmtIDR(c.tax)} · Total {fmtIDR(c.total)}
+                      Subtotal {fmtIDR(c.base)}
+                      {c.regular > 0 && <> · Pajak {fmtIDR(c.regular)}</>}
+                      {c.withholding > 0 && <> · PWH −{fmtIDR(c.withholding)}</>}
+                      {' '}· Total {fmtIDR(c.total)}
                     </span>
                   )}
                 </div>
@@ -169,10 +178,14 @@ export function NewBillForm({ expenseAccounts, taxes }: { expenseAccounts: Accou
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '12px 14px', background: 'var(--bg)', borderRadius: 'var(--r-md)' }}>
         <Row label="Subtotal" value={fmtIDR(subtotal)} muted />
-        {Array.from(taxSummary.values()).map((t) => (
+        {Array.from(taxSummary.values()).filter((t) => !t.isWithholding).map((t) => (
           <Row key={t.name} label={t.name} value={fmtIDR(t.amount)} muted />
         ))}
-        <Row label="Total" value={fmtIDR(grandTotal)} />
+        <Row label="Total Tagihan" value={fmtIDR(grandTotal)} />
+        {Array.from(taxSummary.values()).filter((t) => t.isWithholding).map((t) => (
+          <Row key={t.name} label={`${t.name} (potong)`} value={`−${fmtIDR(t.amount)}`} muted />
+        ))}
+        {totalWithholding > 0 && <Row label="Dibayar ke vendor (net)" value={fmtIDR(netSettlement)} />}
       </div>
 
       {error && (

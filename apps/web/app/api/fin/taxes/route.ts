@@ -30,6 +30,7 @@ export async function POST(req: Request) {
     taxAccountId?: string
     groupId?: string | null
     priceInclude?: boolean
+    isWithholding?: boolean
     description?: string | null
   } | null
   if (!body?.name || !body.scope || typeof body.amount !== 'number' || !body.taxAccountId) {
@@ -46,6 +47,7 @@ export async function POST(req: Request) {
       taxAccountId: body.taxAccountId,
       groupId: body.groupId ?? null,
       priceInclude: body.priceInclude ?? false,
+      isWithholding: body.isWithholding ?? false,
       description: body.description ?? null,
     })
     return NextResponse.json({ id: tax.id })

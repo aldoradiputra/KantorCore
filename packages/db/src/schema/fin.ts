@@ -238,6 +238,7 @@ export const taxes = fin.table('taxes', {
   taxAccountId: uuid('tax_account_id').notNull().references(() => accounts.id, { onDelete: 'restrict' }),
   groupId: uuid('group_id').references(() => taxGroups.id, { onDelete: 'set null' }),
   priceInclude: boolean('price_include').notNull().default(false),
+  isWithholding: boolean('is_withholding').notNull().default(false),
   isActive: boolean('is_active').notNull().default(true),
   sequence: integer('sequence').notNull().default(10),
   description: text('description'),
