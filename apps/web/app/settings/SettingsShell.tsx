@@ -2,11 +2,17 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { AppShell } from '../../components/AppShell'
 
-type SettingsSection =
+export type SettingsSection =
   | 'profile'
   | 'security'
   | 'workspace'
   | 'members'
+  | 'groups'
+  | 'directory'
+  | 'security-policy'
+  | 'audit'
+  | 'api-keys'
+  | 'billing'
   | 'chat'
   | 'proj'
   | 'agent'
@@ -23,23 +29,34 @@ const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: 'Personal',
     items: [
-      { section: 'profile', label: 'Profil', href: '/settings/profile' },
-      { section: 'security', label: 'Keamanan', href: '/settings/security' },
+      { section: 'profile',   label: 'Profil',    href: '/settings/profile' },
+      { section: 'security',  label: 'Keamanan',  href: '/settings/security' },
     ],
   },
   {
     group: 'Ruang Kerja',
     items: [
-      { section: 'workspace', label: 'Pengaturan Umum', href: '/settings/workspace' },
-      { section: 'members', label: 'Anggota & Undangan', href: '/settings/members', adminOnly: true },
+      { section: 'workspace',  label: 'Pengaturan Umum',    href: '/settings/workspace',  adminOnly: true },
+      { section: 'members',    label: 'Anggota & Undangan', href: '/settings/members',    adminOnly: true },
+      { section: 'groups',     label: 'Grup',               href: '/settings/groups',     adminOnly: true },
+      { section: 'directory',  label: 'Direktori',          href: '/settings/directory',  adminOnly: true },
+      { section: 'billing',    label: 'Langganan',          href: '/settings/billing',    adminOnly: true },
+    ],
+  },
+  {
+    group: 'Keamanan & Kepatuhan',
+    items: [
+      { section: 'security-policy', label: 'Kebijakan Keamanan', href: '/settings/security-policy', adminOnly: true },
+      { section: 'audit',            label: 'Log Audit',          href: '/settings/audit',           adminOnly: true },
+      { section: 'api-keys',         label: 'API Keys',           href: '/settings/api-keys',        adminOnly: true },
     ],
   },
   {
     group: 'Modul',
     items: [
-      { section: 'chat', label: 'Chat', href: '/settings/chat' },
-      { section: 'proj', label: 'Proyek', href: '/settings/proj' },
-      { section: 'agent', label: 'Agent', href: '/settings/agent' },
+      { section: 'chat',   label: 'Chat',    href: '/settings/chat' },
+      { section: 'proj',   label: 'Proyek',  href: '/settings/proj' },
+      { section: 'agent',  label: 'Agent',   href: '/settings/agent' },
     ],
   },
   {
@@ -58,24 +75,20 @@ function SettingsSidebar({
   isAdmin: boolean
 }) {
   return (
-    <div
-      style={{
-        padding: 'var(--s-4)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--s-4)',
-        height: '100%',
-        overflowY: 'auto',
-      }}
-    >
+    <div style={{
+      padding: 'var(--s-4)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 'var(--s-4)',
+      height: '100%',
+      overflowY: 'auto',
+    }}>
       {NAV.map(({ group, items }) => {
         const visible = items.filter((i) => !i.adminOnly || isAdmin)
         if (visible.length === 0) return null
         return (
           <div key={group}>
-            <div className="t-micro" style={{ marginBottom: 'var(--s-2)' }}>
-              {group}
-            </div>
+            <div className="t-micro" style={{ marginBottom: 'var(--s-2)' }}>{group}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {visible.map((item) => {
                 const active = item.section === activeSection
