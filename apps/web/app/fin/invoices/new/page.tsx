@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getCurrentSession } from '../../../../lib/auth'
 import { getCurrentTenant } from '../../../../lib/tenants'
-import { listAccounts } from '../../../../lib/finance'
+import { listAccounts, listTaxes } from '../../../../lib/finance'
 import { FinShell } from '../../FinShell'
 import { NewInvoiceForm } from './NewInvoiceForm'
 
@@ -15,7 +15,10 @@ export default async function NewInvoicePage() {
   const ctx = await getCurrentTenant(session.user.id)
   if (!ctx) redirect('/sign-up')
 
-  const allAccounts = await listAccounts(ctx.tenant.id)
+  const [allAccounts, taxes] = await Promise.all([
+    listAccounts(ctx.tenant.id),
+    listTaxes(ctx.tenant.id, { scope: 'sale', activeOnly: true }),
+  ])
   const revenueAccounts = allAccounts.filter((a) => a.type === 'revenue' && a.isActive)
 
   return (
@@ -26,7 +29,10 @@ export default async function NewInvoicePage() {
     >
       <div style={{ padding: 'var(--s-6)', maxWidth: 760, display: 'flex', flexDirection: 'column', gap: 'var(--s-4)' }}>
         <h1 style={{ font: '600 20px/1.2 var(--font-sans)', color: 'var(--fg-1)', margin: 0 }}>Faktur Baru</h1>
-        <NewInvoiceForm revenueAccounts={revenueAccounts.map((a) => ({ id: a.id, code: a.code, name: a.name }))} />
+        <NewInvoiceForm
+          revenueAccounts={revenueAccounts.map((a) => ({ id: a.id, code: a.code, name: a.name }))}
+          taxes={taxes.map((t) => ({ id: t.id, name: t.name, amount: t.amount, amountType: t.amountType }))}
+        />
       </div>
     </FinShell>
   )

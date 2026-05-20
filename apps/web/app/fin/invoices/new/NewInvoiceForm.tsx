@@ -9,6 +9,13 @@ interface AccountOpt {
   name: string
 }
 
+interface TaxOpt {
+  id: string
+  name: string
+  amount: number
+  amountType: 'percent' | 'fixed'
+}
+
 const inputStyle: React.CSSProperties = {
   height: 34,
   padding: '0 10px',
@@ -26,6 +33,7 @@ interface Line {
   quantity: number
   unitPrice: number
   accountId: string
+  taxIds: string[]
 }
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -35,27 +43,68 @@ const addDays = (d: string, n: number) => {
   return dt.toISOString().slice(0, 10)
 }
 
-export function NewInvoiceForm({ revenueAccounts }: { revenueAccounts: AccountOpt[] }) {
+const fmtIDR = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
+
+function computeLine(subtotal: number, applied: TaxOpt[]): { base: number; taxAmount: number; total: number; byTax: { id: string; name: string; amount: number }[] } {
+  // All taxes here are exclusive (price_include defaults false in form scope)
+  const byTax = applied.map((t) => ({
+    id: t.id,
+    name: t.name,
+    amount: t.amountType === 'percent' ? Math.round(subtotal * (t.amount / 10000)) : t.amount,
+  }))
+  const taxAmount = byTax.reduce((s, t) => s + t.amount, 0)
+  return { base: subtotal, taxAmount, total: subtotal + taxAmount, byTax }
+}
+
+export function NewInvoiceForm({ revenueAccounts, taxes }: { revenueAccounts: AccountOpt[]; taxes: TaxOpt[] }) {
   const router = useRouter()
   const defaultAcct = revenueAccounts[0]?.id ?? ''
+  const defaultTaxIds = taxes.length > 0 ? [taxes[0]!.id] : []
   const [customerName, setCustomerName] = useState('')
   const [customerEmail, setCustomerEmail] = useState('')
   const [date, setDate] = useState(today())
   const [dueDate, setDueDate] = useState(addDays(today(), 30))
   const [notes, setNotes] = useState('')
+  const [displayTaxInline, setDisplayTaxInline] = useState(false)
   const [lines, setLines] = useState<Line[]>([
-    { description: '', quantity: 1, unitPrice: 0, accountId: defaultAcct },
+    { description: '', quantity: 1, unitPrice: 0, accountId: defaultAcct, taxIds: defaultTaxIds },
   ])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const total = lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0)
+  // Compute breakdown
+  const computed = lines.map((l) => {
+    const subtotal = l.quantity * l.unitPrice
+    const applied = taxes.filter((t) => l.taxIds.includes(t.id))
+    return { line: l, ...computeLine(subtotal, applied) }
+  })
+  const subtotal = computed.reduce((s, c) => s + c.base, 0)
+  const totalTax = computed.reduce((s, c) => s + c.taxAmount, 0)
+  const grandTotal = subtotal + totalTax
+
+  // Aggregate tax by id for summary footer
+  const taxSummary = new Map<string, { name: string; amount: number }>()
+  for (const c of computed) {
+    for (const t of c.byTax) {
+      const cur = taxSummary.get(t.id)
+      if (cur) cur.amount += t.amount
+      else taxSummary.set(t.id, { name: t.name, amount: t.amount })
+    }
+  }
 
   function updateLine(i: number, patch: Partial<Line>) {
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)))
   }
+  function toggleTax(i: number, taxId: string) {
+    setLines((ls) => ls.map((l, idx) => {
+      if (idx !== i) return l
+      return l.taxIds.includes(taxId)
+        ? { ...l, taxIds: l.taxIds.filter((id) => id !== taxId) }
+        : { ...l, taxIds: [...l.taxIds, taxId] }
+    }))
+  }
   function addLine() {
-    setLines((ls) => [...ls, { description: '', quantity: 1, unitPrice: 0, accountId: defaultAcct }])
+    setLines((ls) => [...ls, { description: '', quantity: 1, unitPrice: 0, accountId: defaultAcct, taxIds: defaultTaxIds }])
   }
   function removeLine(i: number) {
     setLines((ls) => ls.filter((_, idx) => idx !== i))
@@ -77,7 +126,7 @@ export function NewInvoiceForm({ revenueAccounts }: { revenueAccounts: AccountOp
     const res = await fetch('/api/fin/invoices', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ customerName, customerEmail: customerEmail || null, date, dueDate, notes: notes || null, lines }),
+      body: JSON.stringify({ customerName, customerEmail: customerEmail || null, date, dueDate, notes: notes || null, displayTaxInline, lines }),
     })
     if (!res.ok) {
       const j = await res.json().catch(() => ({}))
@@ -110,22 +159,54 @@ export function NewInvoiceForm({ revenueAccounts }: { revenueAccounts: AccountOp
         <span style={{ font: '600 11px/1 var(--font-sans)', color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Baris Faktur
         </span>
-        {lines.map((l, i) => (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 60px 1fr 1.5fr 28px', gap: 8, alignItems: 'center' }}>
-            <input style={inputStyle} placeholder="Deskripsi" value={l.description} onChange={(e) => updateLine(i, { description: e.target.value })} />
-            <input style={inputStyle} type="number" min={1} value={l.quantity} onChange={(e) => updateLine(i, { quantity: parseInt(e.target.value || '0', 10) })} />
-            <input style={inputStyle} type="number" min={0} value={l.unitPrice} onChange={(e) => updateLine(i, { unitPrice: parseInt(e.target.value || '0', 10) })} placeholder="Harga (IDR)" />
-            <select style={inputStyle} value={l.accountId} onChange={(e) => updateLine(i, { accountId: e.target.value })}>
-              {revenueAccounts.map((a) => (
-                <option key={a.id} value={a.id}>{a.code} — {a.name}</option>
-              ))}
-            </select>
-            <button type="button" onClick={() => removeLine(i)} disabled={lines.length === 1}
-              style={{ background: 'transparent', border: 'none', color: 'var(--fg-3)', cursor: lines.length === 1 ? 'not-allowed' : 'pointer', font: '16px/1 sans-serif' }}>
-              ×
-            </button>
-          </div>
-        ))}
+        {lines.map((l, i) => {
+          const c = computed[i]!
+          return (
+            <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 10, border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', background: 'var(--bg-1)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 60px 1fr 1.5fr 28px', gap: 8, alignItems: 'center' }}>
+                <input style={inputStyle} placeholder="Deskripsi" value={l.description} onChange={(e) => updateLine(i, { description: e.target.value })} />
+                <input style={inputStyle} type="number" min={1} value={l.quantity} onChange={(e) => updateLine(i, { quantity: parseInt(e.target.value || '0', 10) })} />
+                <input style={inputStyle} type="number" min={0} value={l.unitPrice} onChange={(e) => updateLine(i, { unitPrice: parseInt(e.target.value || '0', 10) })} placeholder="Harga (IDR)" />
+                <select style={inputStyle} value={l.accountId} onChange={(e) => updateLine(i, { accountId: e.target.value })}>
+                  {revenueAccounts.map((a) => (
+                    <option key={a.id} value={a.id}>{a.code} — {a.name}</option>
+                  ))}
+                </select>
+                <button type="button" onClick={() => removeLine(i)} disabled={lines.length === 1}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--fg-3)', cursor: lines.length === 1 ? 'not-allowed' : 'pointer', font: '16px/1 sans-serif' }}>
+                  ×
+                </button>
+              </div>
+              {taxes.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                  <span style={{ font: '11px/1 var(--font-sans)', color: 'var(--fg-3)' }}>Pajak:</span>
+                  {taxes.map((t) => {
+                    const on = l.taxIds.includes(t.id)
+                    return (
+                      <button key={t.id} type="button" onClick={() => toggleTax(i, t.id)}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: 999,
+                          border: `1px solid ${on ? 'var(--indigo)' : 'var(--border)'}`,
+                          background: on ? 'var(--indigo-light, #eef0ff)' : 'transparent',
+                          color: on ? 'var(--indigo)' : 'var(--fg-3)',
+                          font: '500 11px/1 var(--font-sans)',
+                          cursor: 'pointer',
+                        }}>
+                        {t.name}
+                      </button>
+                    )
+                  })}
+                  {c.taxAmount > 0 && (
+                    <span style={{ marginLeft: 'auto', font: '11px/1 var(--font-mono, monospace)', color: 'var(--fg-3)' }}>
+                      Subtotal {fmtIDR(c.base)} · Pajak {fmtIDR(c.taxAmount)} · Total {fmtIDR(c.total)}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
         <button type="button" onClick={addLine}
           style={{ alignSelf: 'flex-start', background: 'transparent', border: '1px dashed var(--border)', borderRadius: 'var(--r-sm)', padding: '6px 10px', font: '500 12px/1 var(--font-sans)', color: 'var(--fg-2)', cursor: 'pointer' }}>
           + Tambah Baris
@@ -136,11 +217,17 @@ export function NewInvoiceForm({ revenueAccounts }: { revenueAccounts: AccountOp
         <textarea style={inputStyle} rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
       </Field>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: 'var(--bg)', borderRadius: 'var(--r-md)' }}>
-        <span style={{ font: '500 13px/1 var(--font-sans)', color: 'var(--fg-3)' }}>Total</span>
-        <span style={{ font: '600 16px/1 var(--font-mono, monospace)', color: 'var(--fg-1)' }}>
-          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(total)}
-        </span>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, font: '13px/1 var(--font-sans)', color: 'var(--fg-2)' }}>
+        <input type="checkbox" checked={displayTaxInline} onChange={(e) => setDisplayTaxInline(e.target.checked)} />
+        Tampilkan pajak per-baris pada detail faktur (default: ringkasan di bawah subtotal)
+      </label>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '12px 14px', background: 'var(--bg)', borderRadius: 'var(--r-md)' }}>
+        <Row label="Subtotal" value={fmtIDR(subtotal)} muted />
+        {Array.from(taxSummary.values()).map((t) => (
+          <Row key={t.name} label={t.name} value={fmtIDR(t.amount)} muted />
+        ))}
+        <Row label="Total" value={fmtIDR(grandTotal)} />
       </div>
 
       {error && (
@@ -165,5 +252,14 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span style={{ font: '500 12px/1 var(--font-sans)', color: 'var(--fg-3)' }}>{label}</span>
       {children}
     </label>
+  )
+}
+
+function Row({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+      <span style={{ font: `${muted ? '500' : '600'} ${muted ? 12 : 13}px/1 var(--font-sans)`, color: muted ? 'var(--fg-3)' : 'var(--fg-2)' }}>{label}</span>
+      <span style={{ font: `${muted ? '500' : '600'} ${muted ? 13 : 16}px/1 var(--font-mono, monospace)`, color: muted ? 'var(--fg-2)' : 'var(--fg-1)' }}>{value}</span>
+    </div>
   )
 }

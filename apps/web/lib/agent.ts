@@ -178,7 +178,8 @@ const DEFAULT_TOOLS: ReadonlyArray<{
   { name: 'fin.list_accounts', module: 'fin', description: 'Daftar akun dari Bagan Akun (Chart of Accounts).' },
   { name: 'fin.list_invoices', module: 'fin', description: 'Daftar faktur pelanggan dengan filter status.' },
   { name: 'fin.list_bills', module: 'fin', description: 'Daftar tagihan vendor dengan filter status.' },
-  { name: 'fin.create_invoice', module: 'fin', description: 'Buat faktur pelanggan baru (status draf). Perlu account_id pendapatan.' },
+  { name: 'fin.list_taxes', module: 'fin', description: 'Daftar pajak (PPN, dll.) dengan filter ruang lingkup (sale/purchase).' },
+  { name: 'fin.create_invoice', module: 'fin', description: 'Buat faktur pelanggan baru (status draf). Perlu account_id pendapatan. Bisa sertakan tax_ids per baris.' },
 ]
 
 /** Idempotent — re-running on a populated tenant is a no-op. */
