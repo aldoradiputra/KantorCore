@@ -321,6 +321,7 @@ const TOOL_IMPLS: Record<string, ToolImpl> = {
         account: `${t.accountCode} ${t.accountName}`,
         group: t.groupName,
         price_include: t.priceInclude,
+        is_withholding: t.isWithholding,
       })),
     }
   },

@@ -63,7 +63,14 @@ export default async function TaxesPage() {
               <tbody>
                 {taxes.map((t) => (
                   <tr key={t.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '10px 14px', color: 'var(--fg-1)', font: '500 13px/1.3 var(--font-sans)' }}>{t.name}</td>
+                    <td style={{ padding: '10px 14px', color: 'var(--fg-1)', font: '500 13px/1.3 var(--font-sans)' }}>
+                      {t.name}
+                      {t.isWithholding && (
+                        <span style={{ marginLeft: 8, font: '600 10px/1 var(--font-sans)', color: 'var(--amber)', border: '1px solid var(--amber)', padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                          Withholding
+                        </span>
+                      )}
+                    </td>
                     <td style={{ padding: '10px 14px', color: 'var(--fg-2)' }}>{SCOPE_LABEL[t.scope] ?? t.scope}</td>
                     <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono, monospace)', color: 'var(--fg-1)' }}>{formatAmount(t.amountType, t.amount)}</td>
                     <td style={{ padding: '10px 14px', color: 'var(--fg-2)' }}>{t.groupName ?? '—'}</td>

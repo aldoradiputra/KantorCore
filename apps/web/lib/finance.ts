@@ -41,6 +41,7 @@ export const DEFAULT_COA: SeedAccount[] = [
   { code: '1200', name: 'Piutang Usaha', type: 'asset', isReconcilable: true, description: 'Piutang dari pelanggan atas faktur belum lunas.' },
   { code: '1300', name: 'Persediaan', type: 'asset', description: 'Persediaan barang dagang.' },
   { code: '1220', name: 'Pajak Dibayar di Muka — PPN Masukan', type: 'asset', isReconcilable: true, description: 'PPN yang dibayar atas pembelian (kredit pajak).' },
+  { code: '1230', name: 'Pajak Dibayar di Muka — PPh 23', type: 'asset', isReconcilable: true, description: 'PPh 23 yang dipotong pelanggan atas jasa kami (kredit pajak).' },
   { code: '1500', name: 'Aset Tetap', type: 'asset', description: 'Tanah, bangunan, kendaraan, peralatan.' },
   { code: '1510', name: 'Akumulasi Penyusutan', type: 'asset', description: 'Akumulasi penyusutan aset tetap (saldo kredit).' },
 
@@ -450,20 +451,23 @@ export async function confirmInvoice(
 
     const taxMap = await loadInvoiceLineTaxMap(tx, tenantId, lines.map((l) => l.id))
 
-    // Per-line computation: base (revenue) goes to line.accountId, taxes accumulated.
     type RevAccum = { accountId: string; description: string; amount: number }
     const revAccum: RevAccum[] = []
-    const taxAccum = new Map<string, { accountId: string; name: string; amount: number }>()
+    const regularTax = new Map<string, { accountId: string; name: string; amount: number }>()
+    const withholdingTax = new Map<string, { accountId: string; name: string; amount: number }>()
     let grandTotal = 0
+    let withholdingTotal = 0
     for (const l of lines) {
       const subtotal = l.quantity * l.unitPrice
       const comp = computeLineTaxes(subtotal, taxMap.get(l.id) ?? [])
       revAccum.push({ accountId: l.accountId, description: l.description, amount: comp.baseAmount })
       grandTotal += comp.total
       for (const t of comp.taxes) {
-        const cur = taxAccum.get(t.taxAccountId)
+        const bucket = t.isWithholding ? withholdingTax : regularTax
+        if (t.isWithholding) withholdingTotal += t.amount
+        const cur = bucket.get(t.taxAccountId)
         if (cur) cur.amount += t.amount
-        else taxAccum.set(t.taxAccountId, { accountId: t.taxAccountId, name: t.taxName, amount: t.amount })
+        else bucket.set(t.taxAccountId, { accountId: t.taxAccountId, name: t.taxName, amount: t.amount })
       }
     }
 
@@ -481,11 +485,14 @@ export async function confirmInvoice(
       postedAt: new Date(),
     }).returning()
 
-    // Dr AR (grand total); Cr revenue per line (base only); Cr each tax account.
+    // Sale-side withholding: customer withholds tax from us → record as prepaid asset (Dr).
+    // AR debit = grandTotal - withholdingTotal (what customer will actually pay).
+    const arAmount = grandTotal - withholdingTotal
     const jelRows: { tenantId: string; entryId: string; accountId: string; description: string; debit: number; credit: number }[] = [
-      { tenantId, entryId: je!.id, accountId: ar.id, description: `Piutang dari ${inv.customerName}`, debit: grandTotal, credit: 0 },
+      { tenantId, entryId: je!.id, accountId: ar.id, description: `Piutang dari ${inv.customerName}`, debit: arAmount, credit: 0 },
+      ...Array.from(withholdingTax.values()).filter((t) => t.amount > 0).map((t) => ({ tenantId, entryId: je!.id, accountId: t.accountId, description: `${t.name} (dipotong pelanggan)`, debit: t.amount, credit: 0 })),
       ...revAccum.filter((r) => r.amount > 0).map((r) => ({ tenantId, entryId: je!.id, accountId: r.accountId, description: r.description, debit: 0, credit: r.amount })),
-      ...Array.from(taxAccum.values()).filter((t) => t.amount > 0).map((t) => ({ tenantId, entryId: je!.id, accountId: t.accountId, description: t.name, debit: 0, credit: t.amount })),
+      ...Array.from(regularTax.values()).filter((t) => t.amount > 0).map((t) => ({ tenantId, entryId: je!.id, accountId: t.accountId, description: t.name, debit: 0, credit: t.amount })),
     ]
     await tx.insert(journalEntryLines).values(jelRows)
 
@@ -524,17 +531,21 @@ export async function confirmBill(
 
     type ExpAccum = { accountId: string; description: string; amount: number }
     const expAccum: ExpAccum[] = []
-    const taxAccum = new Map<string, { accountId: string; name: string; amount: number }>()
+    const regularTax = new Map<string, { accountId: string; name: string; amount: number }>()
+    const withholdingTax = new Map<string, { accountId: string; name: string; amount: number }>()
     let grandTotal = 0
+    let withholdingTotal = 0
     for (const l of lines) {
       const subtotal = l.quantity * l.unitPrice
       const comp = computeLineTaxes(subtotal, taxMap.get(l.id) ?? [])
       expAccum.push({ accountId: l.accountId, description: l.description, amount: comp.baseAmount })
       grandTotal += comp.total
       for (const t of comp.taxes) {
-        const cur = taxAccum.get(t.taxAccountId)
+        const bucket = t.isWithholding ? withholdingTax : regularTax
+        if (t.isWithholding) withholdingTotal += t.amount
+        const cur = bucket.get(t.taxAccountId)
         if (cur) cur.amount += t.amount
-        else taxAccum.set(t.taxAccountId, { accountId: t.taxAccountId, name: t.taxName, amount: t.amount })
+        else bucket.set(t.taxAccountId, { accountId: t.taxAccountId, name: t.taxName, amount: t.amount })
       }
     }
 
@@ -552,11 +563,14 @@ export async function confirmBill(
       postedAt: new Date(),
     }).returning()
 
-    // Dr expense per line (base); Dr each tax account (input VAT etc.); Cr AP (grand total).
+    // Purchase-side withholding: we withhold from vendor → record as payable to govt (Cr).
+    // AP credit = grandTotal - withholdingTotal (what we owe the vendor net of withholding).
+    const apAmount = grandTotal - withholdingTotal
     const jelRows: { tenantId: string; entryId: string; accountId: string; description: string; debit: number; credit: number }[] = [
       ...expAccum.filter((r) => r.amount > 0).map((r) => ({ tenantId, entryId: je!.id, accountId: r.accountId, description: r.description, debit: r.amount, credit: 0 })),
-      ...Array.from(taxAccum.values()).filter((t) => t.amount > 0).map((t) => ({ tenantId, entryId: je!.id, accountId: t.accountId, description: t.name, debit: t.amount, credit: 0 })),
-      { tenantId, entryId: je!.id, accountId: ap.id, description: `Utang ke ${bill.vendorName}`, debit: 0, credit: grandTotal },
+      ...Array.from(regularTax.values()).filter((t) => t.amount > 0).map((t) => ({ tenantId, entryId: je!.id, accountId: t.accountId, description: t.name, debit: t.amount, credit: 0 })),
+      ...Array.from(withholdingTax.values()).filter((t) => t.amount > 0).map((t) => ({ tenantId, entryId: je!.id, accountId: t.accountId, description: `${t.name} (potong vendor)`, debit: 0, credit: t.amount })),
+      { tenantId, entryId: je!.id, accountId: ap.id, description: `Utang ke ${bill.vendorName}`, debit: 0, credit: apAmount },
     ]
     await tx.insert(journalEntryLines).values(jelRows)
 
@@ -587,7 +601,7 @@ export async function payInvoice(
     if (inv.status !== 'confirmed') return { ok: false, error: 'Faktur harus dikonfirmasi sebelum ditandai lunas.' }
 
     const breakdown = await getInvoiceTaxBreakdown(tenantId, invoiceId)
-    const total = breakdown.grandTotal
+    const total = breakdown.netSettlement // amount actually received (gross minus withholding)
 
     const ar = await findAccountByCode(tx, tenantId, '1200')
     const cash = await findAccountByCode(tx, tenantId, cashAccountCode)
@@ -645,7 +659,7 @@ export async function payBill(
     if (bill.status !== 'confirmed') return { ok: false, error: 'Tagihan harus dikonfirmasi sebelum dibayar.' }
 
     const breakdown = await getBillTaxBreakdown(tenantId, billId)
-    const total = breakdown.grandTotal
+    const total = breakdown.netSettlement // amount actually paid to vendor (gross minus withholding)
 
     const ap = await findAccountByCode(tx, tenantId, '2100')
     const cash = await findAccountByCode(tx, tenantId, cashAccountCode)
@@ -784,13 +798,14 @@ export interface ComputedLineTax {
   taxAccountId: string
   groupId: string | null
   amount: number // IDR amount on this line
+  isWithholding: boolean
 }
 
 export interface ComputedLine {
   lineId: string
-  baseAmount: number // pre-tax revenue/expense after any price_include adjustment
+  baseAmount: number
   taxes: ComputedLineTax[]
-  total: number // baseAmount + sum(exclusive taxes); equals subtotal when all price_include
+  total: number // baseAmount + exclusive_regular (withholding NOT added)
 }
 
 interface InputTax {
@@ -801,6 +816,7 @@ interface InputTax {
   taxAccountId: string
   groupId: string | null
   priceInclude: boolean
+  isWithholding: boolean
 }
 
 /**
@@ -810,40 +826,32 @@ interface InputTax {
  * apply, they are computed independently against the same base.  Price-included
  * taxes are deducted from base; exclusive taxes are added on top.
  */
-export function computeLineTaxes(subtotal: number, applied: InputTax[]): { baseAmount: number; taxes: { taxId: string; taxName: string; taxAccountId: string; groupId: string | null; amount: number }[]; total: number } {
+export function computeLineTaxes(subtotal: number, applied: InputTax[]): { baseAmount: number; taxes: { taxId: string; taxName: string; taxAccountId: string; groupId: string | null; amount: number; isWithholding: boolean }[]; total: number } {
+  // Withholding taxes are never price-included; they don't change the gross.
   let base = subtotal
-  // First pass: handle price_include — derive base from inclusive total.
-  // For a 11% inclusive tax: base = subtotal / 1.11, tax = subtotal - base.
-  // If multiple inclusive percents, divide by (1 + sum of rates).
-  const inclusivePercent = applied.filter((t) => t.priceInclude && t.amountType === 'percent')
-  const inclusiveFixed   = applied.filter((t) => t.priceInclude && t.amountType === 'fixed')
+  const nonWithholding = applied.filter((t) => !t.isWithholding)
+  const inclusivePercent = nonWithholding.filter((t) => t.priceInclude && t.amountType === 'percent')
+  const inclusiveFixed   = nonWithholding.filter((t) => t.priceInclude && t.amountType === 'fixed')
   const inclusiveFixedTotal = inclusiveFixed.reduce((s, t) => s + t.amount, 0)
-  const inclusiveRate = inclusivePercent.reduce((s, t) => s + t.amount / 10000, 0) // basis points → ratio
+  const inclusiveRate = inclusivePercent.reduce((s, t) => s + t.amount / 10000, 0)
   if (inclusiveRate > 0 || inclusiveFixedTotal > 0) {
     base = Math.round((subtotal - inclusiveFixedTotal) / (1 + inclusiveRate))
     if (base < 0) base = 0
   }
 
-  const computed: { taxId: string; taxName: string; taxAccountId: string; groupId: string | null; amount: number }[] = []
+  const computed: { taxId: string; taxName: string; taxAccountId: string; groupId: string | null; amount: number; isWithholding: boolean }[] = []
   let exclusiveTotal = 0
   for (const t of applied) {
     let amount = 0
-    if (t.priceInclude) {
-      // Inclusive: the tax portion is (subtotal - base) split proportionally.
-      if (t.amountType === 'percent') {
-        amount = Math.round(base * (t.amount / 10000))
-      } else {
-        amount = t.amount
-      }
+    if (t.priceInclude && !t.isWithholding) {
+      if (t.amountType === 'percent') amount = Math.round(base * (t.amount / 10000))
+      else amount = t.amount
     } else {
-      if (t.amountType === 'percent') {
-        amount = Math.round(base * (t.amount / 10000))
-      } else {
-        amount = t.amount
-      }
-      exclusiveTotal += amount
+      if (t.amountType === 'percent') amount = Math.round(base * (t.amount / 10000))
+      else amount = t.amount
+      if (!t.isWithholding) exclusiveTotal += amount
     }
-    computed.push({ taxId: t.id, taxName: t.name, taxAccountId: t.taxAccountId, groupId: t.groupId, amount })
+    computed.push({ taxId: t.id, taxName: t.name, taxAccountId: t.taxAccountId, groupId: t.groupId, amount, isWithholding: t.isWithholding })
   }
 
   return { baseAmount: base, taxes: computed, total: base + exclusiveTotal }
@@ -902,6 +910,7 @@ export async function createTax(input: {
   taxAccountId: string
   groupId?: string | null
   priceInclude?: boolean
+  isWithholding?: boolean
   sequence?: number
   description?: string | null
 }): Promise<Tax> {
@@ -915,6 +924,7 @@ export async function createTax(input: {
       taxAccountId: input.taxAccountId,
       groupId: input.groupId ?? null,
       priceInclude: input.priceInclude ?? false,
+      isWithholding: input.isWithholding ?? false,
       sequence: input.sequence ?? 10,
       description: input.description ?? null,
     }).returning()
@@ -932,6 +942,8 @@ export async function seedDefaultTaxes(tenantId: string): Promise<{ groups: numb
     const acct = (code: string) => tx.select().from(accounts).where(and(eq(accounts.tenantId, tenantId), eq(accounts.code, code))).limit(1)
     const [out] = await acct('2200') // PPN Keluaran
     const [inn] = await acct('1220') // PPN Masukan
+    const [p23p] = await acct('2220') // Utang PPh 23 (withhold from vendor)
+    const [p23r] = await acct('1230') // PPh 23 Dibayar di Muka (withheld by customer)
     if (!out || !inn) return { groups: 0, taxes: 0 }
 
     // Groups
@@ -939,6 +951,7 @@ export async function seedDefaultTaxes(tenantId: string): Promise<{ groups: numb
     const groupByName = new Map(existingGroups.map((g) => [g.name, g]))
     const wantGroups: { name: string; sequence: number }[] = [
       { name: 'PPN', sequence: 1 },
+      { name: 'PPh', sequence: 2 },
     ]
     let groupsAdded = 0
     for (const g of wantGroups) {
@@ -955,10 +968,17 @@ export async function seedDefaultTaxes(tenantId: string): Promise<{ groups: numb
     const existingTaxes = await tx.select().from(taxes).where(eq(taxes.tenantId, tenantId))
     const taxByName = new Set(existingTaxes.map((t) => t.name))
     const ppn = groupByName.get('PPN')!
+    const pph = groupByName.get('PPh')!
     const wantTaxes: Array<typeof taxes.$inferInsert> = [
-      { tenantId, name: 'PPN 11% (Penjualan)',  scope: 'sale',     amountType: 'percent', amount: 1100, taxAccountId: out.id, groupId: ppn.id, priceInclude: false, sequence: 1, description: 'PPN Keluaran 11% (tarif standar 2026).' },
-      { tenantId, name: 'PPN 11% (Pembelian)',  scope: 'purchase', amountType: 'percent', amount: 1100, taxAccountId: inn.id, groupId: ppn.id, priceInclude: false, sequence: 2, description: 'PPN Masukan 11% (kredit pajak).' },
+      { tenantId, name: 'PPN 11% (Penjualan)',  scope: 'sale',     amountType: 'percent', amount: 1100, taxAccountId: out.id, groupId: ppn.id, priceInclude: false, isWithholding: false, sequence: 1, description: 'PPN Keluaran 11% (tarif standar 2026).' },
+      { tenantId, name: 'PPN 11% (Pembelian)',  scope: 'purchase', amountType: 'percent', amount: 1100, taxAccountId: inn.id, groupId: ppn.id, priceInclude: false, isWithholding: false, sequence: 2, description: 'PPN Masukan 11% (kredit pajak).' },
     ]
+    if (p23p) {
+      wantTaxes.push({ tenantId, name: 'PPh 23 2% (Potong Vendor)', scope: 'purchase', amountType: 'percent', amount: 200, taxAccountId: p23p.id, groupId: pph.id, priceInclude: false, isWithholding: true, sequence: 3, description: 'PPh 23 atas jasa — dipotong dari pembayaran vendor (2%).' })
+    }
+    if (p23r) {
+      wantTaxes.push({ tenantId, name: 'PPh 23 2% (Dipotong Pelanggan)', scope: 'sale', amountType: 'percent', amount: 200, taxAccountId: p23r.id, groupId: pph.id, priceInclude: false, isWithholding: true, sequence: 4, description: 'PPh 23 yang dipotong pelanggan dari pembayaran ke kami (kredit pajak).' })
+    }
     let added = 0
     for (const t of wantTaxes) {
       if (!taxByName.has(t.name)) {
@@ -1003,6 +1023,7 @@ async function loadInvoiceLineTaxMap(tx: Parameters<Parameters<typeof withTenant
       taxAccountId: taxes.taxAccountId,
       groupId: taxes.groupId,
       priceInclude: taxes.priceInclude,
+      isWithholding: taxes.isWithholding,
     })
     .from(invoiceLineTaxes)
     .innerJoin(taxes, eq(invoiceLineTaxes.taxId, taxes.id))
@@ -1010,7 +1031,7 @@ async function loadInvoiceLineTaxMap(tx: Parameters<Parameters<typeof withTenant
   const out = new Map<string, InputTax[]>()
   for (const r of rows) {
     const arr = out.get(r.lineId) ?? []
-    arr.push({ id: r.id, name: r.name, amount: r.amount, amountType: r.amountType as 'percent' | 'fixed', taxAccountId: r.taxAccountId, groupId: r.groupId, priceInclude: r.priceInclude })
+    arr.push({ id: r.id, name: r.name, amount: r.amount, amountType: r.amountType as 'percent' | 'fixed', taxAccountId: r.taxAccountId, groupId: r.groupId, priceInclude: r.priceInclude, isWithholding: r.isWithholding })
     out.set(r.lineId, arr)
   }
   return out
@@ -1028,6 +1049,7 @@ async function loadBillLineTaxMap(tx: Parameters<Parameters<typeof withTenant>[1
       taxAccountId: taxes.taxAccountId,
       groupId: taxes.groupId,
       priceInclude: taxes.priceInclude,
+      isWithholding: taxes.isWithholding,
     })
     .from(billLineTaxes)
     .innerJoin(taxes, eq(billLineTaxes.taxId, taxes.id))
@@ -1035,19 +1057,23 @@ async function loadBillLineTaxMap(tx: Parameters<Parameters<typeof withTenant>[1
   const out = new Map<string, InputTax[]>()
   for (const r of rows) {
     const arr = out.get(r.lineId) ?? []
-    arr.push({ id: r.id, name: r.name, amount: r.amount, amountType: r.amountType as 'percent' | 'fixed', taxAccountId: r.taxAccountId, groupId: r.groupId, priceInclude: r.priceInclude })
+    arr.push({ id: r.id, name: r.name, amount: r.amount, amountType: r.amountType as 'percent' | 'fixed', taxAccountId: r.taxAccountId, groupId: r.groupId, priceInclude: r.priceInclude, isWithholding: r.isWithholding })
     out.set(r.lineId, arr)
   }
   return out
 }
 
-/** Compute the full breakdown of an invoice (used by detail view + posting). */
-export async function getInvoiceTaxBreakdown(tenantId: string, invoiceId: string): Promise<{
+export interface TaxBreakdown {
   baseTotal: number
-  taxLines: { taxId: string; taxName: string; taxAccountId: string; groupId: string | null; amount: number }[]
+  taxLines: { taxId: string; taxName: string; taxAccountId: string; groupId: string | null; amount: number; isWithholding: boolean }[]
   taxByGroup: { groupId: string | null; groupName: string | null; amount: number }[]
-  grandTotal: number
-}> {
+  grandTotal: number          // base + non-withholding exclusive taxes (invoice/bill face value)
+  withholdingTotal: number    // sum of withholding taxes (reduces cash settlement)
+  netSettlement: number       // grandTotal - withholdingTotal (actual cash leg)
+}
+
+/** Compute the full breakdown of an invoice (used by detail view + posting). */
+export async function getInvoiceTaxBreakdown(tenantId: string, invoiceId: string): Promise<TaxBreakdown> {
   return withTenant(tenantId, async (tx) => {
     const lines = await tx.select().from(invoiceLines)
       .where(and(eq(invoiceLines.tenantId, tenantId), eq(invoiceLines.invoiceId, invoiceId)))
@@ -1056,12 +1082,7 @@ export async function getInvoiceTaxBreakdown(tenantId: string, invoiceId: string
   })
 }
 
-export async function getBillTaxBreakdown(tenantId: string, billId: string): Promise<{
-  baseTotal: number
-  taxLines: { taxId: string; taxName: string; taxAccountId: string; groupId: string | null; amount: number }[]
-  taxByGroup: { groupId: string | null; groupName: string | null; amount: number }[]
-  grandTotal: number
-}> {
+export async function getBillTaxBreakdown(tenantId: string, billId: string): Promise<TaxBreakdown> {
   return withTenant(tenantId, async (tx) => {
     const lines = await tx.select().from(billLines)
       .where(and(eq(billLines.tenantId, tenantId), eq(billLines.billId, billId)))
@@ -1074,20 +1095,17 @@ async function aggregate(
   lines: { id: string; subtotal: number; taxes: InputTax[] }[],
   tx: Parameters<Parameters<typeof withTenant>[1]>[0],
   tenantId: string,
-): Promise<{
-  baseTotal: number
-  taxLines: { taxId: string; taxName: string; taxAccountId: string; groupId: string | null; amount: number }[]
-  taxByGroup: { groupId: string | null; groupName: string | null; amount: number }[]
-  grandTotal: number
-}> {
+): Promise<TaxBreakdown> {
   let baseTotal = 0
   let grandTotal = 0
-  const taxAccum = new Map<string, { taxId: string; taxName: string; taxAccountId: string; groupId: string | null; amount: number }>()
+  let withholdingTotal = 0
+  const taxAccum = new Map<string, { taxId: string; taxName: string; taxAccountId: string; groupId: string | null; amount: number; isWithholding: boolean }>()
   for (const l of lines) {
     const comp = computeLineTaxes(l.subtotal, l.taxes)
     baseTotal += comp.baseAmount
     grandTotal += comp.total
     for (const t of comp.taxes) {
+      if (t.isWithholding) withholdingTotal += t.amount
       const cur = taxAccum.get(t.taxId)
       if (cur) cur.amount += t.amount
       else taxAccum.set(t.taxId, { ...t })
@@ -1095,7 +1113,7 @@ async function aggregate(
   }
   const taxLines = Array.from(taxAccum.values())
 
-  // Group lookup
+  // Group lookup (withholding contributes negative-direction; tracked separately via tax flag)
   const groupIds = Array.from(new Set(taxLines.map((t) => t.groupId).filter((g): g is string => !!g)))
   const groups = groupIds.length
     ? await tx.select().from(taxGroups).where(and(eq(taxGroups.tenantId, tenantId), inArray(taxGroups.id, groupIds)))
@@ -1103,10 +1121,11 @@ async function aggregate(
   const groupName = new Map(groups.map((g) => [g.id, g.name]))
   const groupAccum = new Map<string, { groupId: string | null; groupName: string | null; amount: number }>()
   for (const t of taxLines) {
+    if (t.isWithholding) continue
     const key = t.groupId ?? '__none__'
     const cur = groupAccum.get(key)
     if (cur) cur.amount += t.amount
     else groupAccum.set(key, { groupId: t.groupId, groupName: t.groupId ? groupName.get(t.groupId) ?? null : null, amount: t.amount })
   }
-  return { baseTotal, taxLines, taxByGroup: Array.from(groupAccum.values()), grandTotal }
+  return { baseTotal, taxLines, taxByGroup: Array.from(groupAccum.values()), grandTotal, withholdingTotal, netSettlement: grandTotal - withholdingTotal }
 }

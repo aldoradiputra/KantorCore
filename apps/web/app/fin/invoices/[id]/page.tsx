@@ -96,16 +96,28 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                 <Td colSpan={4} align="right">Subtotal</Td>
                 <Td align="right" mono>{formatIDR(total)}</Td>
               </tr>
-              {breakdown.taxLines.map((t) => (
+              {breakdown.taxLines.filter((t) => !t.isWithholding).map((t) => (
                 <tr key={t.taxId}>
                   <Td colSpan={4} align="right" muted>{t.taxName}</Td>
                   <Td align="right" mono muted>{formatIDR(t.amount)}</Td>
                 </tr>
               ))}
               <tr style={{ borderTop: '1px solid var(--border)', background: 'var(--bg)' }}>
-                <Td colSpan={4} align="right"><b>Total</b></Td>
+                <Td colSpan={4} align="right"><b>Total Faktur</b></Td>
                 <Td align="right" mono><b>{formatIDR(breakdown.grandTotal)}</b></Td>
               </tr>
+              {breakdown.taxLines.filter((t) => t.isWithholding).map((t) => (
+                <tr key={t.taxId}>
+                  <Td colSpan={4} align="right" muted>{t.taxName} (dipotong pelanggan)</Td>
+                  <Td align="right" mono muted>−{formatIDR(t.amount)}</Td>
+                </tr>
+              ))}
+              {breakdown.withholdingTotal > 0 && (
+                <tr style={{ background: 'var(--bg)' }}>
+                  <Td colSpan={4} align="right"><b>Diterima (net)</b></Td>
+                  <Td align="right" mono><b>{formatIDR(breakdown.netSettlement)}</b></Td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
