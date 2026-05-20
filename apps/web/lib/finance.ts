@@ -8,6 +8,10 @@ import {
   invoiceLines,
   bills,
   billLines,
+  taxGroups,
+  taxes,
+  invoiceLineTaxes,
+  billLineTaxes,
   type Account,
   type Invoice,
   type InvoiceLine,
@@ -15,6 +19,8 @@ import {
   type BillLine,
   type JournalEntry,
   type JournalEntryLine,
+  type Tax,
+  type TaxGroup,
 } from '@kantorcore/db'
 import { withTenant } from './db'
 
@@ -34,6 +40,7 @@ export const DEFAULT_COA: SeedAccount[] = [
   { code: '1110', name: 'Bank', type: 'asset', isReconcilable: true, description: 'Rekening bank operasional.' },
   { code: '1200', name: 'Piutang Usaha', type: 'asset', isReconcilable: true, description: 'Piutang dari pelanggan atas faktur belum lunas.' },
   { code: '1300', name: 'Persediaan', type: 'asset', description: 'Persediaan barang dagang.' },
+  { code: '1220', name: 'Pajak Dibayar di Muka — PPN Masukan', type: 'asset', isReconcilable: true, description: 'PPN yang dibayar atas pembelian (kredit pajak).' },
   { code: '1500', name: 'Aset Tetap', type: 'asset', description: 'Tanah, bangunan, kendaraan, peralatan.' },
   { code: '1510', name: 'Akumulasi Penyusutan', type: 'asset', description: 'Akumulasi penyusutan aset tetap (saldo kredit).' },
 
@@ -41,6 +48,7 @@ export const DEFAULT_COA: SeedAccount[] = [
   { code: '2100', name: 'Utang Usaha', type: 'liability', isReconcilable: true, description: 'Utang ke vendor atas tagihan belum dibayar.' },
   { code: '2200', name: 'Utang Pajak — PPN Keluaran', type: 'liability', description: 'PPN yang dipungut dari pelanggan.' },
   { code: '2210', name: 'Utang Pajak — PPh 21', type: 'liability', description: 'PPh karyawan terutang.' },
+  { code: '2220', name: 'Utang Pajak — PPh 23', type: 'liability', description: 'PPh dipotong atas jasa terutang.' },
   { code: '2300', name: 'Utang Gaji', type: 'liability', description: 'Gaji karyawan terutang.' },
 
   // Ekuitas (3xxx)
@@ -147,7 +155,7 @@ async function nextDocNumber(
 
 export interface InvoiceWithLines {
   invoice: Invoice
-  lines: (InvoiceLine & { accountCode: string; accountName: string })[]
+  lines: (InvoiceLine & { accountCode: string; accountName: string; taxIds: string[] })[]
   total: number
 }
 
@@ -202,10 +210,23 @@ export async function getInvoice(tenantId: string, id: string): Promise<InvoiceW
       .where(and(eq(invoiceLines.tenantId, tenantId), eq(invoiceLines.invoiceId, id)))
       .orderBy(asc(invoiceLines.createdAt))
 
+    const lineIds = lines.map((l) => l.line.id)
+    const ltx = lineIds.length
+      ? await tx.select({ lineId: invoiceLineTaxes.invoiceLineId, taxId: invoiceLineTaxes.taxId })
+          .from(invoiceLineTaxes)
+          .where(and(eq(invoiceLineTaxes.tenantId, tenantId), inArray(invoiceLineTaxes.invoiceLineId, lineIds)))
+      : []
+    const taxByLine = new Map<string, string[]>()
+    for (const r of ltx) {
+      const arr = taxByLine.get(r.lineId) ?? []
+      arr.push(r.taxId)
+      taxByLine.set(r.lineId, arr)
+    }
+
     const total = lines.reduce((s, l) => s + l.line.quantity * l.line.unitPrice, 0)
     return {
       invoice: inv,
-      lines: lines.map((l) => ({ ...l.line, accountCode: l.accountCode, accountName: l.accountName })),
+      lines: lines.map((l) => ({ ...l.line, accountCode: l.accountCode, accountName: l.accountName, taxIds: taxByLine.get(l.line.id) ?? [] })),
       total,
     }
   })
@@ -219,7 +240,8 @@ export async function createInvoice(input: {
   date: string
   dueDate: string
   notes?: string | null
-  lines: { description: string; quantity: number; unitPrice: number; accountId: string }[]
+  displayTaxInline?: boolean
+  lines: { description: string; quantity: number; unitPrice: number; accountId: string; taxIds?: string[] }[]
 }): Promise<Invoice> {
   return withTenant(input.tenantId, async (tx) => {
     const invoiceNumber = await nextDocNumber(tx, input.tenantId, 'INV', invoices, 'invoiceNumber')
@@ -235,12 +257,13 @@ export async function createInvoice(input: {
         date: input.date,
         dueDate: input.dueDate,
         notes: input.notes ?? null,
+        displayTaxInline: input.displayTaxInline ?? false,
         createdBy: input.userId,
       })
       .returning()
 
     if (input.lines.length > 0) {
-      await tx.insert(invoiceLines).values(
+      const inserted = await tx.insert(invoiceLines).values(
         input.lines.map((l) => ({
           tenantId: input.tenantId,
           invoiceId: inv!.id,
@@ -249,7 +272,16 @@ export async function createInvoice(input: {
           unitPrice: l.unitPrice,
           accountId: l.accountId,
         })),
-      )
+      ).returning()
+
+      const junctionRows: { tenantId: string; invoiceLineId: string; taxId: string }[] = []
+      inserted.forEach((row, i) => {
+        const tIds = input.lines[i]?.taxIds ?? []
+        for (const tid of tIds) junctionRows.push({ tenantId: input.tenantId, invoiceLineId: row.id, taxId: tid })
+      })
+      if (junctionRows.length > 0) {
+        await tx.insert(invoiceLineTaxes).values(junctionRows)
+      }
     }
     return inv!
   })
@@ -259,7 +291,7 @@ export async function createInvoice(input: {
 
 export interface BillWithLines {
   bill: Bill
-  lines: (BillLine & { accountCode: string; accountName: string })[]
+  lines: (BillLine & { accountCode: string; accountName: string; taxIds: string[] })[]
   total: number
 }
 
@@ -314,10 +346,23 @@ export async function getBill(tenantId: string, id: string): Promise<BillWithLin
       .where(and(eq(billLines.tenantId, tenantId), eq(billLines.billId, id)))
       .orderBy(asc(billLines.createdAt))
 
+    const lineIds = lines.map((l) => l.line.id)
+    const ltx = lineIds.length
+      ? await tx.select({ lineId: billLineTaxes.billLineId, taxId: billLineTaxes.taxId })
+          .from(billLineTaxes)
+          .where(and(eq(billLineTaxes.tenantId, tenantId), inArray(billLineTaxes.billLineId, lineIds)))
+      : []
+    const taxByLine = new Map<string, string[]>()
+    for (const r of ltx) {
+      const arr = taxByLine.get(r.lineId) ?? []
+      arr.push(r.taxId)
+      taxByLine.set(r.lineId, arr)
+    }
+
     const total = lines.reduce((s, l) => s + l.line.quantity * l.line.unitPrice, 0)
     return {
       bill,
-      lines: lines.map((l) => ({ ...l.line, accountCode: l.accountCode, accountName: l.accountName })),
+      lines: lines.map((l) => ({ ...l.line, accountCode: l.accountCode, accountName: l.accountName, taxIds: taxByLine.get(l.line.id) ?? [] })),
       total,
     }
   })
@@ -331,7 +376,8 @@ export async function createBill(input: {
   date: string
   dueDate: string
   notes?: string | null
-  lines: { description: string; quantity: number; unitPrice: number; accountId: string }[]
+  displayTaxInline?: boolean
+  lines: { description: string; quantity: number; unitPrice: number; accountId: string; taxIds?: string[] }[]
 }): Promise<Bill> {
   return withTenant(input.tenantId, async (tx) => {
     const billNumber = await nextDocNumber(tx, input.tenantId, 'BILL', bills, 'billNumber')
@@ -347,12 +393,13 @@ export async function createBill(input: {
         date: input.date,
         dueDate: input.dueDate,
         notes: input.notes ?? null,
+        displayTaxInline: input.displayTaxInline ?? false,
         createdBy: input.userId,
       })
       .returning()
 
     if (input.lines.length > 0) {
-      await tx.insert(billLines).values(
+      const inserted = await tx.insert(billLines).values(
         input.lines.map((l) => ({
           tenantId: input.tenantId,
           billId: bill!.id,
@@ -361,7 +408,16 @@ export async function createBill(input: {
           unitPrice: l.unitPrice,
           accountId: l.accountId,
         })),
-      )
+      ).returning()
+
+      const junctionRows: { tenantId: string; billLineId: string; taxId: string }[] = []
+      inserted.forEach((row, i) => {
+        const tIds = input.lines[i]?.taxIds ?? []
+        for (const tid of tIds) junctionRows.push({ tenantId: input.tenantId, billLineId: row.id, taxId: tid })
+      })
+      if (junctionRows.length > 0) {
+        await tx.insert(billLineTaxes).values(junctionRows)
+      }
     }
     return bill!
   })
@@ -392,7 +448,25 @@ export async function confirmInvoice(
     const ar = await findAccountByCode(tx, tenantId, '1200')
     if (!ar) return { ok: false, error: 'Akun Piutang Usaha (1200) tidak ditemukan. Jalankan seed Chart of Accounts.' }
 
-    const total = lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0)
+    const taxMap = await loadInvoiceLineTaxMap(tx, tenantId, lines.map((l) => l.id))
+
+    // Per-line computation: base (revenue) goes to line.accountId, taxes accumulated.
+    type RevAccum = { accountId: string; description: string; amount: number }
+    const revAccum: RevAccum[] = []
+    const taxAccum = new Map<string, { accountId: string; name: string; amount: number }>()
+    let grandTotal = 0
+    for (const l of lines) {
+      const subtotal = l.quantity * l.unitPrice
+      const comp = computeLineTaxes(subtotal, taxMap.get(l.id) ?? [])
+      revAccum.push({ accountId: l.accountId, description: l.description, amount: comp.baseAmount })
+      grandTotal += comp.total
+      for (const t of comp.taxes) {
+        const cur = taxAccum.get(t.taxAccountId)
+        if (cur) cur.amount += t.amount
+        else taxAccum.set(t.taxAccountId, { accountId: t.taxAccountId, name: t.taxName, amount: t.amount })
+      }
+    }
+
     const entryNumber = await nextDocNumber(tx, tenantId, 'JE', journalEntries, 'entryNumber')
 
     const [je] = await tx.insert(journalEntries).values({
@@ -407,24 +481,11 @@ export async function confirmInvoice(
       postedAt: new Date(),
     }).returning()
 
-    // Debit AR, credit revenue (per line)
-    const jelRows = [
-      {
-        tenantId,
-        entryId: je!.id,
-        accountId: ar.id,
-        description: `Piutang dari ${inv.customerName}`,
-        debit: total,
-        credit: 0,
-      },
-      ...lines.map((l) => ({
-        tenantId,
-        entryId: je!.id,
-        accountId: l.accountId,
-        description: l.description,
-        debit: 0,
-        credit: l.quantity * l.unitPrice,
-      })),
+    // Dr AR (grand total); Cr revenue per line (base only); Cr each tax account.
+    const jelRows: { tenantId: string; entryId: string; accountId: string; description: string; debit: number; credit: number }[] = [
+      { tenantId, entryId: je!.id, accountId: ar.id, description: `Piutang dari ${inv.customerName}`, debit: grandTotal, credit: 0 },
+      ...revAccum.filter((r) => r.amount > 0).map((r) => ({ tenantId, entryId: je!.id, accountId: r.accountId, description: r.description, debit: 0, credit: r.amount })),
+      ...Array.from(taxAccum.values()).filter((t) => t.amount > 0).map((t) => ({ tenantId, entryId: je!.id, accountId: t.accountId, description: t.name, debit: 0, credit: t.amount })),
     ]
     await tx.insert(journalEntryLines).values(jelRows)
 
@@ -459,7 +520,24 @@ export async function confirmBill(
     const ap = await findAccountByCode(tx, tenantId, '2100')
     if (!ap) return { ok: false, error: 'Akun Utang Usaha (2100) tidak ditemukan. Jalankan seed Chart of Accounts.' }
 
-    const total = lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0)
+    const taxMap = await loadBillLineTaxMap(tx, tenantId, lines.map((l) => l.id))
+
+    type ExpAccum = { accountId: string; description: string; amount: number }
+    const expAccum: ExpAccum[] = []
+    const taxAccum = new Map<string, { accountId: string; name: string; amount: number }>()
+    let grandTotal = 0
+    for (const l of lines) {
+      const subtotal = l.quantity * l.unitPrice
+      const comp = computeLineTaxes(subtotal, taxMap.get(l.id) ?? [])
+      expAccum.push({ accountId: l.accountId, description: l.description, amount: comp.baseAmount })
+      grandTotal += comp.total
+      for (const t of comp.taxes) {
+        const cur = taxAccum.get(t.taxAccountId)
+        if (cur) cur.amount += t.amount
+        else taxAccum.set(t.taxAccountId, { accountId: t.taxAccountId, name: t.taxName, amount: t.amount })
+      }
+    }
+
     const entryNumber = await nextDocNumber(tx, tenantId, 'JE', journalEntries, 'entryNumber')
 
     const [je] = await tx.insert(journalEntries).values({
@@ -474,23 +552,11 @@ export async function confirmBill(
       postedAt: new Date(),
     }).returning()
 
-    const jelRows = [
-      ...lines.map((l) => ({
-        tenantId,
-        entryId: je!.id,
-        accountId: l.accountId,
-        description: l.description,
-        debit: l.quantity * l.unitPrice,
-        credit: 0,
-      })),
-      {
-        tenantId,
-        entryId: je!.id,
-        accountId: ap.id,
-        description: `Utang ke ${bill.vendorName}`,
-        debit: 0,
-        credit: total,
-      },
+    // Dr expense per line (base); Dr each tax account (input VAT etc.); Cr AP (grand total).
+    const jelRows: { tenantId: string; entryId: string; accountId: string; description: string; debit: number; credit: number }[] = [
+      ...expAccum.filter((r) => r.amount > 0).map((r) => ({ tenantId, entryId: je!.id, accountId: r.accountId, description: r.description, debit: r.amount, credit: 0 })),
+      ...Array.from(taxAccum.values()).filter((t) => t.amount > 0).map((t) => ({ tenantId, entryId: je!.id, accountId: t.accountId, description: t.name, debit: t.amount, credit: 0 })),
+      { tenantId, entryId: je!.id, accountId: ap.id, description: `Utang ke ${bill.vendorName}`, debit: 0, credit: grandTotal },
     ]
     await tx.insert(journalEntryLines).values(jelRows)
 
@@ -520,9 +586,8 @@ export async function payInvoice(
     if (!inv) return { ok: false, error: 'Faktur tidak ditemukan.' }
     if (inv.status !== 'confirmed') return { ok: false, error: 'Faktur harus dikonfirmasi sebelum ditandai lunas.' }
 
-    const lines = await tx.select().from(invoiceLines)
-      .where(and(eq(invoiceLines.tenantId, tenantId), eq(invoiceLines.invoiceId, invoiceId)))
-    const total = lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0)
+    const breakdown = await getInvoiceTaxBreakdown(tenantId, invoiceId)
+    const total = breakdown.grandTotal
 
     const ar = await findAccountByCode(tx, tenantId, '1200')
     const cash = await findAccountByCode(tx, tenantId, cashAccountCode)
@@ -579,9 +644,8 @@ export async function payBill(
     if (!bill) return { ok: false, error: 'Tagihan tidak ditemukan.' }
     if (bill.status !== 'confirmed') return { ok: false, error: 'Tagihan harus dikonfirmasi sebelum dibayar.' }
 
-    const lines = await tx.select().from(billLines)
-      .where(and(eq(billLines.tenantId, tenantId), eq(billLines.billId, billId)))
-    const total = lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0)
+    const breakdown = await getBillTaxBreakdown(tenantId, billId)
+    const total = breakdown.grandTotal
 
     const ap = await findAccountByCode(tx, tenantId, '2100')
     const cash = await findAccountByCode(tx, tenantId, cashAccountCode)
@@ -710,4 +774,339 @@ export const DOC_STATUS_COLOR: Record<string, string> = {
   confirmed: 'var(--indigo)',
   paid: 'var(--teal)',
   cancelled: 'var(--fg-3)',
+}
+
+// ── Tax computation ───────────────────────────────────────────────────────────
+
+export interface ComputedLineTax {
+  taxId: string
+  taxName: string
+  taxAccountId: string
+  groupId: string | null
+  amount: number // IDR amount on this line
+}
+
+export interface ComputedLine {
+  lineId: string
+  baseAmount: number // pre-tax revenue/expense after any price_include adjustment
+  taxes: ComputedLineTax[]
+  total: number // baseAmount + sum(exclusive taxes); equals subtotal when all price_include
+}
+
+interface InputTax {
+  id: string
+  name: string
+  amount: number // basis points (percent) or IDR (fixed)
+  amountType: 'percent' | 'fixed'
+  taxAccountId: string
+  groupId: string | null
+  priceInclude: boolean
+}
+
+/**
+ * Apply taxes to a line subtotal (qty * unit_price).
+ *
+ * Indonesian convention is single-tax-per-line in most cases; if multiple taxes
+ * apply, they are computed independently against the same base.  Price-included
+ * taxes are deducted from base; exclusive taxes are added on top.
+ */
+export function computeLineTaxes(subtotal: number, applied: InputTax[]): { baseAmount: number; taxes: { taxId: string; taxName: string; taxAccountId: string; groupId: string | null; amount: number }[]; total: number } {
+  let base = subtotal
+  // First pass: handle price_include — derive base from inclusive total.
+  // For a 11% inclusive tax: base = subtotal / 1.11, tax = subtotal - base.
+  // If multiple inclusive percents, divide by (1 + sum of rates).
+  const inclusivePercent = applied.filter((t) => t.priceInclude && t.amountType === 'percent')
+  const inclusiveFixed   = applied.filter((t) => t.priceInclude && t.amountType === 'fixed')
+  const inclusiveFixedTotal = inclusiveFixed.reduce((s, t) => s + t.amount, 0)
+  const inclusiveRate = inclusivePercent.reduce((s, t) => s + t.amount / 10000, 0) // basis points → ratio
+  if (inclusiveRate > 0 || inclusiveFixedTotal > 0) {
+    base = Math.round((subtotal - inclusiveFixedTotal) / (1 + inclusiveRate))
+    if (base < 0) base = 0
+  }
+
+  const computed: { taxId: string; taxName: string; taxAccountId: string; groupId: string | null; amount: number }[] = []
+  let exclusiveTotal = 0
+  for (const t of applied) {
+    let amount = 0
+    if (t.priceInclude) {
+      // Inclusive: the tax portion is (subtotal - base) split proportionally.
+      if (t.amountType === 'percent') {
+        amount = Math.round(base * (t.amount / 10000))
+      } else {
+        amount = t.amount
+      }
+    } else {
+      if (t.amountType === 'percent') {
+        amount = Math.round(base * (t.amount / 10000))
+      } else {
+        amount = t.amount
+      }
+      exclusiveTotal += amount
+    }
+    computed.push({ taxId: t.id, taxName: t.name, taxAccountId: t.taxAccountId, groupId: t.groupId, amount })
+  }
+
+  return { baseAmount: base, taxes: computed, total: base + exclusiveTotal }
+}
+
+// ── Tax CRUD ──────────────────────────────────────────────────────────────────
+
+export async function listTaxGroups(tenantId: string): Promise<TaxGroup[]> {
+  return withTenant(tenantId, async (tx) => {
+    return tx
+      .select()
+      .from(taxGroups)
+      .where(eq(taxGroups.tenantId, tenantId))
+      .orderBy(asc(taxGroups.sequence), asc(taxGroups.name))
+  })
+}
+
+export async function listTaxes(tenantId: string, opts: { scope?: 'sale' | 'purchase'; activeOnly?: boolean } = {}): Promise<(Tax & { groupName: string | null; accountCode: string; accountName: string })[]> {
+  return withTenant(tenantId, async (tx) => {
+    const where = [eq(taxes.tenantId, tenantId)]
+    if (opts.scope) where.push(eq(taxes.scope, opts.scope))
+    if (opts.activeOnly) where.push(eq(taxes.isActive, true))
+    const rows = await tx
+      .select({
+        tax: taxes,
+        groupName: taxGroups.name,
+        accountCode: accounts.code,
+        accountName: accounts.name,
+      })
+      .from(taxes)
+      .leftJoin(taxGroups, eq(taxes.groupId, taxGroups.id))
+      .innerJoin(accounts, eq(taxes.taxAccountId, accounts.id))
+      .where(and(...where))
+      .orderBy(asc(taxes.sequence), asc(taxes.name))
+    return rows.map((r) => ({ ...r.tax, groupName: r.groupName, accountCode: r.accountCode, accountName: r.accountName }))
+  })
+}
+
+export async function createTaxGroup(input: { tenantId: string; name: string; sequence?: number }): Promise<TaxGroup> {
+  return withTenant(input.tenantId, async (tx) => {
+    const [g] = await tx.insert(taxGroups).values({
+      tenantId: input.tenantId,
+      name: input.name,
+      sequence: input.sequence ?? 10,
+    }).returning()
+    return g!
+  })
+}
+
+export async function createTax(input: {
+  tenantId: string
+  name: string
+  scope: 'sale' | 'purchase'
+  amountType?: 'percent' | 'fixed'
+  amount: number
+  taxAccountId: string
+  groupId?: string | null
+  priceInclude?: boolean
+  sequence?: number
+  description?: string | null
+}): Promise<Tax> {
+  return withTenant(input.tenantId, async (tx) => {
+    const [t] = await tx.insert(taxes).values({
+      tenantId: input.tenantId,
+      name: input.name,
+      scope: input.scope,
+      amountType: input.amountType ?? 'percent',
+      amount: input.amount,
+      taxAccountId: input.taxAccountId,
+      groupId: input.groupId ?? null,
+      priceInclude: input.priceInclude ?? false,
+      sequence: input.sequence ?? 10,
+      description: input.description ?? null,
+    }).returning()
+    return t!
+  })
+}
+
+/**
+ * Idempotent: seeds Indonesian default tax groups + taxes for a tenant.
+ * Requires CoA accounts 2200, 1220, 2220 — call seedDefaultAccounts() first.
+ */
+export async function seedDefaultTaxes(tenantId: string): Promise<{ groups: number; taxes: number }> {
+  return withTenant(tenantId, async (tx) => {
+    // Ensure required accounts exist
+    const acct = (code: string) => tx.select().from(accounts).where(and(eq(accounts.tenantId, tenantId), eq(accounts.code, code))).limit(1)
+    const [out] = await acct('2200') // PPN Keluaran
+    const [inn] = await acct('1220') // PPN Masukan
+    if (!out || !inn) return { groups: 0, taxes: 0 }
+
+    // Groups
+    const existingGroups = await tx.select().from(taxGroups).where(eq(taxGroups.tenantId, tenantId))
+    const groupByName = new Map(existingGroups.map((g) => [g.name, g]))
+    const wantGroups: { name: string; sequence: number }[] = [
+      { name: 'PPN', sequence: 1 },
+    ]
+    let groupsAdded = 0
+    for (const g of wantGroups) {
+      if (!groupByName.has(g.name)) {
+        const [created] = await tx.insert(taxGroups).values({ tenantId, name: g.name, sequence: g.sequence }).returning()
+        if (created) {
+          groupByName.set(g.name, created)
+          groupsAdded++
+        }
+      }
+    }
+
+    // Taxes
+    const existingTaxes = await tx.select().from(taxes).where(eq(taxes.tenantId, tenantId))
+    const taxByName = new Set(existingTaxes.map((t) => t.name))
+    const ppn = groupByName.get('PPN')!
+    const wantTaxes: Array<typeof taxes.$inferInsert> = [
+      { tenantId, name: 'PPN 11% (Penjualan)',  scope: 'sale',     amountType: 'percent', amount: 1100, taxAccountId: out.id, groupId: ppn.id, priceInclude: false, sequence: 1, description: 'PPN Keluaran 11% (tarif standar 2026).' },
+      { tenantId, name: 'PPN 11% (Pembelian)',  scope: 'purchase', amountType: 'percent', amount: 1100, taxAccountId: inn.id, groupId: ppn.id, priceInclude: false, sequence: 2, description: 'PPN Masukan 11% (kredit pajak).' },
+    ]
+    let added = 0
+    for (const t of wantTaxes) {
+      if (!taxByName.has(t.name)) {
+        await tx.insert(taxes).values(t)
+        added++
+      }
+    }
+    return { groups: groupsAdded, taxes: added }
+  })
+}
+
+// ── Per-line tax wiring ───────────────────────────────────────────────────────
+
+export async function setInvoiceLineTaxes(tenantId: string, invoiceLineId: string, taxIds: string[]): Promise<void> {
+  return withTenant(tenantId, async (tx) => {
+    await tx.delete(invoiceLineTaxes).where(and(eq(invoiceLineTaxes.tenantId, tenantId), eq(invoiceLineTaxes.invoiceLineId, invoiceLineId)))
+    if (taxIds.length > 0) {
+      await tx.insert(invoiceLineTaxes).values(taxIds.map((tid) => ({ tenantId, invoiceLineId, taxId: tid })))
+    }
+  })
+}
+
+export async function setBillLineTaxes(tenantId: string, billLineId: string, taxIds: string[]): Promise<void> {
+  return withTenant(tenantId, async (tx) => {
+    await tx.delete(billLineTaxes).where(and(eq(billLineTaxes.tenantId, tenantId), eq(billLineTaxes.billLineId, billLineId)))
+    if (taxIds.length > 0) {
+      await tx.insert(billLineTaxes).values(taxIds.map((tid) => ({ tenantId, billLineId, taxId: tid })))
+    }
+  })
+}
+
+// Helpers used by confirm-* flows.
+async function loadInvoiceLineTaxMap(tx: Parameters<Parameters<typeof withTenant>[1]>[0], tenantId: string, lineIds: string[]): Promise<Map<string, InputTax[]>> {
+  if (lineIds.length === 0) return new Map()
+  const rows = await tx
+    .select({
+      lineId: invoiceLineTaxes.invoiceLineId,
+      id: taxes.id,
+      name: taxes.name,
+      amount: taxes.amount,
+      amountType: taxes.amountType,
+      taxAccountId: taxes.taxAccountId,
+      groupId: taxes.groupId,
+      priceInclude: taxes.priceInclude,
+    })
+    .from(invoiceLineTaxes)
+    .innerJoin(taxes, eq(invoiceLineTaxes.taxId, taxes.id))
+    .where(and(eq(invoiceLineTaxes.tenantId, tenantId), inArray(invoiceLineTaxes.invoiceLineId, lineIds)))
+  const out = new Map<string, InputTax[]>()
+  for (const r of rows) {
+    const arr = out.get(r.lineId) ?? []
+    arr.push({ id: r.id, name: r.name, amount: r.amount, amountType: r.amountType as 'percent' | 'fixed', taxAccountId: r.taxAccountId, groupId: r.groupId, priceInclude: r.priceInclude })
+    out.set(r.lineId, arr)
+  }
+  return out
+}
+
+async function loadBillLineTaxMap(tx: Parameters<Parameters<typeof withTenant>[1]>[0], tenantId: string, lineIds: string[]): Promise<Map<string, InputTax[]>> {
+  if (lineIds.length === 0) return new Map()
+  const rows = await tx
+    .select({
+      lineId: billLineTaxes.billLineId,
+      id: taxes.id,
+      name: taxes.name,
+      amount: taxes.amount,
+      amountType: taxes.amountType,
+      taxAccountId: taxes.taxAccountId,
+      groupId: taxes.groupId,
+      priceInclude: taxes.priceInclude,
+    })
+    .from(billLineTaxes)
+    .innerJoin(taxes, eq(billLineTaxes.taxId, taxes.id))
+    .where(and(eq(billLineTaxes.tenantId, tenantId), inArray(billLineTaxes.billLineId, lineIds)))
+  const out = new Map<string, InputTax[]>()
+  for (const r of rows) {
+    const arr = out.get(r.lineId) ?? []
+    arr.push({ id: r.id, name: r.name, amount: r.amount, amountType: r.amountType as 'percent' | 'fixed', taxAccountId: r.taxAccountId, groupId: r.groupId, priceInclude: r.priceInclude })
+    out.set(r.lineId, arr)
+  }
+  return out
+}
+
+/** Compute the full breakdown of an invoice (used by detail view + posting). */
+export async function getInvoiceTaxBreakdown(tenantId: string, invoiceId: string): Promise<{
+  baseTotal: number
+  taxLines: { taxId: string; taxName: string; taxAccountId: string; groupId: string | null; amount: number }[]
+  taxByGroup: { groupId: string | null; groupName: string | null; amount: number }[]
+  grandTotal: number
+}> {
+  return withTenant(tenantId, async (tx) => {
+    const lines = await tx.select().from(invoiceLines)
+      .where(and(eq(invoiceLines.tenantId, tenantId), eq(invoiceLines.invoiceId, invoiceId)))
+    const taxMap = await loadInvoiceLineTaxMap(tx, tenantId, lines.map((l) => l.id))
+    return aggregate(lines.map((l) => ({ id: l.id, subtotal: l.quantity * l.unitPrice, taxes: taxMap.get(l.id) ?? [] })), tx, tenantId)
+  })
+}
+
+export async function getBillTaxBreakdown(tenantId: string, billId: string): Promise<{
+  baseTotal: number
+  taxLines: { taxId: string; taxName: string; taxAccountId: string; groupId: string | null; amount: number }[]
+  taxByGroup: { groupId: string | null; groupName: string | null; amount: number }[]
+  grandTotal: number
+}> {
+  return withTenant(tenantId, async (tx) => {
+    const lines = await tx.select().from(billLines)
+      .where(and(eq(billLines.tenantId, tenantId), eq(billLines.billId, billId)))
+    const taxMap = await loadBillLineTaxMap(tx, tenantId, lines.map((l) => l.id))
+    return aggregate(lines.map((l) => ({ id: l.id, subtotal: l.quantity * l.unitPrice, taxes: taxMap.get(l.id) ?? [] })), tx, tenantId)
+  })
+}
+
+async function aggregate(
+  lines: { id: string; subtotal: number; taxes: InputTax[] }[],
+  tx: Parameters<Parameters<typeof withTenant>[1]>[0],
+  tenantId: string,
+): Promise<{
+  baseTotal: number
+  taxLines: { taxId: string; taxName: string; taxAccountId: string; groupId: string | null; amount: number }[]
+  taxByGroup: { groupId: string | null; groupName: string | null; amount: number }[]
+  grandTotal: number
+}> {
+  let baseTotal = 0
+  let grandTotal = 0
+  const taxAccum = new Map<string, { taxId: string; taxName: string; taxAccountId: string; groupId: string | null; amount: number }>()
+  for (const l of lines) {
+    const comp = computeLineTaxes(l.subtotal, l.taxes)
+    baseTotal += comp.baseAmount
+    grandTotal += comp.total
+    for (const t of comp.taxes) {
+      const cur = taxAccum.get(t.taxId)
+      if (cur) cur.amount += t.amount
+      else taxAccum.set(t.taxId, { ...t })
+    }
+  }
+  const taxLines = Array.from(taxAccum.values())
+
+  // Group lookup
+  const groupIds = Array.from(new Set(taxLines.map((t) => t.groupId).filter((g): g is string => !!g)))
+  const groups = groupIds.length
+    ? await tx.select().from(taxGroups).where(and(eq(taxGroups.tenantId, tenantId), inArray(taxGroups.id, groupIds)))
+    : []
+  const groupName = new Map(groups.map((g) => [g.id, g.name]))
+  const groupAccum = new Map<string, { groupId: string | null; groupName: string | null; amount: number }>()
+  for (const t of taxLines) {
+    const key = t.groupId ?? '__none__'
+    const cur = groupAccum.get(key)
+    if (cur) cur.amount += t.amount
+    else groupAccum.set(key, { groupId: t.groupId, groupName: t.groupId ? groupName.get(t.groupId) ?? null : null, amount: t.amount })
+  }
+  return { baseTotal, taxLines, taxByGroup: Array.from(groupAccum.values()), grandTotal }
 }

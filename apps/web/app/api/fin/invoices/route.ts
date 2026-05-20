@@ -27,7 +27,8 @@ export async function POST(req: Request) {
     date?: string
     dueDate?: string
     notes?: string | null
-    lines?: { description: string; quantity: number; unitPrice: number; accountId: string }[]
+    lines?: { description: string; quantity: number; unitPrice: number; accountId: string; taxIds?: string[] }[]
+    displayTaxInline?: boolean
   } | null
   if (!body?.customerName || !body.date || !body.dueDate || !Array.isArray(body.lines) || body.lines.length === 0) {
     return NextResponse.json({ error: 'Data faktur tidak lengkap.' }, { status: 400 })
@@ -42,6 +43,7 @@ export async function POST(req: Request) {
       date: body.date,
       dueDate: body.dueDate,
       notes: body.notes ?? null,
+      displayTaxInline: body.displayTaxInline ?? false,
       lines: body.lines,
     })
     return NextResponse.json({ id: inv.id, invoiceNumber: inv.invoiceNumber })

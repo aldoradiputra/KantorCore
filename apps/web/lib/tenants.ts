@@ -3,7 +3,7 @@ import { eq, and, sql } from 'drizzle-orm'
 import { tenants, memberships, type Tenant, type Membership } from '@kantorcore/db'
 import { getDb, withUser } from './db'
 import { seedDefaultProcesses } from './processes'
-import { seedDefaultAccounts } from './finance'
+import { seedDefaultAccounts, seedDefaultTaxes } from './finance'
 
 const SLUG_RE = /^[a-z0-9]([a-z0-9-]{1,62}[a-z0-9])?$/
 const RESERVED_SLUGS = new Set([
@@ -83,6 +83,14 @@ export async function provisionTenant(input: {
     await seedDefaultAccounts(result.tenant.id)
   } catch (err) {
     console.error('[provisionTenant] seedDefaultAccounts failed', err)
+  }
+
+  // Seed Indonesian default tax objects (PPN 11% sale/purchase).
+  // Depends on default accounts existing.
+  try {
+    await seedDefaultTaxes(result.tenant.id)
+  } catch (err) {
+    console.error('[provisionTenant] seedDefaultTaxes failed', err)
   }
 
   return { ok: true, ...result }

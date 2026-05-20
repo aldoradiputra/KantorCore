@@ -2,7 +2,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { AppShell } from '../../components/AppShell'
 
-type FinSection = 'invoices' | 'bills' | 'journal' | 'coa'
+type FinSection = 'invoices' | 'bills' | 'journal' | 'coa' | 'taxes'
 
 function FinSidebar({ activeSection }: { activeSection: FinSection | null }) {
   const nav: { section: FinSection; label: string; href: string }[] = [
@@ -10,6 +10,7 @@ function FinSidebar({ activeSection }: { activeSection: FinSection | null }) {
     { section: 'bills', label: 'Tagihan Vendor', href: '/fin/bills' },
     { section: 'journal', label: 'Jurnal', href: '/fin/journal' },
     { section: 'coa', label: 'Bagan Akun', href: '/fin/coa' },
+    { section: 'taxes', label: 'Pajak', href: '/fin/taxes' },
   ]
   return (
     <div style={{ padding: 'var(--s-4)', display: 'flex', flexDirection: 'column', gap: 'var(--s-3)', height: '100%' }}>

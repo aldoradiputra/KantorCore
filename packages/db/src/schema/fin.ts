@@ -125,6 +125,7 @@ export const invoices = fin.table('invoices', {
   date: date('date').notNull(),
   dueDate: date('due_date').notNull(),
   notes: text('notes'),
+  displayTaxInline: boolean('display_tax_inline').notNull().default(false),
   journalEntryId: uuid('journal_entry_id').references(() => journalEntries.id, { onDelete: 'set null' }),
   createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'restrict' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -167,6 +168,7 @@ export const bills = fin.table('bills', {
   date: date('date').notNull(),
   dueDate: date('due_date').notNull(),
   notes: text('notes'),
+  displayTaxInline: boolean('display_tax_inline').notNull().default(false),
   journalEntryId: uuid('journal_entry_id').references(() => journalEntries.id, { onDelete: 'set null' }),
   createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'restrict' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -196,3 +198,82 @@ export const billLines = fin.table('bill_lines', {
 
 export type BillLine = typeof billLines.$inferSelect
 export type NewBillLine = typeof billLines.$inferInsert
+
+// ── Tax Groups & Taxes (Phase 28) ─────────────────────────────────────────────
+//
+// Inspired by Odoo's account.tax model:
+//   - tax_groups: visual grouping on invoice (e.g., "PPN", "PPh") + summary CoA
+//   - taxes: per-rate tax records, scoped to sale or purchase, linked to a CoA
+//
+// `amount` semantics depend on amount_type:
+//   - 'percent' → basis points (1100 = 11.00 %)
+//   - 'fixed'   → IDR (Rupiah) per line
+// `price_include` true means the unit price on the line is tax-inclusive;
+// confirm-posting deducts the tax portion from revenue and posts it to tax_account.
+
+export const finTaxScope = pgEnum('fin_tax_scope', ['sale', 'purchase'])
+export const finTaxAmountType = pgEnum('fin_tax_amount_type', ['percent', 'fixed'])
+
+export const taxGroups = fin.table('tax_groups', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 80 }).notNull(),
+  sequence: integer('sequence').notNull().default(10),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  tenantNameUnique: uniqueIndex('fin_taxgrp_tenant_name_uniq').on(t.tenantId, t.name),
+}))
+
+export type TaxGroup = typeof taxGroups.$inferSelect
+export type NewTaxGroup = typeof taxGroups.$inferInsert
+
+export const taxes = fin.table('taxes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 120 }).notNull(),
+  scope: finTaxScope('scope').notNull(),
+  amountType: finTaxAmountType('amount_type').notNull().default('percent'),
+  amount: bigint('amount', { mode: 'number' }).notNull(),
+  taxAccountId: uuid('tax_account_id').notNull().references(() => accounts.id, { onDelete: 'restrict' }),
+  groupId: uuid('group_id').references(() => taxGroups.id, { onDelete: 'set null' }),
+  priceInclude: boolean('price_include').notNull().default(false),
+  isActive: boolean('is_active').notNull().default(true),
+  sequence: integer('sequence').notNull().default(10),
+  description: text('description'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  tenantScopeIdx: index('fin_tax_tenant_scope_idx').on(t.tenantId, t.scope),
+  tenantNameUnique: uniqueIndex('fin_tax_tenant_name_uniq').on(t.tenantId, t.name),
+}))
+
+export type Tax = typeof taxes.$inferSelect
+export type NewTax = typeof taxes.$inferInsert
+
+// Junctions: many taxes per invoice/bill line.
+export const invoiceLineTaxes = fin.table('invoice_line_taxes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  invoiceLineId: uuid('invoice_line_id').notNull().references(() => invoiceLines.id, { onDelete: 'cascade' }),
+  taxId: uuid('tax_id').notNull().references(() => taxes.id, { onDelete: 'restrict' }),
+}, (t) => ({
+  lineTaxUnique: uniqueIndex('fin_invltax_line_tax_uniq').on(t.invoiceLineId, t.taxId),
+  lineIdx: index('fin_invltax_line_idx').on(t.invoiceLineId),
+}))
+
+export type InvoiceLineTax = typeof invoiceLineTaxes.$inferSelect
+export type NewInvoiceLineTax = typeof invoiceLineTaxes.$inferInsert
+
+export const billLineTaxes = fin.table('bill_line_taxes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  billLineId: uuid('bill_line_id').notNull().references(() => billLines.id, { onDelete: 'cascade' }),
+  taxId: uuid('tax_id').notNull().references(() => taxes.id, { onDelete: 'restrict' }),
+}, (t) => ({
+  lineTaxUnique: uniqueIndex('fin_billltax_line_tax_uniq').on(t.billLineId, t.taxId),
+  lineIdx: index('fin_billltax_line_idx').on(t.billLineId),
+}))
+
+export type BillLineTax = typeof billLineTaxes.$inferSelect
+export type NewBillLineTax = typeof billLineTaxes.$inferInsert

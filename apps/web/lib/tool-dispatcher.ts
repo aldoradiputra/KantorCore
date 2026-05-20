@@ -27,6 +27,7 @@ import {
   listAccounts,
   listInvoices,
   listBills,
+  listTaxes,
   createInvoice,
   createBill,
   formatIDR,
@@ -304,6 +305,26 @@ const TOOL_IMPLS: Record<string, ToolImpl> = {
     }
   },
 
+  'fin.list_taxes': async ({ tenantId }, input) => {
+    const scope = input['scope'] ? (String(input['scope']) as 'sale' | 'purchase') : undefined
+    const activeOnly = input['active_only'] !== false
+    const list = await listTaxes(tenantId, { scope, activeOnly })
+    return {
+      ok: true,
+      result: list.map((t) => ({
+        id: t.id,
+        name: t.name,
+        scope: t.scope,
+        amount_type: t.amountType,
+        amount: t.amount,
+        rate: t.amountType === 'percent' ? `${(t.amount / 100).toFixed(2)}%` : `IDR ${t.amount}`,
+        account: `${t.accountCode} ${t.accountName}`,
+        group: t.groupName,
+        price_include: t.priceInclude,
+      })),
+    }
+  },
+
   'fin.list_bills': async ({ tenantId }, input) => {
     const status = input['status'] ? (String(input['status']) as 'draft' | 'confirmed' | 'paid' | 'cancelled') : undefined
     const list = await listBills(tenantId, status ? { status } : {}, 50)
@@ -336,6 +357,7 @@ const TOOL_IMPLS: Record<string, ToolImpl> = {
       quantity: Number(l['quantity'] ?? 1),
       unitPrice: Number(l['unit_price'] ?? 0),
       accountId: String(l['account_id'] ?? ''),
+      taxIds: Array.isArray(l['tax_ids']) ? (l['tax_ids'] as unknown[]).map((x) => String(x)) : [],
     }))
     for (const l of parsedLines) {
       if (!l.description || !l.accountId || l.quantity <= 0 || l.unitPrice < 0) {
@@ -551,6 +573,13 @@ export const TOOL_SCHEMAS: Record<string, object> = {
       status: { type: 'string', enum: ['draft', 'confirmed', 'paid', 'cancelled'], description: 'Filter status (opsional)' },
     },
   },
+  'fin.list_taxes': {
+    type: 'object',
+    properties: {
+      scope: { type: 'string', enum: ['sale', 'purchase'], description: 'Filter ruang lingkup pajak (opsional)' },
+      active_only: { type: 'boolean', description: 'Hanya tampilkan pajak aktif (default true)' },
+    },
+  },
   'fin.create_invoice': {
     type: 'object',
     properties: {
@@ -569,6 +598,7 @@ export const TOOL_SCHEMAS: Record<string, object> = {
             quantity: { type: 'integer', minimum: 1 },
             unit_price: { type: 'integer', description: 'Harga satuan dalam IDR (tanpa desimal)' },
             account_id: { type: 'string', description: 'UUID akun pendapatan (gunakan fin.list_accounts type=revenue)' },
+            tax_ids: { type: 'array', items: { type: 'string' }, description: 'UUID pajak yang dikenakan (opsional, gunakan fin.list_taxes scope=sale)' },
           },
           required: ['description', 'quantity', 'unit_price', 'account_id'],
         },
