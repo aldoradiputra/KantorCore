@@ -99,6 +99,8 @@ export const rentCustomers = rent.table(
     tenantId: uuid('tenant_id')
       .notNull()
       .references(() => tenants.id, { onDelete: 'cascade' }),
+    /** FK to platform.contacts (Phase 32). Nullable for back-compat. */
+    contactId: uuid('contact_id'),
     name: varchar('name', { length: 255 }).notNull(),
     customerType: customerType('customer_type').notNull().default('individual'),
     email: varchar('email', { length: 255 }),
