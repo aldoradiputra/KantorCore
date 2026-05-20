@@ -75,6 +75,17 @@ function IconFin() {
   )
 }
 
+function IconPay() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="4" width="14" height="10" rx="1.5" />
+      <circle cx="9" cy="9" r="2" />
+      <path d="M5 7v.01" />
+      <path d="M13 11v.01" />
+    </svg>
+  )
+}
+
 function IconProses() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -89,7 +100,7 @@ function IconProses() {
 }
 
 // ── Module list ───────────────────────────────────────────────
-type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'fin' | 'proses'
+type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'fin' | 'pay' | 'proses'
 
 const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon: () => React.ReactElement }[] = [
   { id: 'home', label: 'Beranda', href: '/', hotkey: 'G H', Icon: IconHome },
@@ -98,6 +109,7 @@ const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon
   { id: 'hr', label: 'SDM', href: '/hr', hotkey: 'G R', Icon: IconHR },
   { id: 'time', label: 'Waktu', href: '/time', hotkey: 'G W', Icon: IconTime },
   { id: 'fin', label: 'Keuangan', href: '/fin', hotkey: 'G F', Icon: IconFin },
+  { id: 'pay', label: 'Penggajian', href: '/pay', hotkey: 'G Y', Icon: IconPay },
   { id: 'rent', label: 'Sewa', href: '/rent', hotkey: 'G S', Icon: IconRent },
   { id: 'proses', label: 'Proses', href: '/proses', hotkey: 'G O', Icon: IconProses },
   { id: 'agent', label: 'Agent', href: '/agent', hotkey: 'G A', Icon: IconAgent },
