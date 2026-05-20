@@ -238,6 +238,7 @@ export async function createInvoice(input: {
   userId: string
   customerName: string
   customerEmail?: string | null
+  contactId?: string | null
   date: string
   dueDate: string
   notes?: string | null
@@ -255,6 +256,7 @@ export async function createInvoice(input: {
         status: 'draft',
         customerName: input.customerName,
         customerEmail: input.customerEmail ?? null,
+        contactId: input.contactId ?? null,
         date: input.date,
         dueDate: input.dueDate,
         notes: input.notes ?? null,
@@ -374,6 +376,7 @@ export async function createBill(input: {
   userId: string
   vendorName: string
   vendorRef?: string | null
+  contactId?: string | null
   date: string
   dueDate: string
   notes?: string | null
@@ -391,6 +394,7 @@ export async function createBill(input: {
         status: 'draft',
         vendorName: input.vendorName,
         vendorRef: input.vendorRef ?? null,
+        contactId: input.contactId ?? null,
         date: input.date,
         dueDate: input.dueDate,
         notes: input.notes ?? null,

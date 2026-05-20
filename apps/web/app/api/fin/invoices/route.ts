@@ -24,6 +24,7 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null) as {
     customerName?: string
     customerEmail?: string | null
+    contactId?: string | null
     date?: string
     dueDate?: string
     notes?: string | null
@@ -40,6 +41,7 @@ export async function POST(req: Request) {
       userId: session.user.id,
       customerName: body.customerName,
       customerEmail: body.customerEmail ?? null,
+      contactId: typeof body.contactId === 'string' ? body.contactId : null,
       date: body.date,
       dueDate: body.dueDate,
       notes: body.notes ?? null,

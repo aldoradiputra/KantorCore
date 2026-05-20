@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface AccountOpt {
@@ -15,6 +15,13 @@ interface TaxOpt {
   amount: number
   amountType: 'percent' | 'fixed'
   isWithholding: boolean
+}
+
+interface ContactOpt {
+  id: string
+  name: string
+  email: string | null
+  phone: string | null
 }
 
 const inputStyle: React.CSSProperties = {
@@ -58,11 +65,128 @@ function computeLine(subtotal: number, applied: TaxOpt[]): { base: number; regul
   return { base: subtotal, regularTax, withholdingTax, total: subtotal + regularTax, byTax }
 }
 
-export function NewInvoiceForm({ revenueAccounts, taxes }: { revenueAccounts: AccountOpt[]; taxes: TaxOpt[] }) {
+function ContactPicker({
+  contacts,
+  selectedId,
+  onSelect,
+  onClear,
+}: {
+  contacts: ContactOpt[]
+  selectedId: string | null
+  onSelect: (c: ContactOpt) => void
+  onClear: () => void
+}) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const selected = contacts.find((c) => c.id === selectedId) ?? null
+
+  const filtered = query.length > 0
+    ? contacts.filter((c) =>
+        c.name.toLowerCase().includes(query.toLowerCase()) ||
+        (c.email ?? '').toLowerCase().includes(query.toLowerCase()),
+      )
+    : contacts
+
+  if (selected) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        height: 34,
+        padding: '0 10px',
+        border: '1px solid var(--indigo)',
+        borderRadius: 'var(--r-sm)',
+        background: 'var(--indigo-light, #eef0ff)',
+        boxSizing: 'border-box',
+      }}>
+        <span style={{ font: '500 13px/1 var(--font-sans)', color: 'var(--indigo)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {selected.name}{selected.email ? ` · ${selected.email}` : ''}
+        </span>
+        <button
+          type="button"
+          onClick={onClear}
+          style={{ background: 'none', border: 'none', color: 'var(--indigo)', cursor: 'pointer', font: '16px/1 sans-serif', padding: 0, flexShrink: 0 }}
+          title="Hapus kontak"
+        >
+          ×
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <input
+        ref={inputRef}
+        style={inputStyle}
+        placeholder={contacts.length === 0 ? 'Belum ada kontak pelanggan' : 'Cari kontak…'}
+        value={query}
+        disabled={contacts.length === 0}
+        onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+      />
+      {open && filtered.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          right: 0,
+          zIndex: 100,
+          background: 'var(--bg-1)',
+          border: '1px solid var(--border-strong)',
+          borderRadius: 'var(--r-sm)',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+          maxHeight: 240,
+          overflowY: 'auto',
+          marginTop: 2,
+        }}>
+          {filtered.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onMouseDown={() => {
+                onSelect(c)
+                setQuery('')
+                setOpen(false)
+              }}
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '8px 12px',
+                background: 'none',
+                border: 'none',
+                textAlign: 'left',
+                cursor: 'pointer',
+                borderBottom: '1px solid var(--border)',
+              }}
+            >
+              <div style={{ font: '500 13px/1.3 var(--font-sans)', color: 'var(--fg-1)' }}>{c.name}</div>
+              {(c.email || c.phone) && (
+                <div style={{ font: '12px/1.3 var(--font-sans)', color: 'var(--fg-3)', marginTop: 2 }}>
+                  {c.email ?? c.phone}
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export function NewInvoiceForm({ revenueAccounts, taxes, contacts }: {
+  revenueAccounts: AccountOpt[]
+  taxes: TaxOpt[]
+  contacts: ContactOpt[]
+}) {
   const router = useRouter()
   const defaultAcct = revenueAccounts[0]?.id ?? ''
   const firstRegularTax = taxes.find((t) => !t.isWithholding)
   const defaultTaxIds = firstRegularTax ? [firstRegularTax.id] : []
+  const [contactId, setContactId] = useState<string | null>(null)
   const [customerName, setCustomerName] = useState('')
   const [customerEmail, setCustomerEmail] = useState('')
   const [date, setDate] = useState(today())
@@ -74,6 +198,16 @@ export function NewInvoiceForm({ revenueAccounts, taxes }: { revenueAccounts: Ac
   ])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  function handleSelectContact(c: ContactOpt) {
+    setContactId(c.id)
+    setCustomerName(c.name)
+    setCustomerEmail(c.email ?? '')
+  }
+
+  function handleClearContact() {
+    setContactId(null)
+  }
 
   // Compute breakdown
   const computed = lines.map((l) => {
@@ -130,7 +264,16 @@ export function NewInvoiceForm({ revenueAccounts, taxes }: { revenueAccounts: Ac
     const res = await fetch('/api/fin/invoices', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ customerName, customerEmail: customerEmail || null, date, dueDate, notes: notes || null, displayTaxInline, lines }),
+      body: JSON.stringify({
+        customerName,
+        customerEmail: customerEmail || null,
+        contactId,
+        date,
+        dueDate,
+        notes: notes || null,
+        displayTaxInline,
+        lines,
+      }),
     })
     if (!res.ok) {
       const j = await res.json().catch(() => ({}))
@@ -145,11 +288,29 @@ export function NewInvoiceForm({ revenueAccounts, taxes }: { revenueAccounts: Ac
   return (
     <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-4)' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s-3)' }}>
+        <Field label="Kontak Pelanggan">
+          <ContactPicker
+            contacts={contacts}
+            selectedId={contactId}
+            onSelect={handleSelectContact}
+            onClear={handleClearContact}
+          />
+        </Field>
+        <div />
         <Field label="Nama Pelanggan *">
-          <input style={inputStyle} value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+          <input
+            style={inputStyle}
+            value={customerName}
+            onChange={(e) => { setCustomerName(e.target.value); setContactId(null) }}
+          />
         </Field>
         <Field label="Email Pelanggan">
-          <input style={inputStyle} type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
+          <input
+            style={inputStyle}
+            type="email"
+            value={customerEmail}
+            onChange={(e) => { setCustomerEmail(e.target.value); setContactId(null) }}
+          />
         </Field>
         <Field label="Tanggal Faktur">
           <input style={inputStyle} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
