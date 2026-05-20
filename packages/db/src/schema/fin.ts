@@ -120,6 +120,8 @@ export const invoices = fin.table('invoices', {
   tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   invoiceNumber: varchar('invoice_number', { length: 50 }).notNull(),
   status: finDocStatus('status').notNull().default('draft'),
+  /** FK to platform.contacts (Phase 32). Nullable for back-compat with invoices created before contacts shipped. */
+  contactId: uuid('contact_id'),
   customerName: varchar('customer_name', { length: 200 }).notNull(),
   customerEmail: varchar('customer_email', { length: 254 }),
   date: date('date').notNull(),
@@ -163,6 +165,8 @@ export const bills = fin.table('bills', {
   tenantId: uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
   billNumber: varchar('bill_number', { length: 50 }).notNull(),
   status: finDocStatus('status').notNull().default('draft'),
+  /** FK to platform.contacts (Phase 32). Nullable for back-compat. */
+  contactId: uuid('contact_id'),
   vendorName: varchar('vendor_name', { length: 200 }).notNull(),
   vendorRef: varchar('vendor_ref', { length: 100 }),
   date: date('date').notNull(),

@@ -63,6 +63,8 @@ export const employees = hr.table(
     tenantId: uuid('tenant_id')
       .notNull()
       .references(() => tenants.id, { onDelete: 'cascade' }),
+    /** FK to platform.contacts (Phase 32). Nullable for back-compat with employees created before contacts shipped. */
+    contactId: uuid('contact_id'),
     employeeCode: varchar('employee_code', { length: 50 }),
     name: varchar('name', { length: 255 }).notNull(),
     email: varchar('email', { length: 255 }),
