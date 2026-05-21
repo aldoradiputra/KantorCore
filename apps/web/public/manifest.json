@@ -1,0 +1,37 @@
+{
+  "name": "KantorCore",
+  "short_name": "KantorCore",
+  "description": "Sistem operasi korporat untuk Indonesia",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0F1117",
+  "theme_color": "#3B4FC4",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "/brand/kantorcore-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Beranda",
+      "url": "/",
+      "icons": [{ "src": "/brand/kantorcore-mark.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Chat",
+      "url": "/chat",
+      "icons": [{ "src": "/brand/kantorcore-mark.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Keuangan",
+      "url": "/fin",
+      "icons": [{ "src": "/brand/kantorcore-mark.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}
