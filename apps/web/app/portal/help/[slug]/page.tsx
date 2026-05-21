@@ -4,6 +4,7 @@ import { getCurrentPortalSession } from '../../../../lib/portal-auth'
 import { getTenantBranding } from '../../../../lib/branding'
 import { getSpace, listPublishedArticlesForPortal, getArticle, incrementViewCount } from '../../../../lib/kms'
 import { PortalShell } from '../../PortalShell'
+import { ArticleBody } from '../../../kms/articles/[id]/ArticleBody'
 
 export default async function PortalSpacePage({
   params,
@@ -86,9 +87,7 @@ export default async function PortalSpacePage({
               <h1 style={{ font: '700 28px/1.2 var(--font-sans)', color: 'var(--fg-1)', margin: '0 0 24px' }}>
                 {selected.title}
               </h1>
-              <div style={{ font: '15px/1.7 var(--font-sans)', color: 'var(--fg-1)', whiteSpace: 'pre-wrap' }}>
-                {selected.body}
-              </div>
+              <ArticleBody body={selected.body} bodyJson={selected.bodyJson} />
             </article>
           ) : articles.length === 0 ? (
             <div style={{ padding: 'var(--s-8)', textAlign: 'center', font: '13px/1.5 var(--font-sans)', color: 'var(--fg-3)' }}>

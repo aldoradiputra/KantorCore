@@ -26,7 +26,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const { id } = await params
 
   const body = await req.json()
-  // Map "content" → body field
+  // Map "content" → body (plain text) and keep bodyJson if provided
   if (body.content !== undefined) {
     body.body = body.content
     delete body.content
