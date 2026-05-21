@@ -10,13 +10,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.36.3",
     "@kantorcore/auth": "workspace:*",
     "@kantorcore/db": "workspace:*",
     "@kantorcore/design-tokens": "workspace:*",
     "@kantorcore/types": "workspace:*",
     "@kantorcore/ui": "workspace:*",
-    "@tiptap/extension-code-block-lowlight": "^3.23.5",
     "@tiptap/extension-image": "^3.23.5",
     "@tiptap/extension-link": "^3.23.5",
     "@tiptap/extension-placeholder": "^3.23.5",
@@ -31,7 +29,6 @@
     "@tiptap/starter-kit": "^3.23.5",
     "@tiptap/suggestion": "^3.23.5",
     "drizzle-orm": "^0.36.0",
-    "lowlight": "^3.3.0",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

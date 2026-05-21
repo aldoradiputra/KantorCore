@@ -1,5 +1,5 @@
 import { requireAuthedContext } from '../../../../lib/requireSession'
-import { getAnthropic } from '../../../../lib/anthropic'
+import { streamMessage } from '../../../../lib/anthropic'
 import { listContacts } from '../../../../lib/contacts'
 import { listDeals } from '../../../../lib/crm'
 import { listPOs } from '../../../../lib/procurement'
@@ -104,30 +104,28 @@ Workspace: ${ctx.tenant.name}
 ${JSON.stringify(snapshot, null, 2)}
 === END SNAPSHOT ===`
 
-  const anthropic = getAnthropic()
-
-  const stream = await anthropic.messages.stream({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1024,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: query }],
-  })
-
   const encoder = new TextEncoder()
   const readable = new ReadableStream({
     async start(controller) {
       try {
-        for await (const chunk of stream) {
-          if (
-            chunk.type === 'content_block_delta' &&
-            chunk.delta.type === 'text_delta'
-          ) {
-            controller.enqueue(encoder.encode(chunk.delta.text))
+        for await (const chunk of streamMessage({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: query }],
+        })) {
+          if (chunk.type === 'content_block_delta') {
+            const delta = (chunk as { delta?: { type?: string; text?: string } }).delta
+            if (delta?.type === 'text_delta' && typeof delta.text === 'string') {
+              controller.enqueue(encoder.encode(delta.text))
+            }
           }
         }
-      } finally {
-        controller.close()
+      } catch (err) {
+        controller.error(err)
+        return
       }
+      controller.close()
     },
   })
 
