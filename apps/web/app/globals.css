@@ -79,3 +79,76 @@ a {
   from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ============================================================
+   IS-THEME (P46): Dark mode + accent presets + tenant brand
+   - data-theme  → light/dark (overrides neutrals only)
+   - data-accent → swaps --indigo + --indigo-light
+   - --brand     → inline style from tenant.brandColor (chrome only)
+   ============================================================ */
+
+/* ── Dark mode (overrides neutrals) ───────────────────────── */
+html[data-theme="dark"] {
+  --bg:            #0F1117;
+  --surface:       #1A1D24;
+  --border:        #2A2E37;
+  --border-strong: #3A3F4A;
+  --fg-1:          #F5F7FA;
+  --fg-2:          #B8BFC9;
+  --fg-3:          #8A8F9D;
+  --indigo-light:  #1F2548;
+  --teal-light:    #0A3D38;
+  --amber-light:   #4A2E0A;
+  --red-light:     #4A1815;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] body {
+  background: var(--bg);
+  color: var(--fg-2);
+}
+
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+}
+
+/* ── Accent presets (override --indigo + --indigo-light) ───── */
+html[data-accent="teal"] {
+  --indigo:       #0F7B6C;
+  --indigo-hover: #0B6357;
+  --indigo-light: #E0F4F1;
+}
+html[data-accent="purple"] {
+  --indigo:       #7C3AED;
+  --indigo-hover: #6225D4;
+  --indigo-light: #F3EBFF;
+}
+html[data-accent="rose"] {
+  --indigo:       #E11D48;
+  --indigo-hover: #BE163C;
+  --indigo-light: #FFE4E9;
+}
+html[data-accent="amber"] {
+  --indigo:       #B35A00;
+  --indigo-hover: #944800;
+  --indigo-light: #FFF1D9;
+}
+html[data-accent="emerald"] {
+  --indigo:       #059669;
+  --indigo-hover: #047857;
+  --indigo-light: #D1FAE5;
+}
+
+/* Dark mode dims accent-light variants so they don't glow */
+html[data-theme="dark"][data-accent="teal"]    { --indigo-light: #0A3D38; }
+html[data-theme="dark"][data-accent="purple"]  { --indigo-light: #2B1A4F; }
+html[data-theme="dark"][data-accent="rose"]    { --indigo-light: #4A1825; }
+html[data-theme="dark"][data-accent="amber"]   { --indigo-light: #4A2E0A; }
+html[data-theme="dark"][data-accent="emerald"] { --indigo-light: #0A3D2B; }
+
+/* ── Tenant brand colour (chrome only — sidebar accents,
+       active rail indicator, login screen). Buttons/links still
+       use the user's accent. Inline-styled via --brand on <html>. ── */
+html { --brand: var(--indigo); }
+

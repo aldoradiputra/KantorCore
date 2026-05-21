@@ -46,6 +46,10 @@ export const tenants = platform.table('tenants', {
   plan: tenantPlan('plan').notNull().default('rintis'),
   dbMode: tenantDbMode('db_mode').notNull().default('shared'),
   dbUrl: text('db_url'), // null for shared; populated for dedicated
+  // Branding (admin-customizable; nullable = use defaults)
+  logoUrl:     text('logo_url'),
+  brandColor:  text('brand_color'),    // hex e.g. '#3B4FC4'
+  loginBgUrl:  text('login_bg_url'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

@@ -23,10 +23,17 @@ export const users = platform.table(
     totpSecret: text('totp_secret'),
     totpEnabled: boolean('totp_enabled').notNull().default(false),
     backupCodeHashes: text('backup_code_hashes').array(),
+    themeMode: text('theme_mode').notNull().default('light'),
+    accentColor: text('accent_color').notNull().default('indigo'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
 )
+
+export type ThemeMode = 'light' | 'dark'
+export type AccentColor = 'indigo' | 'teal' | 'purple' | 'rose' | 'amber' | 'emerald'
+
+export const ACCENT_COLORS: ReadonlyArray<AccentColor> = ['indigo','teal','purple','rose','amber','emerald']
 
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
