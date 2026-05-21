@@ -115,6 +115,15 @@ function IconMig() {
   )
 }
 
+function IconKms() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 3h7a3 3 0 0 1 3 3v9a3 3 0 0 0-3-3H3z" />
+      <path d="M15 3h-2a3 3 0 0 0-3 3v9" />
+    </svg>
+  )
+}
+
 function IconHd() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -195,7 +204,7 @@ function IconProses() {
 }
 
 // ── Module list ───────────────────────────────────────────────
-type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'fin' | 'pay' | 'proses' | 'inv' | 'proc' | 'sales' | 'crm' | 'doc' | 'aip' | 'mig' | 'trig' | 'promo' | 'hd'
+type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'fin' | 'pay' | 'proses' | 'inv' | 'proc' | 'sales' | 'crm' | 'doc' | 'aip' | 'mig' | 'trig' | 'promo' | 'hd' | 'kms'
 
 const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon: () => React.ReactElement }[] = [
   { id: 'home', label: 'Beranda', href: '/', hotkey: 'G H', Icon: IconHome },
@@ -215,6 +224,7 @@ const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon
   { id: 'trig',  label: 'Triggers',   href: '/trig/rules',      hotkey: 'G T', Icon: IconTrig  },
   { id: 'promo', label: 'Promosi',    href: '/promo/promotions', hotkey: 'G E', Icon: IconPromo },
   { id: 'hd',    label: 'Help Desk',  href: '/hd/tickets',       hotkey: 'G Q', Icon: IconHd   },
+  { id: 'kms',   label: 'Knowledge',  href: '/kms',              hotkey: 'G U', Icon: IconKms  },
   { id: 'rent', label: 'Sewa', href: '/rent', hotkey: 'G S', Icon: IconRent },
   { id: 'proses', label: 'Proses', href: '/proses', hotkey: 'G O', Icon: IconProses },
   { id: 'agent', label: 'Agent', href: '/agent', hotkey: 'G A', Icon: IconAgent },
