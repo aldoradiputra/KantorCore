@@ -106,6 +106,16 @@ function IconProc() {
   )
 }
 
+function IconAip() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="9" r="3" />
+      <path d="M9 2v2M9 14v2M2 9h2M14 9h2" />
+      <path d="M4.2 4.2l1.4 1.4M12.4 12.4l1.4 1.4M4.2 13.8l1.4-1.4M12.4 5.6l1.4-1.4" />
+    </svg>
+  )
+}
+
 function IconDoc() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -149,7 +159,7 @@ function IconProses() {
 }
 
 // ── Module list ───────────────────────────────────────────────
-type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'fin' | 'pay' | 'proses' | 'inv' | 'proc' | 'sales' | 'crm' | 'doc'
+type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'fin' | 'pay' | 'proses' | 'inv' | 'proc' | 'sales' | 'crm' | 'doc' | 'aip'
 
 const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon: () => React.ReactElement }[] = [
   { id: 'home', label: 'Beranda', href: '/', hotkey: 'G H', Icon: IconHome },
@@ -164,6 +174,7 @@ const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon
   { id: 'sales', label: 'Penjualan',  href: '/sales/orders', hotkey: 'G L', Icon: IconSales },
   { id: 'crm',   label: 'CRM',        href: '/crm/deals',    hotkey: 'G M', Icon: IconCrm   },
   { id: 'doc',   label: 'Dokumen',    href: '/doc/documents', hotkey: 'G D', Icon: IconDoc   },
+  { id: 'aip',   label: 'AI Search',  href: '/aip/search',   hotkey: 'G K', Icon: IconAip   },
   { id: 'rent', label: 'Sewa', href: '/rent', hotkey: 'G S', Icon: IconRent },
   { id: 'proses', label: 'Proses', href: '/proses', hotkey: 'G O', Icon: IconProses },
   { id: 'agent', label: 'Agent', href: '/agent', hotkey: 'G A', Icon: IconAgent },
