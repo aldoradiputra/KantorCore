@@ -11,6 +11,7 @@ import {
   integer,
 } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
+import { users } from './users'
 import { accounts } from './fin'
 
 export const inv = pgSchema('inv')
@@ -94,3 +95,77 @@ export const products = inv.table('products', {
 export type Product = typeof products.$inferSelect
 export type NewProduct = typeof products.$inferInsert
 export type ProductTypeValue = (typeof productType.enumValues)[number]
+
+// ── Stock Enums ───────────────────────────────────────────────────────────────
+
+export const stockLocationType = pgEnum('inv_stock_location_type', [
+  'internal',   // owned warehouse / bin / shelf
+  'external',   // vendor or customer — moves to/from here represent receipts/deliveries
+  'virtual',    // inventory adjustments, scrap, transit
+])
+
+export const stockMoveState = pgEnum('inv_stock_move_state', [
+  'draft',
+  'done',
+  'cancelled',
+])
+
+// ── Stock Locations ───────────────────────────────────────────────────────────
+
+export const stockLocations = inv.table('stock_locations', {
+  id:        uuid('id').primaryKey().defaultRandom(),
+  tenantId:  uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  code:      varchar('code', { length: 32 }).notNull(),   // e.g. WH, VENDOR, SCRAP
+  name:      varchar('name', { length: 128 }).notNull(),
+  type:      stockLocationType('type').notNull().default('internal'),
+  parentId:  uuid('parent_id'),                            // self-ref — handled in migration
+  isActive:  boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => ({
+  tenantIdx:     index('inv_loc_tenant_idx').on(t.tenantId),
+  tenantCodeIdx: uniqueIndex('inv_loc_tenant_code_idx').on(t.tenantId, t.code),
+}))
+
+export type StockLocation = typeof stockLocations.$inferSelect
+export type StockLocationType = (typeof stockLocationType.enumValues)[number]
+
+// ── Stock Moves ───────────────────────────────────────────────────────────────
+
+export const stockMoves = inv.table('stock_moves', {
+  id:             uuid('id').primaryKey().defaultRandom(),
+  tenantId:       uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  productId:      uuid('product_id').notNull().references(() => products.id, { onDelete: 'restrict' }),
+  fromLocationId: uuid('from_location_id').notNull().references(() => stockLocations.id, { onDelete: 'restrict' }),
+  toLocationId:   uuid('to_location_id').notNull().references(() => stockLocations.id, { onDelete: 'restrict' }),
+  qty:            integer('qty').notNull(),               // always positive
+  reference:      varchar('reference', { length: 128 }), // free-text: "ADJ-001", "INV/001", "PO/001"
+  notes:          text('notes'),
+  state:          stockMoveState('state').notNull().default('done'),
+  movedAt:        timestamp('moved_at').notNull().defaultNow(),
+  createdBy:      uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt:      timestamp('created_at').notNull().defaultNow(),
+}, (t) => ({
+  tenantIdx:   index('inv_move_tenant_idx').on(t.tenantId),
+  productIdx:  index('inv_move_product_idx').on(t.tenantId, t.productId),
+  movedAtIdx:  index('inv_move_moved_at_idx').on(t.tenantId, t.movedAt),
+}))
+
+export type StockMove = typeof stockMoves.$inferSelect
+export type StockMoveState = (typeof stockMoveState.enumValues)[number]
+
+// ── Stock Quants (on-hand per product per location) ───────────────────────────
+
+export const stockQuants = inv.table('stock_quants', {
+  id:         uuid('id').primaryKey().defaultRandom(),
+  tenantId:   uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  productId:  uuid('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+  locationId: uuid('location_id').notNull().references(() => stockLocations.id, { onDelete: 'cascade' }),
+  qty:        integer('qty').notNull().default(0),
+  updatedAt:  timestamp('updated_at').notNull().defaultNow(),
+}, (t) => ({
+  uniqueIdx:  uniqueIndex('inv_quant_unique_idx').on(t.tenantId, t.productId, t.locationId),
+  tenantIdx:  index('inv_quant_tenant_idx').on(t.tenantId),
+}))
+
+export type StockQuant = typeof stockQuants.$inferSelect
+
