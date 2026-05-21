@@ -106,6 +106,16 @@ function IconProc() {
   )
 }
 
+function IconDoc() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 2h7l3 3v11H4V2z" />
+      <path d="M11 2v3h3" />
+      <path d="M6 8h6M6 11h4" />
+    </svg>
+  )
+}
+
 function IconCrm() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -139,7 +149,7 @@ function IconProses() {
 }
 
 // ── Module list ───────────────────────────────────────────────
-type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'fin' | 'pay' | 'proses' | 'inv' | 'proc' | 'sales' | 'crm'
+type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'fin' | 'pay' | 'proses' | 'inv' | 'proc' | 'sales' | 'crm' | 'doc'
 
 const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon: () => React.ReactElement }[] = [
   { id: 'home', label: 'Beranda', href: '/', hotkey: 'G H', Icon: IconHome },
@@ -153,6 +163,7 @@ const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon
   { id: 'proc',  label: 'Pembelian',  href: '/proc/orders',  hotkey: 'G B', Icon: IconProc  },
   { id: 'sales', label: 'Penjualan',  href: '/sales/orders', hotkey: 'G L', Icon: IconSales },
   { id: 'crm',   label: 'CRM',        href: '/crm/deals',    hotkey: 'G M', Icon: IconCrm   },
+  { id: 'doc',   label: 'Dokumen',    href: '/doc/documents', hotkey: 'G D', Icon: IconDoc   },
   { id: 'rent', label: 'Sewa', href: '/rent', hotkey: 'G S', Icon: IconRent },
   { id: 'proses', label: 'Proses', href: '/proses', hotkey: 'G O', Icon: IconProses },
   { id: 'agent', label: 'Agent', href: '/agent', hotkey: 'G A', Icon: IconAgent },
