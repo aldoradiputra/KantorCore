@@ -115,6 +115,16 @@ function IconMig() {
   )
 }
 
+function IconHd() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="9" r="7.5" />
+      <path d="M6.5 7.5C6.5 6.1 7.6 5 9 5s2.5 1.1 2.5 2.5c0 1.7-2.5 3-2.5 3" />
+      <circle cx="9" cy="13" r="0.8" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
 function IconPromo() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -185,7 +195,7 @@ function IconProses() {
 }
 
 // ── Module list ───────────────────────────────────────────────
-type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'fin' | 'pay' | 'proses' | 'inv' | 'proc' | 'sales' | 'crm' | 'doc' | 'aip' | 'mig' | 'trig' | 'promo'
+type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'fin' | 'pay' | 'proses' | 'inv' | 'proc' | 'sales' | 'crm' | 'doc' | 'aip' | 'mig' | 'trig' | 'promo' | 'hd'
 
 const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon: () => React.ReactElement }[] = [
   { id: 'home', label: 'Beranda', href: '/', hotkey: 'G H', Icon: IconHome },
@@ -204,6 +214,7 @@ const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon
   { id: 'mig',   label: 'Import',     href: '/mig/import',   hotkey: 'G N', Icon: IconMig   },
   { id: 'trig',  label: 'Triggers',   href: '/trig/rules',      hotkey: 'G T', Icon: IconTrig  },
   { id: 'promo', label: 'Promosi',    href: '/promo/promotions', hotkey: 'G E', Icon: IconPromo },
+  { id: 'hd',    label: 'Help Desk',  href: '/hd/tickets',       hotkey: 'G Q', Icon: IconHd   },
   { id: 'rent', label: 'Sewa', href: '/rent', hotkey: 'G S', Icon: IconRent },
   { id: 'proses', label: 'Proses', href: '/proses', hotkey: 'G O', Icon: IconProses },
   { id: 'agent', label: 'Agent', href: '/agent', hotkey: 'G A', Icon: IconAgent },
