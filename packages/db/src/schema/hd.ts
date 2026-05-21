@@ -3,8 +3,10 @@ import {
   uuid,
   text,
   varchar,
+  integer,
   timestamp,
   boolean,
+  jsonb,
   pgEnum,
   index,
   unique,
@@ -71,10 +73,13 @@ export const hdTickets = hdSchema.table('tickets', {
   reporterEmail:  text('reporter_email'),
   teamId:         uuid('team_id').references(() => hdTeams.id, { onDelete: 'set null' }),
   assigneeId:     uuid('assignee_id').references(() => users.id, { onDelete: 'set null' }),
-  closedAt:       timestamp('closed_at'),
-  firstReplyAt:   timestamp('first_reply_at'),
-  slaDueAt:       timestamp('sla_due_at'),
-  createdBy:      uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+  closedAt:        timestamp('closed_at'),
+  firstReplyAt:    timestamp('first_reply_at'),
+  resolvedAt:      timestamp('resolved_at'),
+  slaDueAt:        timestamp('sla_due_at'),
+  slaPolicyId:     uuid('sla_policy_id'),
+  emailMessageId:  text('email_message_id'),
+  createdBy:       uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
   createdAt:      timestamp('created_at').notNull().defaultNow(),
   updatedAt:      timestamp('updated_at').notNull().defaultNow(),
 }, (t) => ({
@@ -109,3 +114,77 @@ export const hdTicketMessages = hdSchema.table('ticket_messages', {
 
 export type HdTicketMessage = typeof hdTicketMessages.$inferSelect
 export type NewHdTicketMessage = typeof hdTicketMessages.$inferInsert
+
+// ── SLA Policies ──────────────────────────────────────────────────────────────
+
+export const hdSlaPolicies = hdSchema.table('sla_policies', {
+  id:                       uuid('id').primaryKey().defaultRandom(),
+  tenantId:                 uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  name:                     text('name').notNull(),
+  description:              text('description'),
+  conditions:               jsonb('conditions').notNull().default({}),
+  responseTargetMinutes:    integer('response_target_minutes').notNull().default(480),
+  resolutionTargetMinutes:  integer('resolution_target_minutes').notNull().default(2880),
+  priorityOrder:            integer('priority_order').notNull().default(0),
+  active:                   boolean('active').notNull().default(true),
+  createdAt:                timestamp('created_at').notNull().defaultNow(),
+  updatedAt:                timestamp('updated_at').notNull().defaultNow(),
+}, (t) => ({
+  tenantOrderIdx: index('hd_sla_policies_tenant_idx').on(t.tenantId, t.priorityOrder),
+}))
+
+export type HdSlaPolicy = typeof hdSlaPolicies.$inferSelect
+export type NewHdSlaPolicy = typeof hdSlaPolicies.$inferInsert
+
+export type SlaPolicyConditions = {
+  priority?: TicketPriority
+  teamId?: string
+  source?: TicketSource
+  tags?: string[]
+}
+
+// ── Email Aliases ─────────────────────────────────────────────────────────────
+
+export const hdEmailAliases = hdSchema.table('email_aliases', {
+  id:        uuid('id').primaryKey().defaultRandom(),
+  tenantId:  uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  alias:     text('alias').notNull(),
+  teamId:    uuid('team_id').references(() => hdTeams.id, { onDelete: 'set null' }),
+  autoReply: boolean('auto_reply').notNull().default(true),
+  active:    boolean('active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => ({
+  tenantIdx: index('hd_email_aliases_tenant_idx').on(t.tenantId),
+}))
+
+export type HdEmailAlias = typeof hdEmailAliases.$inferSelect
+
+// ── Ticket Actions ────────────────────────────────────────────────────────────
+
+export const ticketActionType = pgEnum('ticket_action_type', [
+  'create_task',
+  'create_so',
+  'create_lead',
+  'create_kb_article',
+  'schedule_intervention',
+  'escalate',
+  'merge',
+  'custom',
+])
+
+export type TicketActionType = (typeof ticketActionType.enumValues)[number]
+
+export const hdTicketActions = hdSchema.table('ticket_actions', {
+  id:         uuid('id').primaryKey().defaultRandom(),
+  tenantId:   uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  ticketId:   uuid('ticket_id').notNull().references(() => hdTickets.id, { onDelete: 'cascade' }),
+  actionType: ticketActionType('action_type').notNull(),
+  actorId:    uuid('actor_id').references(() => users.id, { onDelete: 'set null' }),
+  payload:    jsonb('payload').notNull().default({}),
+  createdAt:  timestamp('created_at').notNull().defaultNow(),
+}, (t) => ({
+  ticketIdx: index('hd_ticket_actions_ticket_idx').on(t.ticketId),
+  tenantIdx: index('hd_ticket_actions_tenant_idx').on(t.tenantId),
+}))
+
+export type HdTicketAction = typeof hdTicketActions.$inferSelect
