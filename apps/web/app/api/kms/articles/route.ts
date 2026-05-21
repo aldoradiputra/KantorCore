@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   const { ctx } = result
 
   const body = await req.json()
-  const { spaceId, title, content, parentId, visibility, tags, slug } = body
+  const { spaceId, title, content, bodyJson, parentId, visibility, tags, slug } = body
 
   if (!spaceId) return NextResponse.json({ error: 'Space diperlukan.' }, { status: 400 })
   if (!title?.trim()) return NextResponse.json({ error: 'Judul diperlukan.' }, { status: 400 })
@@ -35,6 +35,7 @@ export async function POST(req: Request) {
     spaceId,
     title: title.trim(),
     body: content ?? '',
+    bodyJson: bodyJson ?? null,
     parentId: parentId || null,
     visibility: visibility ?? 'internal',
     tags: Array.isArray(tags) ? tags : [],

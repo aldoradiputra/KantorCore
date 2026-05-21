@@ -4,6 +4,7 @@ import { getCurrentSession } from '../../../../lib/auth'
 import { getCurrentTenant } from '../../../../lib/tenants'
 import { getArticle, getSpace, incrementViewCount } from '../../../../lib/kms'
 import ArticleActions from './ArticleActions'
+import { ArticleBody } from './ArticleBody'
 
 export default async function ArticlePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getCurrentSession()
@@ -64,15 +65,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
         </div>
       )}
 
-      <article style={{
-        font: '15px/1.7 var(--font-sans)',
-        color: 'var(--fg-1)',
-        whiteSpace: 'pre-wrap',
-      }}>
-        {article.body || (
-          <em style={{ color: 'var(--fg-3)' }}>Artikel kosong. Klik Edit untuk menambahkan konten.</em>
-        )}
-      </article>
+      <ArticleBody body={article.body} bodyJson={article.bodyJson} />
     </div>
   )
 }

@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import type { JSONContent } from '@tiptap/react'
+import { RichEditor } from '../../../../../components/editor'
 import type { KmsSpace, KmsArticle, ArticleVisibility } from '../../../../../lib/kms'
 
 export default function ArticleEditor({
@@ -18,19 +20,27 @@ export default function ArticleEditor({
 
   const [spaceId, setSpaceId] = useState(initialSpaceId)
   const [title, setTitle] = useState(article?.title ?? '')
-  const [content, setContent] = useState(article?.body ?? '')
+  const [bodyText, setBodyText] = useState(article?.body ?? '')
+  const [bodyJson, setBodyJson] = useState<JSONContent | undefined>(
+    article?.bodyJson as JSONContent | undefined
+  )
   const [excerpt, setExcerpt] = useState(article?.excerpt ?? '')
   const [visibility, setVisibility] = useState<ArticleVisibility>(article?.visibility ?? 'internal')
   const [tagsInput, setTagsInput] = useState((article?.tags ?? []).join(', '))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  function handleEditorChange(text: string, json: JSONContent) {
+    setBodyText(text)
+    setBodyJson(json)
+  }
+
   async function save(publish = false) {
     setSaving(true); setError(null)
     try {
       const tags = tagsInput.split(',').map((t) => t.trim()).filter(Boolean)
       const payload: Record<string, unknown> = {
-        spaceId, title, content, excerpt: excerpt || null, visibility, tags,
+        spaceId, title, content: bodyText, bodyJson, excerpt: excerpt || null, visibility, tags,
       }
       if (publish) payload.status = 'published'
 
@@ -76,16 +86,13 @@ export default function ArticleEditor({
         <input value={excerpt} onChange={(e) => setExcerpt(e.target.value)} style={inputStyle} placeholder="Singkat 1-2 kalimat tentang artikel ini" maxLength={200} />
       </Field>
 
-      <Field label="Konten" hint="Markdown didukung di tampilan baca (versi awal: teks biasa)">
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          rows={16}
-          style={{
-            ...inputStyle, height: 'auto', padding: '12px',
-            font: '14px/1.6 var(--font-mono)', resize: 'vertical',
-          }}
-          placeholder="Tulis isi artikel di sini…"
+      <Field label="Konten">
+        <RichEditor
+          value={!bodyJson ? bodyText : undefined}
+          valueJson={bodyJson}
+          onChange={handleEditorChange}
+          placeholder="Tulis isi artikel di sini, atau ketik / untuk perintah blok…"
+          minHeight={320}
         />
       </Field>
 
