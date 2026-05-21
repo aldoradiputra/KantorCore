@@ -9,6 +9,7 @@ import {
   type ContactType,
 } from '@kantorcore/db'
 import { withTenant } from './db'
+import { syncContactRelated } from './relatedFields'
 
 export interface ContactRow {
   contact: Contact
@@ -133,12 +134,12 @@ export async function updateContact(
   contactId: string,
   input: Partial<ContactInput>,
 ): Promise<{ ok: true; contact: Contact } | { ok: false; error: string }> {
-  return withTenant(tenantId, async (tx) => {
+  const result = await withTenant(tenantId, async (tx) => {
     const patch: Record<string, unknown> = { updatedAt: new Date() }
     if (input.type !== undefined) patch.type = input.type
     if (input.name !== undefined) {
       const n = input.name.trim()
-      if (n.length < 2) return { ok: false, error: 'Nama minimal 2 karakter.' }
+      if (n.length < 2) return { ok: false as const, error: 'Nama minimal 2 karakter.' }
       patch.name = n
     }
     if (input.email !== undefined) {
@@ -150,7 +151,7 @@ export async function updateContact(
           .where(and(eq(contacts.tenantId, tenantId), eq(contacts.email, e)))
           .limit(1)
         if (conflict.length > 0 && conflict[0]!.id !== contactId) {
-          return { ok: false, error: 'Email ini sudah dipakai oleh kontak lain.' }
+          return { ok: false as const, error: 'Email ini sudah dipakai oleh kontak lain.' }
         }
       }
       patch.email = e
@@ -167,7 +168,7 @@ export async function updateContact(
       .where(and(eq(contacts.id, contactId), eq(contacts.tenantId, tenantId)))
       .returning()
 
-    if (!contact) return { ok: false, error: 'Kontak tidak ditemukan.' }
+    if (!contact) return { ok: false as const, error: 'Kontak tidak ditemukan.' }
 
     if (input.roles !== undefined) {
       await tx
@@ -180,8 +181,19 @@ export async function updateContact(
       }
     }
 
-    return { ok: true, contact }
+    return { ok: true as const, contact }
   })
+
+  if (result.ok) {
+    syncContactRelated(tenantId, contactId, {
+      name: result.contact.name,
+      email: result.contact.email,
+    }).catch(() => {
+      console.error('[syncContactRelated] failed for contact', contactId)
+    })
+  }
+
+  return result
 }
 
 export async function deleteContact(tenantId: string, contactId: string): Promise<void> {
