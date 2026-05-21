@@ -6,6 +6,7 @@ import {
   pgEnum,
   uniqueIndex,
   index,
+  boolean,
 } from 'drizzle-orm/pg-core'
 import { platform, tenants } from './tenants'
 import { users } from './users'
@@ -56,6 +57,9 @@ export const contacts = platform.table(
     notes: text('notes'),
     /** Link to login account when the contact is an internal user. NULL otherwise. */
     userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    /** Portal access enabled — when true, contact can sign into the external portal via magic link. */
+    portalEnabled: boolean('portal_enabled').notNull().default(false),
+    portalLastLogin: timestamp('portal_last_login', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
