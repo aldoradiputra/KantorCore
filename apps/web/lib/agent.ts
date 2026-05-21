@@ -180,6 +180,14 @@ const DEFAULT_TOOLS: ReadonlyArray<{
   { name: 'fin.list_bills', module: 'fin', description: 'Daftar tagihan vendor dengan filter status.' },
   { name: 'fin.list_taxes', module: 'fin', description: 'Daftar pajak (PPN, dll.) dengan filter ruang lingkup (sale/purchase).' },
   { name: 'fin.create_invoice', module: 'fin', description: 'Buat faktur pelanggan baru (status draf). Perlu account_id pendapatan. Bisa sertakan tax_ids per baris.' },
+  { name: 'inv.list_products', module: 'inv', description: 'Daftar produk/layanan dengan filter tipe atau kata kunci.' },
+  { name: 'inv.get_stock', module: 'inv', description: 'Cek stok on-hand untuk satu produk berdasarkan UUID.' },
+  { name: 'proc.list_pos', module: 'proc', description: 'Daftar pesanan pembelian (Purchase Order) dengan filter status.' },
+  { name: 'sales.list_sos', module: 'sales', description: 'Daftar pesanan penjualan (Sales Order) dengan filter status.' },
+  { name: 'crm.list_deals', module: 'crm', description: 'Daftar deal pipeline CRM dengan filter stage.' },
+  { name: 'crm.create_deal', module: 'crm', description: 'Buat deal baru di pipeline CRM.' },
+  { name: 'crm.move_deal_stage', module: 'crm', description: 'Pindahkan deal ke stage berikutnya atau stage tertentu.' },
+  { name: 'doc.list_documents', module: 'doc', description: 'Daftar dokumen/kontrak dengan filter tipe atau status.' },
 ]
 
 /** Idempotent — re-running on a populated tenant is a no-op. */
