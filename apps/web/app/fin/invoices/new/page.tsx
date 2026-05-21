@@ -3,6 +3,7 @@ import { getCurrentSession } from '../../../../lib/auth'
 import { getCurrentTenant } from '../../../../lib/tenants'
 import { listAccounts, listTaxes } from '../../../../lib/finance'
 import { listContacts } from '../../../../lib/contacts'
+import { listProducts } from '../../../../lib/products'
 import { FinShell } from '../../FinShell'
 import { NewInvoiceForm } from './NewInvoiceForm'
 
@@ -16,10 +17,11 @@ export default async function NewInvoicePage() {
   const ctx = await getCurrentTenant(session.user.id)
   if (!ctx) redirect('/sign-up')
 
-  const [allAccounts, taxes, contactRows] = await Promise.all([
+  const [allAccounts, taxes, contactRows, productRows] = await Promise.all([
     listAccounts(ctx.tenant.id),
     listTaxes(ctx.tenant.id, { scope: 'sale', activeOnly: true }),
     listContacts(ctx.tenant.id, { role: 'customer' }),
+    listProducts(ctx.tenant.id, { activeOnly: true }),
   ])
   const revenueAccounts = allAccounts.filter((a) => a.type === 'revenue' && a.isActive)
 
@@ -35,6 +37,15 @@ export default async function NewInvoicePage() {
           revenueAccounts={revenueAccounts.map((a) => ({ id: a.id, code: a.code, name: a.name }))}
           taxes={taxes.map((t) => ({ id: t.id, name: t.name, amount: t.amount, amountType: t.amountType, isWithholding: t.isWithholding }))}
           contacts={contactRows.map((r) => ({ id: r.contact.id, name: r.contact.name, email: r.contact.email, phone: r.contact.phone }))}
+          products={productRows.map((r) => ({
+            id: r.product.id,
+            name: r.product.name,
+            code: r.product.code,
+            salePrice: r.product.salePrice,
+            defaultAccountId: r.product.revenueAccountId,
+            defaultTaxIds: r.product.defaultSaleTaxIds,
+            uomSymbol: r.uomSymbol,
+          }))}
         />
       </div>
     </FinShell>

@@ -7,6 +7,12 @@ interface AccountOpt { id: string; code: string; name: string }
 interface TaxOpt { id: string; name: string; amount: number; amountType: 'percent' | 'fixed'; isWithholding: boolean }
 interface ContactOpt { id: string; name: string; email: string | null; phone: string | null }
 
+interface ProductOpt {
+  id: string; name: string; code: string | null
+  costPrice: number; defaultAccountId: string | null
+  defaultTaxIds: string[]; uomSymbol: string | null
+}
+
 const inputStyle: React.CSSProperties = {
   height: 34,
   padding: '0 10px',
@@ -151,10 +157,11 @@ function ContactPicker({
   )
 }
 
-export function NewBillForm({ expenseAccounts, taxes, contacts }: {
+export function NewBillForm({ expenseAccounts, taxes, contacts, products }: {
   expenseAccounts: AccountOpt[]
   taxes: TaxOpt[]
   contacts: ContactOpt[]
+  products: ProductOpt[]
 }) {
   const router = useRouter()
   const defaultAcct = expenseAccounts[0]?.id ?? ''
@@ -271,6 +278,31 @@ export function NewBillForm({ expenseAccounts, taxes, contacts }: {
           const c = computed[i]!
           return (
             <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 10, border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', background: 'var(--bg-1)' }}>
+              {products.length > 0 && (
+                <div style={{ marginBottom: 6 }}>
+                  <select
+                    style={{ ...inputStyle, color: 'var(--fg-3)', font: '12px/1 var(--font-sans)' }}
+                    value=""
+                    onChange={(e) => {
+                      const p = products.find((x) => x.id === e.target.value)
+                      if (!p) return
+                      updateLine(i, {
+                        description: p.name,
+                        unitPrice: p.costPrice,
+                        accountId: p.defaultAccountId ?? l.accountId,
+                        taxIds: p.defaultTaxIds.length > 0 ? p.defaultTaxIds : l.taxIds,
+                      })
+                    }}
+                  >
+                    <option value="">— Pilih produk untuk isi otomatis —</option>
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.code ? `[${p.code}] ` : ''}{p.name}{p.uomSymbol ? ` / ${p.uomSymbol}` : ''} — {new Intl.NumberFormat('id-ID').format(p.costPrice)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 60px 1fr 1.5fr 28px', gap: 8, alignItems: 'center' }}>
                 <input style={inputStyle} placeholder="Deskripsi" value={l.description} onChange={(e) => updateLine(i, { description: e.target.value })} />
                 <input style={inputStyle} type="number" min={1} value={l.quantity} onChange={(e) => updateLine(i, { quantity: parseInt(e.target.value || '0', 10) })} />
