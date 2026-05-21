@@ -1,40 +1,74 @@
 import 'server-only'
-import { eq, and, desc, sql, inArray } from 'drizzle-orm'
+import { eq, and, asc, desc, sql } from 'drizzle-orm'
 import { withTenant } from './db'
 import {
   hdTickets,
   hdTicketMessages,
   hdTeams,
   hdTeamMembers,
+  hdSlaPolicies,
+  hdEmailAliases,
+  hdTicketActions,
 } from '@kantorcore/db'
 import type {
   HdTicket, NewHdTicket,
   HdTicketMessage, NewHdTicketMessage,
   HdTeam,
-  TicketStatus, TicketPriority,
+  HdSlaPolicy, NewHdSlaPolicy,
+  HdEmailAlias,
+  HdTicketAction, TicketActionType,
+  TicketStatus, TicketPriority, TicketSource,
+  SlaPolicyConditions,
 } from '@kantorcore/db'
 
-export type { HdTicket, HdTicketMessage, HdTeam, TicketStatus, TicketPriority }
-
-// ── SLA durations by priority (hours) ────────────────────────────────────────
-
-const SLA_HOURS: Record<TicketPriority, number> = {
-  low:    72,
-  medium: 24,
-  high:   8,
-  urgent: 2,
+export type {
+  HdTicket, HdTicketMessage, HdTeam,
+  HdSlaPolicy, HdEmailAlias, HdTicketAction,
+  TicketStatus, TicketPriority, TicketSource, TicketActionType,
+  SlaPolicyConditions,
 }
 
-function slaDeadline(priority: TicketPriority): Date {
-  const ms = SLA_HOURS[priority] * 60 * 60 * 1000
-  return new Date(Date.now() + ms)
+// ── SLA policy resolution ─────────────────────────────────────────────────────
+// Evaluates policies in priority_order ASC; returns the first match.
+// Falls back to sensible defaults if no policy matches.
+
+const DEFAULT_RESPONSE_MINUTES: Record<TicketPriority, number> = {
+  low:    72 * 60,
+  medium: 24 * 60,
+  high:   8  * 60,
+  urgent: 2  * 60,
+}
+
+export async function resolveSlaPolicy(
+  tenantId: string,
+  opts: { priority: TicketPriority; teamId?: string | null; source?: TicketSource; tags?: string[] },
+): Promise<{ policy: HdSlaPolicy | null; slaDueAt: Date; responseTargetMinutes: number }> {
+  const policies = await listSlaPolicies(tenantId)
+
+  for (const p of policies) {
+    if (!p.active) continue
+    const cond = p.conditions as SlaPolicyConditions
+    if (cond.priority && cond.priority !== opts.priority) continue
+    if (cond.teamId && cond.teamId !== opts.teamId) continue
+    if (cond.source && cond.source !== opts.source) continue
+    if (cond.tags?.length) {
+      const ticketTags = opts.tags ?? []
+      if (!cond.tags.some((t) => ticketTags.includes(t))) continue
+    }
+    // Matched
+    const slaDueAt = new Date(Date.now() + p.resolutionTargetMinutes * 60_000)
+    return { policy: p, slaDueAt, responseTargetMinutes: p.responseTargetMinutes }
+  }
+
+  // No policy matched — use priority-based defaults
+  const minutes = DEFAULT_RESPONSE_MINUTES[opts.priority]
+  const slaDueAt = new Date(Date.now() + minutes * 60_000)
+  return { policy: null, slaDueAt, responseTargetMinutes: minutes }
 }
 
 // ── Ticket number ─────────────────────────────────────────────────────────────
 
 async function nextTicketNumber(tenantId: string): Promise<string> {
-  // Use a per-tenant sequence approximation — nextval from shared seq,
-  // formatted with tenant prefix.
   return withTenant(tenantId, async (db) => {
     const [row] = await db.execute<{ n: string }>(
       sql`SELECT nextval('hd.ticket_seq')::text AS n`,
@@ -92,9 +126,15 @@ export async function getTicket(tenantId: string, id: string) {
 
 export async function createTicket(
   tenantId: string,
-  data: Omit<NewHdTicket, 'tenantId' | 'ticketNumber' | 'slaDueAt'>,
+  data: Omit<NewHdTicket, 'tenantId' | 'ticketNumber' | 'slaDueAt' | 'slaPolicyId'>,
 ): Promise<HdTicket> {
   const ticketNumber = await nextTicketNumber(tenantId)
+  const { policy, slaDueAt } = await resolveSlaPolicy(tenantId, {
+    priority: data.priority ?? 'medium',
+    teamId: data.teamId,
+    source: data.source,
+  })
+
   return withTenant(tenantId, async (db) => {
     const [row] = await db
       .insert(hdTickets)
@@ -102,7 +142,8 @@ export async function createTicket(
         ...data,
         tenantId,
         ticketNumber,
-        slaDueAt: slaDeadline(data.priority ?? 'medium'),
+        slaDueAt,
+        slaPolicyId: policy?.id ?? null,
       })
       .returning()
     return row!
@@ -115,10 +156,10 @@ export async function updateTicket(
   patch: Partial<Omit<NewHdTicket, 'tenantId' | 'id'>>,
 ) {
   return withTenant(tenantId, async (db) => {
-    // Auto-set closedAt when status transitions to resolved/closed
     const extra: Partial<HdTicket> = {}
-    if ((patch.status === 'resolved' || patch.status === 'closed') && !patch.closedAt) {
-      extra.closedAt = new Date()
+    if (patch.status === 'resolved' || patch.status === 'closed') {
+      if (!patch.closedAt) extra.closedAt = new Date()
+      if (!patch.resolvedAt) extra.resolvedAt = new Date()
     }
     const [row] = await db
       .update(hdTickets)
@@ -158,8 +199,8 @@ export async function addMessage(
       .values({ ...data, tenantId })
       .returning()
 
-    // Set firstReplyAt on ticket if this is an internal agent's first reply
     if (data.authorUserId) {
+      // Agent reply: set firstReplyAt, transition new→open
       await db
         .update(hdTickets)
         .set({
@@ -169,7 +210,7 @@ export async function addMessage(
         })
         .where(and(eq(hdTickets.id, data.ticketId), eq(hdTickets.tenantId, tenantId)))
     } else {
-      // Customer reply — reopen pending tickets
+      // Customer reply: reopen pending tickets
       await db
         .update(hdTickets)
         .set({
@@ -196,6 +237,81 @@ export async function createTeam(tenantId: string, name: string, description?: s
     const [row] = await db
       .insert(hdTeams)
       .values({ tenantId, name, description: description || null })
+      .returning()
+    return row!
+  })
+}
+
+// ── SLA Policies ──────────────────────────────────────────────────────────────
+
+export async function listSlaPolicies(tenantId: string): Promise<HdSlaPolicy[]> {
+  return withTenant(tenantId, async (db) => {
+    return db.select().from(hdSlaPolicies)
+      .where(eq(hdSlaPolicies.tenantId, tenantId))
+      .orderBy(asc(hdSlaPolicies.priorityOrder))
+  })
+}
+
+export async function createSlaPolicy(tenantId: string, data: Omit<NewHdSlaPolicy, 'tenantId'>): Promise<HdSlaPolicy> {
+  return withTenant(tenantId, async (db) => {
+    const [row] = await db.insert(hdSlaPolicies).values({ ...data, tenantId }).returning()
+    return row!
+  })
+}
+
+export async function updateSlaPolicy(tenantId: string, id: string, patch: Partial<Omit<NewHdSlaPolicy, 'tenantId' | 'id'>>): Promise<HdSlaPolicy | null> {
+  return withTenant(tenantId, async (db) => {
+    const [row] = await db.update(hdSlaPolicies)
+      .set({ ...patch, updatedAt: new Date() })
+      .where(and(eq(hdSlaPolicies.id, id), eq(hdSlaPolicies.tenantId, tenantId)))
+      .returning()
+    return row ?? null
+  })
+}
+
+export async function deleteSlaPolicy(tenantId: string, id: string) {
+  return withTenant(tenantId, async (db) => {
+    await db.delete(hdSlaPolicies).where(and(eq(hdSlaPolicies.id, id), eq(hdSlaPolicies.tenantId, tenantId)))
+  })
+}
+
+// ── Email Aliases ─────────────────────────────────────────────────────────────
+
+export async function listEmailAliases(tenantId: string): Promise<HdEmailAlias[]> {
+  return withTenant(tenantId, async (db) => {
+    return db.select().from(hdEmailAliases).where(eq(hdEmailAliases.tenantId, tenantId))
+  })
+}
+
+export async function createEmailAlias(tenantId: string, alias: string, teamId?: string | null) {
+  return withTenant(tenantId, async (db) => {
+    const [row] = await db.insert(hdEmailAliases)
+      .values({ tenantId, alias, teamId: teamId ?? null })
+      .returning()
+    return row!
+  })
+}
+
+// ── Ticket Actions (cross-module) ─────────────────────────────────────────────
+
+export async function listTicketActions(tenantId: string, ticketId: string): Promise<HdTicketAction[]> {
+  return withTenant(tenantId, async (db) => {
+    return db.select().from(hdTicketActions)
+      .where(and(eq(hdTicketActions.ticketId, ticketId), eq(hdTicketActions.tenantId, tenantId)))
+      .orderBy(hdTicketActions.createdAt)
+  })
+}
+
+export async function recordTicketAction(
+  tenantId: string,
+  ticketId: string,
+  actionType: TicketActionType,
+  actorId: string | null,
+  payload: Record<string, unknown>,
+): Promise<HdTicketAction> {
+  return withTenant(tenantId, async (db) => {
+    const [row] = await db.insert(hdTicketActions)
+      .values({ tenantId, ticketId, actionType, actorId, payload })
       .returning()
     return row!
   })

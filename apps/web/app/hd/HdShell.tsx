@@ -3,8 +3,9 @@
 import { usePathname, useRouter } from 'next/navigation'
 
 const TABS = [
-  { label: 'Semua Tiket',  href: '/hd/tickets' },
-  { label: 'Tim',          href: '/hd/teams' },
+  { label: 'Semua Tiket', href: '/hd/tickets' },
+  { label: 'Tim',         href: '/hd/teams' },
+  { label: 'SLA',         href: '/hd/sla' },
 ] as const
 
 export default function HdShell({ children }: { children: React.ReactNode }) {

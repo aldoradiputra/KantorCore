@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { HdTicket, HdTicketMessage, HdTeam, TicketStatus, TicketPriority } from '../../../../lib/helpdesk'
+import type { HdTicket, HdTicketMessage, HdTeam, TicketStatus, TicketPriority, TicketActionType } from '../../../../lib/helpdesk'
 
 const STATUS_LABEL: Record<TicketStatus, string> = {
   new: 'Baru', open: 'Terbuka', pending: 'Menunggu', resolved: 'Selesai', closed: 'Ditutup',
@@ -210,6 +210,10 @@ export default function TicketDetail({
           </span>
         </SideSection>
 
+        <SideSection label="Aksi">
+          <TicketActions ticketId={ticket.id} ticketSubject={ticket.subject} />
+        </SideSection>
+
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--s-4)' }}>
           <button
             type="button"
@@ -242,4 +246,82 @@ const sideInputStyle: React.CSSProperties = {
   width: '100%', height: 32, padding: '0 8px', border: '1px solid var(--border)',
   borderRadius: 'var(--r-sm)', font: '13px/1 var(--font-sans)', color: 'var(--fg-1)',
   background: 'var(--surface)',
+}
+
+// ── Cross-module ticket actions ───────────────────────────────────────────────
+
+const ACTION_DEFS: { type: TicketActionType; label: string; description: string }[] = [
+  { type: 'create_task',            label: 'Buat Tugas',        description: 'Buat tugas di modul Proyek' },
+  { type: 'create_kb_article',      label: 'Buat Artikel KB',   description: 'Buat artikel Knowledge Base dari tiket ini' },
+  { type: 'schedule_intervention',  label: 'Jadwalkan Intervensi', description: 'Tugaskan teknisi lapangan' },
+  { type: 'escalate',               label: 'Eskalasi',          description: 'Catat eskalasi ke tim lain' },
+]
+
+function TicketActions({ ticketId, ticketSubject }: { ticketId: string; ticketSubject: string }) {
+  const [pending, setPending] = useState<TicketActionType | null>(null)
+  const [done, setDone] = useState<TicketActionType[]>([])
+  const [notes, setNotes] = useState('')
+  const [showNotes, setShowNotes] = useState<TicketActionType | null>(null)
+
+  async function executeAction(type: TicketActionType) {
+    setPending(type)
+    try {
+      const res = await fetch(`/api/hd/tickets/${ticketId}/actions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actionType: type, payload: { notes: notes.trim() || undefined, subject: ticketSubject } }),
+      })
+      if (res.ok) {
+        setDone((prev) => [...prev, type])
+        setNotes('')
+        setShowNotes(null)
+      }
+    } finally { setPending(null) }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {ACTION_DEFS.map((def) => {
+        const isDone = done.includes(def.type)
+        const isActive = showNotes === def.type
+        return (
+          <div key={def.type}>
+            <button
+              type="button"
+              title={def.description}
+              disabled={isDone || pending === def.type}
+              onClick={() => setShowNotes(isActive ? null : def.type)}
+              style={{
+                width: '100%', textAlign: 'left', padding: '6px 8px', border: '1px solid var(--border)',
+                borderRadius: 'var(--r-sm)', background: isDone ? 'var(--teal-light)' : 'var(--surface)',
+                color: isDone ? 'var(--success)' : 'var(--fg-2)', font: '12px/1.3 var(--font-sans)',
+                cursor: isDone ? 'default' : 'pointer', opacity: isDone || pending === def.type ? 0.7 : 1,
+              }}
+            >
+              {isDone ? '✓ ' : ''}{def.label}
+            </button>
+            {isActive && !isDone && (
+              <div style={{ padding: '8px 0 4px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={2}
+                  placeholder="Catatan (opsional)"
+                  style={{ width: '100%', padding: '6px 8px', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', font: '12px/1.4 var(--font-sans)', color: 'var(--fg-1)', background: 'var(--surface)', resize: 'none' }}
+                />
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button type="button" onClick={() => executeAction(def.type)} disabled={pending === def.type} style={{ height: 28, padding: '0 10px', background: 'var(--indigo)', color: 'var(--white)', border: 'none', borderRadius: 'var(--r-sm)', font: '600 11px/1 var(--font-sans)', cursor: 'pointer' }}>
+                    {pending === def.type ? '…' : 'Jalankan'}
+                  </button>
+                  <button type="button" onClick={() => setShowNotes(null)} style={{ height: 28, padding: '0 8px', background: 'transparent', color: 'var(--fg-3)', border: 'none', font: '11px/1 var(--font-sans)', cursor: 'pointer' }}>
+                    Batal
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
 }
