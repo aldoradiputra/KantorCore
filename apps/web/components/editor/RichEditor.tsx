@@ -12,12 +12,8 @@ import TableHeader from '@tiptap/extension-table-header'
 import TableCell from '@tiptap/extension-table-cell'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
-import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight'
-import { createLowlight, common } from 'lowlight'
 import { SlashCommand } from './SlashCommand'
 import { useEffect } from 'react'
-
-const lowlight = createLowlight(common)
 
 // ─── Toolbar ─────────────────────────────────────────────────────────────────
 
@@ -102,8 +98,7 @@ export function RichEditor({
 }: RichEditorProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ codeBlock: false }),
-      CodeBlockLowlight.configure({ lowlight }),
+      StarterKit,
       Placeholder.configure({ placeholder }),
       Typography,
       Link.configure({ openOnClick: false }),

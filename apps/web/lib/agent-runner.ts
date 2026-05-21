@@ -1,9 +1,16 @@
 import 'server-only'
-import type Anthropic from '@anthropic-ai/sdk'
 import { eq, and } from 'drizzle-orm'
 import { agents, agentRuns, mandates, tools } from '@kantorcore/db'
 import { getDb, withTenant } from './db'
-import { getAnthropic } from './anthropic'
+import {
+  createMessage,
+  type AnthropicMessage,
+  type ContentBlock,
+  type MessageParam,
+  type ToolParam,
+  type ToolResultBlockParam,
+  type ToolUseBlock,
+} from './anthropic'
 import { dispatchTool, type ToolDispatchContext } from './tool-dispatcher'
 
 const MAX_ITERATIONS = 12
@@ -20,7 +27,6 @@ export interface ToolCallEvent {
   completedAt?: string
 }
 
-type MessageParam = Anthropic.Messages.MessageParam
 
 async function patchRun(
   runId: string,
@@ -98,18 +104,17 @@ export async function executeRun(runId: string): Promise<void> {
   const grantedTools = toolRows.filter((t) => grantedToolNames.has(t.name))
 
   // Build Anthropic tool definitions with prompt caching on the last tool
-  const toolDefs = grantedTools.map((t, idx) => {
-    const def: Record<string, unknown> = {
+  const toolDefs: ToolParam[] = grantedTools.map((t, idx) => {
+    const def: ToolParam = {
       name: t.name.replace('.', '__'),  // Anthropic tool names: no dots
       description: t.description ?? t.name,
-      input_schema: (t.inputSchema ?? { type: 'object', properties: {} }),
+      input_schema: (t.inputSchema ?? { type: 'object', properties: {} }) as Record<string, unknown>,
     }
-    // Apply cache_control to the last tool to cache the tools array (prompt caching)
     if (idx === grantedTools.length - 1) {
-      def['cache_control'] = { type: 'ephemeral' }
+      def.cache_control = { type: 'ephemeral' }
     }
     return def
-  }) as unknown as Anthropic.Messages.Tool[]
+  })
 
   // Restore or initialize message history
   const input = run.input as Record<string, unknown>
@@ -144,7 +149,6 @@ export async function executeRun(runId: string): Promise<void> {
     pendingMessages: null,
   })
 
-  const anthropic = getAnthropic()
   const systemPrompt = buildSystemPrompt(agentDef.name, tenantId, agentDef.systemPrompt)
   const toolCallHistory: ToolCallEvent[] = (run.toolCalls as ToolCallEvent[]) ?? []
   const ctx: ToolDispatchContext = { tenantId, actorUserId: run.createdBy ?? '' }
@@ -153,9 +157,9 @@ export async function executeRun(runId: string): Promise<void> {
   let totalOutputTokens = 0
 
   for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
-    let response: Anthropic.Messages.Message
+    let response: AnthropicMessage
     try {
-      response = await anthropic.messages.create({
+      response = await createMessage({
         model: agentDef.model,
         max_tokens: MAX_TOKENS,
         system: [
@@ -163,7 +167,7 @@ export async function executeRun(runId: string): Promise<void> {
             type: 'text',
             text: systemPrompt,
             cache_control: { type: 'ephemeral' },
-          } as Anthropic.Messages.TextBlockParam & { cache_control: { type: string } },
+          },
         ],
         tools: toolDefs,
         messages,
@@ -182,7 +186,7 @@ export async function executeRun(runId: string): Promise<void> {
 
     if (response.stop_reason === 'end_turn') {
       // Extract text output
-      const textBlock = response.content.find((b: Anthropic.Messages.ContentBlock) => b.type === 'text')
+      const textBlock = response.content.find((b: ContentBlock) => b.type === 'text')
       const outputText = textBlock?.type === 'text' ? textBlock.text : null
 
       await patchRun(runId, {
@@ -198,9 +202,9 @@ export async function executeRun(runId: string): Promise<void> {
 
     if (response.stop_reason === 'tool_use') {
       const toolUseBlocks = response.content.filter(
-        (b: Anthropic.Messages.ContentBlock): b is Anthropic.Messages.ToolUseBlock => b.type === 'tool_use',
+        (b: ContentBlock): b is ToolUseBlock => b.type === 'tool_use',
       )
-      const toolResults: Anthropic.Messages.ToolResultBlockParam[] = []
+      const toolResults: ToolResultBlockParam[] = []
 
       for (const block of toolUseBlocks) {
         // Map back from __ to . in tool name
