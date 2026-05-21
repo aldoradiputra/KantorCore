@@ -32,8 +32,14 @@ import {
   createBill,
   formatIDR,
 } from './finance'
+import { listProducts } from './products'
+import { getOnHand } from './inventory'
+import { listPOs } from './procurement'
+import { listSOs } from './sales'
+import { listDeals, createDeal, moveDealStage } from './crm'
+import { listDocuments } from './documents'
 import { recordAudit } from './audit'
-import type { IssuePriority, IssueStatus, EmploymentType, EmployeeStatus } from '@kantorcore/db'
+import type { IssuePriority, IssueStatus, EmploymentType, EmployeeStatus, DealStage } from '@kantorcore/db'
 
 export interface ToolDispatchContext {
   tenantId: string
@@ -414,6 +420,144 @@ const TOOL_IMPLS: Record<string, ToolImpl> = {
     })
     return { ok: true, result: { id, status: result.employee.status } }
   },
+
+  'inv.list_products': async ({ tenantId }, input) => {
+    const search = input['search'] ? String(input['search']) : undefined
+    const typeFilter = input['type'] ? String(input['type']) : undefined
+    const rows = await listProducts(tenantId, { search })
+    const filtered = typeFilter ? rows.filter((r) => r.product.type === typeFilter) : rows
+    return {
+      ok: true,
+      result: filtered.map((r) => ({
+        id: r.product.id,
+        name: r.product.name,
+        code: r.product.code,
+        type: r.product.type,
+        salePrice: formatIDR(r.product.salePrice),
+        costPrice: formatIDR(r.product.costPrice),
+        category: r.categoryName ?? null,
+        uom: r.uomSymbol ?? null,
+      })),
+    }
+  },
+
+  'inv.get_stock': async ({ tenantId }, input) => {
+    const productId = String(input['product_id'] ?? '')
+    if (!productId) return { ok: false, error: 'product_id wajib diisi.' }
+    const qty = await getOnHand(tenantId, productId)
+    return { ok: true, result: { productId, onHand: qty } }
+  },
+
+  'proc.list_pos': async ({ tenantId }, input) => {
+    const status = input['status'] ? String(input['status']) as 'draft' | 'confirmed' | 'received' | 'billed' | 'cancelled' : undefined
+    const pos = await listPOs(tenantId, status ? { status } : {})
+    return {
+      ok: true,
+      result: pos.map((p) => ({
+        id: p.id,
+        number: p.poNumber,
+        status: p.status,
+        date: p.date,
+        expectedDate: p.expectedDate,
+      })),
+    }
+  },
+
+  'sales.list_sos': async ({ tenantId }, input) => {
+    const status = input['status'] ? String(input['status']) as 'quotation' | 'confirmed' | 'done' | 'cancelled' : undefined
+    const sos = await listSOs(tenantId, status ? { status } : {})
+    return {
+      ok: true,
+      result: sos.map((s) => ({
+        id: s.id,
+        number: s.soNumber,
+        status: s.status,
+        date: s.date,
+      })),
+    }
+  },
+
+  'crm.list_deals': async ({ tenantId }, input) => {
+    const stage = input['stage'] ? String(input['stage']) as DealStage : undefined
+    const dealList = await listDeals(tenantId, stage ? { stage } : {})
+    return {
+      ok: true,
+      result: dealList.map((d) => ({
+        id: d.id,
+        title: d.title,
+        stage: d.stage,
+        expectedValue: d.expectedValue != null ? formatIDR(d.expectedValue) : null,
+        expectedClose: d.expectedClose,
+      })),
+    }
+  },
+
+  'crm.create_deal': async ({ tenantId, actorUserId }, input) => {
+    const title = String(input['title'] ?? '').trim()
+    if (!title) return { ok: false, error: 'title wajib diisi.' }
+    const expectedValue = input['expected_value'] != null ? Number(input['expected_value']) : undefined
+    const expectedClose = input['expected_close'] ? String(input['expected_close']) : null
+    const notes = input['notes'] ? String(input['notes']) : null
+
+    const result = await createDeal({
+      tenantId,
+      userId: actorUserId,
+      title,
+      contactId: input['contact_id'] ? String(input['contact_id']) : null,
+      expectedValue: expectedValue != null && !isNaN(expectedValue) ? expectedValue : undefined,
+      expectedClose,
+      notes,
+    })
+    if (!result.ok) return { ok: false, error: result.error }
+    void recordAudit({
+      tenantId,
+      actorUserId,
+      action: 'crm.deal_create',
+      resourceType: 'deal',
+      resourceId: result.deal.id,
+      payload: { title, via: 'agent' },
+    })
+    return { ok: true, result: { id: result.deal.id, title, stage: result.deal.stage } }
+  },
+
+  'crm.move_deal_stage': async ({ tenantId, actorUserId }, input) => {
+    const dealId = String(input['deal_id'] ?? '')
+    const stage = String(input['stage'] ?? '') as DealStage
+    if (!dealId) return { ok: false, error: 'deal_id wajib diisi.' }
+    const validStages = ['lead', 'qualified', 'proposal', 'negotiation', 'won', 'lost']
+    if (!validStages.includes(stage)) return { ok: false, error: `stage tidak valid. Pilih: ${validStages.join(', ')}` }
+
+    const result = await moveDealStage(tenantId, dealId, stage)
+    if (!result.ok) return { ok: false, error: result.error }
+    void recordAudit({
+      tenantId,
+      actorUserId,
+      action: 'crm.deal_stage_move',
+      resourceType: 'deal',
+      resourceId: dealId,
+      payload: { stage, via: 'agent' },
+    })
+    return { ok: true, result: { id: dealId, stage } }
+  },
+
+  'doc.list_documents': async ({ tenantId }, input) => {
+    const status = input['status'] ? String(input['status']) as 'draft' | 'active' | 'expired' | 'terminated' : undefined
+    const type = input['type'] ? String(input['type']) as 'contract' | 'nda' | 'mou' | 'agreement' | 'po' | 'invoice' | 'permit' | 'other' : undefined
+    const docs = await listDocuments(tenantId, { status, type })
+    return {
+      ok: true,
+      result: docs.map((d) => ({
+        id: d.doc.id,
+        number: d.doc.docNumber,
+        title: d.doc.title,
+        type: d.doc.type,
+        status: d.doc.status,
+        contact: d.contactName ?? d.doc.partyName ?? null,
+        expiryDate: d.doc.expiryDate,
+        daysUntilExpiry: d.daysUntilExpiry,
+      })),
+    }
+  },
 }
 
 export async function dispatchTool(
@@ -606,5 +750,87 @@ export const TOOL_SCHEMAS: Record<string, object> = {
       },
     },
     required: ['customer_name', 'lines'],
+  },
+  'inv.list_products': {
+    type: 'object',
+    properties: {
+      search: { type: 'string', description: 'Cari berdasarkan nama, kode produk (opsional)' },
+      type: { type: 'string', enum: ['product', 'service', 'consumable'], description: 'Filter tipe produk (opsional)' },
+    },
+  },
+  'inv.get_stock': {
+    type: 'object',
+    properties: {
+      product_id: { type: 'string', description: 'UUID produk (gunakan inv.list_products untuk mendapatkan ID)' },
+    },
+    required: ['product_id'],
+  },
+  'proc.list_pos': {
+    type: 'object',
+    properties: {
+      status: {
+        type: 'string',
+        enum: ['draft', 'confirmed', 'received', 'billed', 'cancelled'],
+        description: 'Filter status PO (opsional)',
+      },
+    },
+  },
+  'sales.list_sos': {
+    type: 'object',
+    properties: {
+      status: {
+        type: 'string',
+        enum: ['quotation', 'confirmed', 'done', 'cancelled'],
+        description: 'Filter status SO (opsional)',
+      },
+    },
+  },
+  'crm.list_deals': {
+    type: 'object',
+    properties: {
+      stage: {
+        type: 'string',
+        enum: ['lead', 'qualified', 'proposal', 'negotiation', 'won', 'lost'],
+        description: 'Filter stage deal (opsional)',
+      },
+    },
+  },
+  'crm.create_deal': {
+    type: 'object',
+    properties: {
+      title: { type: 'string', description: 'Judul deal' },
+      contact_id: { type: 'string', description: 'UUID kontak terkait (opsional)' },
+      expected_value: { type: 'integer', description: 'Nilai deal dalam IDR (opsional)' },
+      expected_close: { type: 'string', description: 'Tanggal target close (YYYY-MM-DD, opsional)' },
+      notes: { type: 'string', description: 'Catatan awal (opsional)' },
+    },
+    required: ['title'],
+  },
+  'crm.move_deal_stage': {
+    type: 'object',
+    properties: {
+      deal_id: { type: 'string', description: 'UUID deal (gunakan crm.list_deals)' },
+      stage: {
+        type: 'string',
+        enum: ['lead', 'qualified', 'proposal', 'negotiation', 'won', 'lost'],
+        description: 'Stage tujuan',
+      },
+    },
+    required: ['deal_id', 'stage'],
+  },
+  'doc.list_documents': {
+    type: 'object',
+    properties: {
+      status: {
+        type: 'string',
+        enum: ['draft', 'active', 'expired', 'terminated'],
+        description: 'Filter status dokumen (opsional)',
+      },
+      type: {
+        type: 'string',
+        enum: ['contract', 'nda', 'mou', 'agreement', 'po', 'invoice', 'permit', 'other'],
+        description: 'Filter tipe dokumen (opsional)',
+      },
+    },
   },
 }
