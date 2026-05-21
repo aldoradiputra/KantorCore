@@ -207,6 +207,7 @@ export function AppShell({
   activeModule,
   sidebar,
   children,
+  tenantLogoUrl,
 }: {
   tenantName: string
   userInitials: string
@@ -214,6 +215,8 @@ export function AppShell({
   activeModule: ModuleId | null
   sidebar?: ReactNode
   children: ReactNode
+  /** Optional tenant-custom logo. Falls back to KantorCore lockup. */
+  tenantLogoUrl?: string | null
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -240,10 +243,10 @@ export function AppShell({
             style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}
           >
             <img
-              src="/brand/kantorcore-lockup.svg"
-              alt="KantorCore"
+              src={tenantLogoUrl ?? '/brand/kantorcore-lockup.svg'}
+              alt={tenantLogoUrl ? tenantName : 'KantorCore'}
               height={20}
-              style={{ display: 'block', height: 20, width: 'auto' }}
+              style={{ display: 'block', height: 20, width: 'auto', maxWidth: 160, objectFit: 'contain' }}
             />
           </Link>
           <span
