@@ -134,6 +134,15 @@ function IconHd() {
   )
 }
 
+function IconEmail() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="4" width="14" height="10" rx="2" />
+      <path d="M2.5 5l6.5 5 6.5-5" />
+    </svg>
+  )
+}
+
 function IconPromo() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -204,7 +213,7 @@ function IconProses() {
 }
 
 // ── Module list ───────────────────────────────────────────────
-type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'fin' | 'pay' | 'proses' | 'inv' | 'proc' | 'sales' | 'crm' | 'doc' | 'aip' | 'mig' | 'trig' | 'promo' | 'hd' | 'kms' | 'portal-admin'
+type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'fin' | 'pay' | 'proses' | 'inv' | 'proc' | 'sales' | 'crm' | 'doc' | 'aip' | 'mig' | 'trig' | 'promo' | 'hd' | 'kms' | 'email' | 'portal-admin'
 
 const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon: () => React.ReactElement }[] = [
   { id: 'home', label: 'Beranda', href: '/', hotkey: 'G H', Icon: IconHome },
@@ -224,6 +233,7 @@ const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon
   { id: 'trig',  label: 'Triggers',   href: '/trig/rules',      hotkey: 'G T', Icon: IconTrig  },
   { id: 'promo', label: 'Promosi',    href: '/promo/promotions', hotkey: 'G E', Icon: IconPromo },
   { id: 'hd',    label: 'Help Desk',  href: '/hd/tickets',       hotkey: 'G Q', Icon: IconHd   },
+  { id: 'email', label: 'Email',      href: '/email',            hotkey: 'G X', Icon: IconEmail },
   { id: 'kms',   label: 'Knowledge',  href: '/kms',              hotkey: 'G U', Icon: IconKms  },
   { id: 'rent', label: 'Sewa', href: '/rent', hotkey: 'G S', Icon: IconRent },
   { id: 'proses', label: 'Proses', href: '/proses', hotkey: 'G O', Icon: IconProses },
