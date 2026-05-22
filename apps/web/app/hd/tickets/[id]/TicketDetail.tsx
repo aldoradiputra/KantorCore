@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { HdTicket, HdTicketMessage, HdTeam, TicketStatus, TicketPriority, TicketActionType } from '../../../../lib/helpdesk'
+import { Chatter } from '../../../../components/chatter/Chatter'
 
 const STATUS_LABEL: Record<TicketStatus, string> = {
   new: 'Baru', open: 'Terbuka', pending: 'Menunggu', resolved: 'Selesai', closed: 'Ditutup',
@@ -212,6 +213,10 @@ export default function TicketDetail({
 
         <SideSection label="Aksi">
           <TicketActions ticketId={ticket.id} ticketSubject={ticket.subject} />
+        </SideSection>
+
+        <SideSection label="Aktivitas Tim">
+          <Chatter entityType="hd.ticket" entityId={ticket.id} />
         </SideSection>
 
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--s-4)' }}>
