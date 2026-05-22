@@ -5,6 +5,7 @@ import { getCurrentTenant } from '../../../../lib/tenants'
 import { getSO, soSubtotal } from '../../../../lib/sales'
 import { SalesShell } from '../../SalesShell'
 import { SOActions } from './SOActions'
+import { Chatter } from '../../../../components/chatter/Chatter'
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
@@ -107,6 +108,13 @@ export default async function SODetailPage({ params }: { params: Promise<{ id: s
         {so.status !== 'cancelled' && so.status !== 'done' && (
           <SOActions id={so.id} status={so.status} />
         )}
+
+        <div>
+          <div style={{ font: '600 11px/1 var(--font-sans)', color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 'var(--s-3)' }}>
+            Komunikasi
+          </div>
+          <Chatter entityType="sales.order" entityId={so.id} />
+        </div>
       </div>
     </SalesShell>
   )
