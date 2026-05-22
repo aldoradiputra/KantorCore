@@ -2177,7 +2177,7 @@
       "label": "Omnichannel",
       "description": "WhatsApp, email, chat in one unified inbox",
       "type": "module",
-      "status": "planned",
+      "status": "in-progress",
       "phase": 2,
       "parent": "core",
       "x": -560,
