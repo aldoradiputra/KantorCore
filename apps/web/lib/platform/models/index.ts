@@ -15,11 +15,39 @@ import type { ModelMeta } from './types'
 import { hdTicketModel } from './hd-ticket'
 import { crmContactModel } from './crm-contact'
 import { crmDealModel } from './crm-deal'
+import { finInvoiceModel } from './fin-invoice'
+import { finBillModel } from './fin-bill'
+import { salesOrderModel } from './sales-order'
+import { procOrderModel } from './proc-order'
+import { invProductModel } from './inv-product'
+import { hrEmployeeModel } from './hr-employee'
+import { payPayslipModel } from './pay-payslip'
+import { projProjectModel } from './proj-project'
+import { projTaskModel } from './proj-task'
+import { emailAccountModel } from './email-account'
+import { emailThreadModel } from './email-thread'
+import { omniChannelModel } from './omni-channel'
+import { omniConversationModel } from './omni-conversation'
+import { kmsArticleModel } from './kms-article'
 
 export const MODEL_REGISTRY: Record<string, ModelMeta> = {
-  [hdTicketModel.entity]:   hdTicketModel,
-  [crmContactModel.entity]: crmContactModel,
-  [crmDealModel.entity]:    crmDealModel,
+  [hdTicketModel.entity]:         hdTicketModel,
+  [crmContactModel.entity]:       crmContactModel,
+  [crmDealModel.entity]:          crmDealModel,
+  [finInvoiceModel.entity]:       finInvoiceModel,
+  [finBillModel.entity]:          finBillModel,
+  [salesOrderModel.entity]:       salesOrderModel,
+  [procOrderModel.entity]:        procOrderModel,
+  [invProductModel.entity]:       invProductModel,
+  [hrEmployeeModel.entity]:       hrEmployeeModel,
+  [payPayslipModel.entity]:       payPayslipModel,
+  [projProjectModel.entity]:      projProjectModel,
+  [projTaskModel.entity]:         projTaskModel,
+  [emailAccountModel.entity]:     emailAccountModel,
+  [emailThreadModel.entity]:      emailThreadModel,
+  [omniChannelModel.entity]:      omniChannelModel,
+  [omniConversationModel.entity]: omniConversationModel,
+  [kmsArticleModel.entity]:       kmsArticleModel,
 }
 
 export function getModel(entity: string): ModelMeta | null {
