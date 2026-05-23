@@ -1,3 +1,4 @@
+import 'server-only'
 import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import {
   stockLocations, stockMoves, stockQuants, products, users,

@@ -1,3 +1,4 @@
+import 'server-only'
 
 /**
  * Storage provider abstraction. Today: pass-through to a URL field.

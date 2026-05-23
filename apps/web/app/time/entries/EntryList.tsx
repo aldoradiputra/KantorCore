@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import type { TimesheetEntryRow } from '../../../lib/timesheet'
-import { formatDuration } from '../../../lib/timesheet'
+import type { TimesheetEntryRow } from '../../../lib/timesheet-shared'
+import { formatDuration } from '../../../lib/timesheet-shared'
 import type { Employee } from '@kantorcore/db'
 
 const BILLABLE_DOT: React.CSSProperties = {

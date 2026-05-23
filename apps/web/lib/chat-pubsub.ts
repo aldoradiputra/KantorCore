@@ -1,3 +1,4 @@
+import 'server-only'
 import type { MessageWithAuthor } from './chat'
 
 // Process-local pub/sub for chat fan-out. Single-process dev only — in

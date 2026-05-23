@@ -1,3 +1,4 @@
+import 'server-only'
 import { and, asc, desc, eq, sql, lte, gte } from 'drizzle-orm'
 import {
   documents, contacts,

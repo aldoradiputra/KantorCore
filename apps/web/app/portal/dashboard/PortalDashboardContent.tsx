@@ -2,7 +2,7 @@
 
 import type { BlocksBlock } from '../../../lib/blocks'
 import { BlockRenderer } from '../../../components/blocks'
-import { formatIDR } from '../../../lib/promotions'
+import { formatIDR } from '../../../lib/promotions-shared'
 
 type Order = {
   id: string

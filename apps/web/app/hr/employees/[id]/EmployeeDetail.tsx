@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { EmployeeWithDept } from '../../../../lib/hr'
-import { EMPLOYMENT_TYPE_LABEL, EMPLOYEE_STATUS_LABEL } from '../../../../lib/hr'
+import type { EmployeeWithDept } from '../../../../lib/hr-shared'
+import { EMPLOYMENT_TYPE_LABEL, EMPLOYEE_STATUS_LABEL } from '../../../../lib/hr-shared'
 import type { Department } from '@kantorcore/db'
 
 const STATUS_COLOR: Record<string, string> = {

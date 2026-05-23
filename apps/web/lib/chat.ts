@@ -1,3 +1,4 @@
+import 'server-only'
 import { and, asc, eq } from 'drizzle-orm'
 import { channels, messages, users, type Channel, type Message } from '@kantorcore/db'
 import { withTenant } from './db'

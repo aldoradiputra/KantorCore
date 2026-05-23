@@ -1,3 +1,4 @@
+import 'server-only'
 import { eq, and, desc, sql, isNull, inArray } from 'drizzle-orm'
 import { withTenant } from './db'
 import {

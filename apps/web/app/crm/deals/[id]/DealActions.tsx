@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { STAGE_ORDER, STAGE_LABEL, type DealStage } from '../../../../lib/crm'
+import { STAGE_ORDER, STAGE_LABEL, type DealStage } from '../../../../lib/crm-shared'
 
 const STAGE_COLOR: Record<DealStage, string> = {
   lead:        '#6B7280',

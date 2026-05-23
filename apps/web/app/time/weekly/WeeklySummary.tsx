@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import type { WeeklySummaryRow } from '../../../lib/timesheet'
-import { formatDuration, weekStart, weekEnd } from '../../../lib/timesheet'
+import type { WeeklySummaryRow } from '../../../lib/timesheet-shared'
+import { formatDuration, weekStart, weekEnd } from '../../../lib/timesheet-shared'
 import type { Employee } from '@kantorcore/db'
 
 function todayStr() {

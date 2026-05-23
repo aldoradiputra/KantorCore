@@ -1,3 +1,4 @@
+import 'server-only'
 import { and, asc, desc, eq, gt, lt, ne, or, ilike, inArray } from 'drizzle-orm'
 import {
   assets,

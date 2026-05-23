@@ -1,3 +1,4 @@
+import 'server-only'
 import { and, desc, eq } from 'drizzle-orm'
 import {
   triggerRules, triggerLogs, messages, channels,

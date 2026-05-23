@@ -1,3 +1,4 @@
+import 'server-only'
 import { auditLog } from '@kantorcore/db'
 import { getDb } from './db'
 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ASSET_CATEGORY_LABEL } from '../../../../lib/rent'
+import { ASSET_CATEGORY_LABEL } from '../../../../lib/rent-shared'
 
 const inputStyle: React.CSSProperties = {
   height: 34,
