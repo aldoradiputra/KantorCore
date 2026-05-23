@@ -13,12 +13,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "oslo": "^1.2.1",
+    "bcryptjs": "^2.4.3",
     "drizzle-orm": "^0.36.0"
   },
   "devDependencies": {
     "typescript": "^5",
     "@types/node": "^20",
+    "@types/bcryptjs": "^2.4.6",
     "@kantorcore/db": "workspace:*"
   },
   "peerDependencies": {
