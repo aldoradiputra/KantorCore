@@ -1,4 +1,3 @@
-import 'server-only'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { invoices, bills, employees } from '@kantorcore/db'
 import { withTenant } from './db'

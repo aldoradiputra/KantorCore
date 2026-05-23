@@ -1,4 +1,3 @@
-import 'server-only'
 import { and, asc, desc, eq, isNull } from 'drizzle-orm'
 import { recordEvents, users } from '@kantorcore/db'
 import type { RecordEvent, EventType, ChatterActivityType } from '@kantorcore/db'

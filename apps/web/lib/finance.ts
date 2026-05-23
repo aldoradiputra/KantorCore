@@ -1,4 +1,3 @@
-import 'server-only'
 import { and, asc, desc, eq, sql, inArray } from 'drizzle-orm'
 import {
   accounts,

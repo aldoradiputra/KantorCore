@@ -1,4 +1,3 @@
-import 'server-only'
 import { cookies, headers } from 'next/headers'
 import { createHash, randomBytes } from 'node:crypto'
 import { eq, and, gt } from 'drizzle-orm'

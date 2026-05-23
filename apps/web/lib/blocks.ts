@@ -1,4 +1,3 @@
-import 'server-only'
 import { eq, and, asc } from 'drizzle-orm'
 import { withTenant } from './db'
 import { blocksLayouts, blocksBlocks } from '@kantorcore/db'

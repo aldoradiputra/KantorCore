@@ -1,4 +1,3 @@
-import 'server-only'
 import { and, asc, eq, ilike, or, sql } from 'drizzle-orm'
 import {
   products,

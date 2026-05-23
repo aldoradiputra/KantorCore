@@ -1,4 +1,3 @@
-import 'server-only'
 import { eq } from 'drizzle-orm'
 import { users, type ThemeMode, type AccentColor, ACCENT_COLORS } from '@kantorcore/db'
 import { getDb } from './db'

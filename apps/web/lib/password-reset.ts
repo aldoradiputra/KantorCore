@@ -1,4 +1,3 @@
-import 'server-only'
 import { randomBytes } from 'crypto'
 import { eq, and, isNull, gt } from 'drizzle-orm'
 import { users, passwordResetTokens } from '@kantorcore/db'

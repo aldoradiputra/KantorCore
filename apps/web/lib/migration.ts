@@ -1,4 +1,3 @@
-import 'server-only'
 import { desc, eq } from 'drizzle-orm'
 import { importJobs, type ImportJob, type ImportEntity } from '@kantorcore/db'
 import { withTenant } from './db'

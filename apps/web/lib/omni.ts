@@ -1,4 +1,3 @@
-import 'server-only'
 import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm'
 import {
   omniChannels, omniConversations, omniMessages, omniWidgetSessions,

@@ -1,4 +1,3 @@
-import 'server-only'
 import { and, eq, ilike, or } from 'drizzle-orm'
 import { channels, projects } from '@kantorcore/db'
 import { withTenant } from './db'

@@ -1,4 +1,3 @@
-import 'server-only'
 import { and, asc, desc, eq, ilike, or } from 'drizzle-orm'
 import {
   departments,

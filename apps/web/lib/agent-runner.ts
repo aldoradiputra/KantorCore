@@ -1,4 +1,3 @@
-import 'server-only'
 import { eq, and } from 'drizzle-orm'
 import { agents, agentRuns, mandates, tools } from '@kantorcore/db'
 import { getDb, withTenant } from './db'

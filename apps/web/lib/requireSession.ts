@@ -1,4 +1,3 @@
-import 'server-only'
 import { NextResponse } from 'next/server'
 import { getCurrentSession } from './auth'
 import { getCurrentTenant } from './tenants'

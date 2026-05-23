@@ -1,4 +1,3 @@
-import 'server-only'
 
 interface TurnstileResponse {
   success: boolean

@@ -1,4 +1,3 @@
-import 'server-only'
 import { createCipheriv, createDecipheriv, randomBytes, createHash } from 'node:crypto'
 
 const ALGO = 'aes-256-gcm'

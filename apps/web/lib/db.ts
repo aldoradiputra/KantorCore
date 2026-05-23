@@ -1,4 +1,3 @@
-import 'server-only'
 import { sql, eq } from 'drizzle-orm'
 import { createDb, type Database, tenants } from '@kantorcore/db'
 

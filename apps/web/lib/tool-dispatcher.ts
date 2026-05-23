@@ -1,4 +1,3 @@
-import 'server-only'
 import { listChannels, getChannelBySlug, sendMessage } from './chat'
 import {
   listProjects,
