@@ -1,0 +1,1840 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KantorCore — Wireframes</title>
+<style>
+  :root {
+    --navy: #1A2B5A;
+    --indigo: #3B4FC4;
+    --indigo-light: #EEF0FC;
+    --teal: #0F7B6C;
+    --amber: #B35A00;
+    --fg-1: #111827;
+    --fg-2: #4B5563;
+    --fg-3: #9CA3AF;
+    --border: #E5E7EB;
+    --surface: #FFFFFF;
+    --bg: #F9FAFB;
+    --red: #DC2626;
+    --green: #059669;
+    --yellow: #D97706;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #ECEFF4;
+    color: var(--fg-1);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  /* ── Page chrome ─────────────────────────────────────────── */
+  .page-header {
+    background: var(--navy);
+    color: #fff;
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .page-header .logo {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+  .page-header .logo span { color: #7B8EE8; }
+  .page-header .subtitle {
+    font-size: 12px;
+    color: #8897C4;
+    margin-top: 2px;
+  }
+
+  .tabs {
+    background: var(--navy);
+    padding: 0 32px;
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .tab {
+    padding: 10px 18px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #8897C4;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    user-select: none;
+  }
+  .tab:hover { color: #C5CFEE; }
+  .tab.active { color: #fff; border-bottom-color: #7B8EE8; }
+
+  .screen {
+    display: none;
+    width: 100%;
+  }
+  .screen.active { display: block; }
+
+  /* ── Shared component styles ─────────────────────────────── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.6;
+  }
+  .badge-open    { background: #DBEAFE; color: #1D4ED8; }
+  .badge-pending { background: #FEF3C7; color: #92400E; }
+  .badge-done    { background: #D1FAE5; color: #065F46; }
+  .badge-new     { background: var(--indigo-light); color: var(--indigo); }
+  .badge-urgent  { background: #FEE2E2; color: #991B1B; }
+  .badge-draft   { background: #F3F4F6; color: #6B7280; }
+
+  .pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    line-height: 1.5;
+  }
+  .pill-btn-primary {
+    background: var(--indigo);
+    color: #fff;
+  }
+  .pill-btn-outline {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--fg-2);
+  }
+  .pill-btn-ghost {
+    background: transparent;
+    color: var(--fg-2);
+  }
+
+  .avatar {
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 11px;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  /* ── SCREEN A: App Shell ─────────────────────────────────── */
+  .app-shell {
+    display: flex;
+    height: calc(100vh - 90px);
+    min-height: 640px;
+    background: var(--bg);
+  }
+
+  /* Icon rail */
+  .icon-rail {
+    width: 56px;
+    background: var(--navy);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .icon-rail .rail-logo {
+    width: 32px;
+    height: 32px;
+    background: var(--indigo);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+  .rail-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #8897C4;
+    font-size: 10px;
+    font-weight: 600;
+    flex-direction: column;
+    gap: 2px;
+    transition: background 0.12s, color 0.12s;
+    position: relative;
+  }
+  .rail-icon:hover { background: rgba(255,255,255,0.08); color: #C5CFEE; }
+  .rail-icon.active { background: rgba(123,142,232,0.18); color: #fff; }
+  .rail-icon svg { width: 18px; height: 18px; }
+  .rail-divider { width: 24px; height: 1px; background: rgba(255,255,255,0.08); margin: 4px 0; }
+
+  /* Inner nav */
+  .inner-nav {
+    width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .inner-nav-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .inner-nav-header .module-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--fg-1);
+  }
+  .inner-nav-header .module-sub {
+    font-size: 11px;
+    color: var(--fg-3);
+    margin-top: 1px;
+  }
+  .nav-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--fg-3);
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    padding: 12px 16px 4px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 16px;
+    font-size: 12.5px;
+    color: var(--fg-2);
+    cursor: pointer;
+    border-radius: 0;
+  }
+  .nav-item:hover { background: var(--bg); color: var(--fg-1); }
+  .nav-item.active {
+    background: var(--indigo-light);
+    color: var(--indigo);
+    font-weight: 600;
+  }
+  .nav-item .nav-count {
+    margin-left: auto;
+    background: var(--indigo-light);
+    color: var(--indigo);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 99px;
+  }
+  .nav-item.active .nav-count {
+    background: var(--indigo);
+    color: #fff;
+  }
+  .nav-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* Main content */
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Top bar */
+  .topbar {
+    height: 48px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .topbar-logo {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--navy);
+    letter-spacing: -0.3px;
+    margin-right: 4px;
+  }
+  .topbar-logo span { color: var(--indigo); }
+  .topbar-search {
+    flex: 1;
+    max-width: 360px;
+    margin: 0 auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 8px;
+    color: var(--fg-3);
+    font-size: 12.5px;
+  }
+  .topbar-search svg { opacity: 0.5; flex-shrink: 0; }
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
+  .topbar-icon-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: var(--fg-3);
+    cursor: pointer;
+  }
+  .topbar-icon-btn:hover { background: var(--bg); color: var(--fg-2); }
+
+  /* Record area */
+  .record-area {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .record-topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px 0;
+    flex-shrink: 0;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--fg-3);
+    margin-bottom: 8px;
+  }
+  .breadcrumb a { color: var(--indigo); text-decoration: none; }
+  .breadcrumb .sep { color: var(--fg-3); }
+  .record-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .record-id {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--fg-1);
+  }
+  .record-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
+  .smart-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0 10px;
+  }
+  .smart-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 500;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--fg-2);
+    cursor: pointer;
+  }
+  .smart-btn:hover { border-color: var(--indigo); color: var(--indigo); background: var(--indigo-light); }
+  .smart-btn .count {
+    font-weight: 700;
+    color: var(--indigo);
+  }
+
+  .record-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+  .record-form {
+    flex: 1;
+    padding: 20px 24px;
+    overflow: auto;
+  }
+  .form-tabs {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 18px;
+  }
+  .form-tab {
+    padding: 6px 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--fg-3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .form-tab.active { color: var(--indigo); border-bottom-color: var(--indigo); }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 24px;
+  }
+  .form-field { display: flex; flex-direction: column; gap: 4px; }
+  .form-field.full { grid-column: 1 / -1; }
+  .field-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--fg-3);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .field-value {
+    font-size: 13px;
+    color: var(--fg-1);
+    padding: 6px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    min-height: 32px;
+  }
+  .field-value.textarea {
+    min-height: 64px;
+    resize: none;
+    line-height: 1.5;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--fg-1);
+  }
+  .field-placeholder { color: var(--fg-3); font-style: italic; }
+
+  /* Chatter */
+  .chatter {
+    width: 300px;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .chatter-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--fg-1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chatter-compose {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .compose-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: var(--fg-3);
+    min-height: 48px;
+  }
+  .chatter-messages {
+    flex: 1;
+    overflow: auto;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .msg-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .msg-bubble {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--fg-2);
+    flex: 1;
+  }
+  .msg-sender {
+    font-weight: 600;
+    color: var(--fg-1);
+    font-size: 11.5px;
+  }
+  .msg-time { font-size: 10.5px; color: var(--fg-3); margin-top: 2px; }
+  .chatter-log {
+    padding: 8px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .log-item {
+    font-size: 11.5px;
+    color: var(--fg-3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .log-item::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  /* ── SCREEN B: List View ─────────────────────────────────── */
+  .list-screen {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 90px);
+    min-height: 640px;
+    background: var(--surface);
+  }
+  .list-toolbar {
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .list-search {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0 12px;
+    height: 34px;
+    min-width: 220px;
+    font-size: 12.5px;
+    color: var(--fg-3);
+  }
+  .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-size: 11.5px;
+    font-weight: 500;
+    background: var(--indigo-light);
+    color: var(--indigo);
+    border: 1px solid #C7CFEE;
+  }
+  .filter-chip .remove {
+    font-size: 13px;
+    line-height: 1;
+    opacity: 0.5;
+    cursor: pointer;
+    margin-left: 2px;
+  }
+  .group-by-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 12px;
+    color: var(--fg-2);
+    cursor: pointer;
+    margin-left: auto;
+  }
+  .table-wrap { flex: 1; overflow: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  thead tr {
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  thead th {
+    padding: 9px 14px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--fg-3);
+    font-size: 11.5px;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { color: var(--fg-2); }
+  thead th .sort-icon { opacity: 0.4; font-size: 10px; }
+  thead th.sorted .sort-icon { opacity: 1; color: var(--indigo); }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: var(--indigo-light); }
+  tbody td {
+    padding: 9px 14px;
+    color: var(--fg-1);
+    vertical-align: middle;
+  }
+  .td-check { width: 40px; }
+  .td-check input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--indigo); cursor: pointer; }
+  .td-subject { font-weight: 500; color: var(--fg-1); }
+  .td-subject .sub { font-size: 11.5px; color: var(--fg-3); font-weight: 400; margin-top: 1px; }
+  .priority-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 24px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .pagination-bar .page-info { font-size: 12px; color: var(--fg-3); }
+  .page-btns { display: flex; gap: 4px; }
+  .page-btn {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--fg-2);
+  }
+  .page-btn.active { background: var(--indigo); border-color: var(--indigo); color: #fff; font-weight: 700; }
+
+  /* ── SCREEN C: Kanban ────────────────────────────────────── */
+  .kanban-screen {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 90px);
+    min-height: 640px;
+    background: var(--bg);
+  }
+  .kanban-toolbar {
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .kanban-board {
+    flex: 1;
+    display: flex;
+    gap: 14px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    align-items: flex-start;
+  }
+  .kanban-col {
+    width: 260px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .kanban-col-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 4px;
+  }
+  .col-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--fg-1);
+  }
+  .col-count {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 99px;
+    background: var(--border);
+    color: var(--fg-2);
+  }
+  .col-count.new { background: var(--indigo-light); color: var(--indigo); }
+  .col-count.open { background: #DBEAFE; color: #1D4ED8; }
+  .col-count.waiting { background: #FEF3C7; color: #92400E; }
+  .col-count.done { background: #D1FAE5; color: #065F46; }
+  .kanban-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 13px;
+    cursor: pointer;
+    transition: box-shadow 0.12s;
+  }
+  .kanban-card:hover { box-shadow: 0 2px 8px rgba(59,79,196,0.12); border-color: #C7CFEE; }
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 7px;
+  }
+  .card-subject {
+    flex: 1;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--fg-1);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .card-tag {
+    font-size: 10.5px;
+    color: var(--fg-3);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 1px 7px;
+    border-radius: 99px;
+  }
+  .sla-badge {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 99px;
+    margin-left: auto;
+  }
+  .sla-ok   { background: #D1FAE5; color: #065F46; }
+  .sla-warn { background: #FEF3C7; color: #92400E; }
+  .sla-over { background: #FEE2E2; color: #991B1B; }
+  .ghost-card {
+    border: 1.5px dashed var(--border);
+    border-radius: 10px;
+    padding: 11px 13px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--fg-3);
+    cursor: pointer;
+    transition: border-color 0.12s, color 0.12s;
+  }
+  .ghost-card:hover { border-color: var(--indigo); color: var(--indigo); }
+
+  /* ── SCREEN D: AI Panel ──────────────────────────────────── */
+  .ai-screen {
+    display: flex;
+    height: calc(100vh - 90px);
+    min-height: 640px;
+    background: var(--bg);
+  }
+  .ai-host {
+    flex: 1;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .ai-host-bg {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 28px,
+      rgba(229,231,235,0.4) 28px,
+      rgba(229,231,235,0.4) 29px
+    );
+    opacity: 0.5;
+  }
+  .ai-host-label {
+    position: relative;
+    text-align: center;
+    color: var(--fg-3);
+    font-size: 13px;
+  }
+  .ai-host-label strong { display: block; font-size: 15px; color: var(--fg-2); margin-bottom: 4px; }
+
+  .ai-panel {
+    width: 420px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+  .ai-panel-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+  }
+  .ai-panel-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--fg-1);
+  }
+  .ai-panel-sub {
+    font-size: 11px;
+    color: var(--fg-3);
+    margin-top: 1px;
+  }
+  .agent-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: var(--indigo-light);
+    color: var(--indigo);
+    font-size: 10.5px;
+    font-weight: 700;
+    margin-left: auto;
+  }
+  .agent-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--indigo);
+  }
+  .ai-messages {
+    flex: 1;
+    overflow: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .ai-msg {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .ai-msg.user { flex-direction: row-reverse; }
+  .ai-msg-bubble {
+    max-width: 300px;
+    padding: 9px 13px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .ai-msg.agent .ai-msg-bubble {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--fg-1);
+    border-radius: 4px 12px 12px 12px;
+  }
+  .ai-msg.user .ai-msg-bubble {
+    background: var(--indigo);
+    color: #fff;
+    border-radius: 12px 4px 12px 12px;
+  }
+  .agent-icon {
+    width: 30px; height: 30px;
+    background: var(--navy);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 13px;
+  }
+  .field-preview-card {
+    background: var(--surface);
+    border: 1.5px solid var(--indigo);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-top: 8px;
+    font-size: 12px;
+  }
+  .field-preview-card .fp-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+  .field-preview-card .fp-name {
+    font-weight: 700;
+    color: var(--fg-1);
+    font-size: 13px;
+  }
+  .field-type-tag {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 99px;
+    background: var(--indigo-light);
+    color: var(--indigo);
+  }
+  .fp-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 7px;
+  }
+  .fp-option {
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    color: var(--fg-2);
+    background: var(--bg);
+  }
+  .confirm-btns {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .btn-confirm {
+    flex: 1;
+    padding: 7px;
+    border-radius: 7px;
+    border: none;
+    background: var(--indigo);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-cancel {
+    padding: 7px 14px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--fg-2);
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .ai-input-area {
+    border-top: 1px solid var(--border);
+    padding: 12px 14px;
+    background: var(--surface);
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .ai-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--fg-1);
+    resize: none;
+    min-height: 38px;
+    max-height: 100px;
+    line-height: 1.5;
+  }
+  .ai-input:focus { outline: 2px solid var(--indigo); border-color: transparent; }
+  .ai-send-btn {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    border: none;
+    background: var(--indigo);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* Util */
+  .sep-line { width: 1px; height: 18px; background: var(--border); }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <div class="logo">Kantor<span>Core</span></div>
+    <div class="subtitle">UI Wireframes — v0.1</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('a')">A — App Shell (Record)</div>
+  <div class="tab" onclick="showTab('b')">B — List View</div>
+  <div class="tab" onclick="showTab('c')">C — Kanban View</div>
+  <div class="tab" onclick="showTab('d')">D — AI Config Panel</div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- SCREEN A: App Shell                                         -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="screen active" id="screen-a">
+  <div class="app-shell">
+
+    <!-- Icon rail -->
+    <div class="icon-rail">
+      <div class="rail-logo">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <rect x="1" y="1" width="6" height="6" rx="1.5" fill="white"/>
+          <rect x="11" y="1" width="6" height="6" rx="1.5" fill="white" opacity="0.6"/>
+          <rect x="1" y="11" width="6" height="6" rx="1.5" fill="white" opacity="0.6"/>
+          <rect x="11" y="11" width="6" height="6" rx="1.5" fill="#7B8EE8"/>
+        </svg>
+      </div>
+
+      <!-- Home -->
+      <div class="rail-icon" title="Beranda">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 2L2 7v9h4v-4h6v4h4V7L9 2Z"/>
+        </svg>
+      </div>
+
+      <!-- Help Desk (active) -->
+      <div class="rail-icon active" title="Help Desk">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <path d="M3 10.5C3 6.9 5.7 4 9 4s6 2.9 6 6.5"/>
+          <rect x="1.5" y="10" width="3" height="4.5" rx="1.5" fill="currentColor" stroke="none"/>
+          <rect x="13.5" y="10" width="3" height="4.5" rx="1.5" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+
+      <!-- HR -->
+      <div class="rail-icon" title="HR">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="9" cy="5" r="2.5"/>
+          <path d="M3 16c0-3 2.5-5 6-5s6 2 6 5"/>
+        </svg>
+      </div>
+
+      <!-- Finance -->
+      <div class="rail-icon" title="Keuangan">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <rect x="2" y="4" width="14" height="10" rx="2"/>
+          <path d="M6 9h2.5M9.5 9H12M9 7v4"/>
+        </svg>
+      </div>
+
+      <div class="rail-divider"></div>
+
+      <!-- Projects -->
+      <div class="rail-icon" title="Proyek">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <rect x="2" y="2" width="4" height="10" rx="1"/>
+          <rect x="7" y="5" width="4" height="7" rx="1"/>
+          <rect x="12" y="3" width="4" height="9" rx="1"/>
+          <line x1="2" y1="15" x2="16" y2="15"/>
+        </svg>
+      </div>
+
+      <!-- Chat -->
+      <div class="rail-icon" title="Chat">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 3h14a1 1 0 011 1v8a1 1 0 01-1 1H6l-4 3v-3H2a1 1 0 01-1-1V4a1 1 0 011-1Z"/>
+        </svg>
+      </div>
+
+      <!-- Sales -->
+      <div class="rail-icon" title="Penjualan">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <polyline points="2,14 6,9 10,11 16,4"/>
+          <polyline points="12,4 16,4 16,8"/>
+        </svg>
+      </div>
+
+      <div class="rail-divider"></div>
+
+      <!-- Settings -->
+      <div class="rail-icon" style="margin-top:auto;" title="Pengaturan">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="9" cy="9" r="2.5"/>
+          <path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.2 3.2l1.4 1.4M13.4 13.4l1.4 1.4M3.2 14.8l1.4-1.4M13.4 4.6l1.4-1.4"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Inner sidebar -->
+    <div class="inner-nav">
+      <div class="inner-nav-header">
+        <div class="module-name">Help Desk</div>
+        <div class="module-sub">IS-HD · Dukungan Pelanggan</div>
+      </div>
+      <div class="nav-section-label">Tiket</div>
+      <div class="nav-item">
+        <span class="nav-dot" style="background:#3B4FC4"></span>
+        Semua Tiket
+        <span class="nav-count">142</span>
+      </div>
+      <div class="nav-item active">
+        <span class="nav-dot" style="background:#DC2626"></span>
+        Perlu Tindakan
+        <span class="nav-count">12</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-dot" style="background:#D97706"></span>
+        Menunggu Pelanggan
+        <span class="nav-count">28</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-dot" style="background:#059669"></span>
+        Selesai Hari Ini
+        <span class="nav-count">9</span>
+      </div>
+      <div class="nav-section-label">Tim Saya</div>
+      <div class="nav-item">
+        <div class="avatar" style="width:18px;height:18px;background:#3B4FC4;font-size:9px;">A</div>
+        Ditugaskan ke Saya
+        <span class="nav-count">7</span>
+      </div>
+      <div class="nav-item">
+        <div class="avatar" style="width:18px;height:18px;background:#6B7280;font-size:9px;">?</div>
+        Belum Ditugaskan
+        <span class="nav-count">5</span>
+      </div>
+      <div class="nav-section-label">SLA</div>
+      <div class="nav-item">
+        <span class="nav-dot" style="background:#DC2626"></span>
+        Terlampaui
+        <span class="nav-count">3</span>
+      </div>
+      <div class="nav-item">
+        <span class="nav-dot" style="background:#D97706"></span>
+        Mendekati Batas
+        <span class="nav-count">8</span>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="main-content">
+      <!-- Top bar -->
+      <div class="topbar">
+        <div class="topbar-logo">Kantor<span>Core</span></div>
+        <div class="topbar-search">
+          <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="5"/><line x1="12" y1="12" x2="16" y2="16"/></svg>
+          Cari tiket, pelanggan, nomor... <span style="margin-left:auto;font-size:11px;opacity:0.6;">⌘K</span>
+        </div>
+        <div class="topbar-actions">
+          <div class="topbar-icon-btn" title="Notifikasi">
+            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M9 2a5 5 0 015 5c0 4 1.5 5 1.5 5H2.5S4 11 4 7a5 5 0 015-5Z"/><path d="M7 15a2 2 0 004 0"/></svg>
+          </div>
+          <div class="sep-line"></div>
+          <div class="avatar" style="width:30px;height:30px;background:var(--navy);font-size:12px;cursor:pointer;">A</div>
+        </div>
+      </div>
+
+      <!-- Record area -->
+      <div class="record-area">
+        <div class="record-topbar">
+          <div class="breadcrumb">
+            <a href="#">Help Desk</a>
+            <span class="sep">›</span>
+            <a href="#">Semua Tiket</a>
+            <span class="sep">›</span>
+            <span style="color:var(--fg-2);">#HD-0042</span>
+          </div>
+          <div class="record-title-row">
+            <div class="record-id">#HD-0042</div>
+            <div class="badge badge-open">Terbuka</div>
+            <div class="badge" style="background:#FEE2E2;color:#991B1B;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;">Urgent</div>
+            <div class="record-actions">
+              <button class="pill-btn pill-btn-primary">✓&nbsp; Selesaikan</button>
+              <button class="pill-btn pill-btn-outline">Delegasikan</button>
+              <button class="pill-btn pill-btn-outline">Eskalasi</button>
+              <button class="pill-btn pill-btn-ghost" style="padding:4px 8px;">···</button>
+            </div>
+          </div>
+          <div class="smart-buttons">
+            <div class="smart-btn"><span class="count">5</span> Pesan</div>
+            <div class="smart-btn"><span class="count">2</span> Lampiran</div>
+            <div class="smart-btn"><span class="count">1</span> Aktivitas Jadwal</div>
+            <div class="smart-btn"><span class="count">0</span> Faktur</div>
+          </div>
+        </div>
+
+        <div class="record-body">
+          <div class="record-form">
+            <!-- Status pipeline -->
+            <div style="display:flex;gap:0;margin-bottom:18px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+              <div style="flex:1;padding:7px 14px;text-align:center;font-size:11.5px;font-weight:600;background:var(--indigo);color:#fff;">Baru</div>
+              <div style="flex:1;padding:7px 14px;text-align:center;font-size:11.5px;font-weight:600;background:var(--indigo);color:#fff;border-left:1px solid rgba(255,255,255,0.2);">Terbuka</div>
+              <div style="flex:1;padding:7px 14px;text-align:center;font-size:11.5px;color:var(--fg-3);border-left:1px solid var(--border);">Menunggu</div>
+              <div style="flex:1;padding:7px 14px;text-align:center;font-size:11.5px;color:var(--fg-3);border-left:1px solid var(--border);">Selesai</div>
+            </div>
+
+            <div class="form-tabs">
+              <div class="form-tab active">Detail Tiket</div>
+              <div class="form-tab">Komunikasi</div>
+              <div class="form-tab">SLA &amp; Waktu</div>
+              <div class="form-tab">Catatan Internal</div>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-field full">
+                <div class="field-label">Subjek</div>
+                <div class="field-value" style="font-weight:600;color:var(--fg-1);">Tidak bisa login ke sistem sejak pembaruan terakhir</div>
+              </div>
+              <div class="form-field">
+                <div class="field-label">Pelanggan</div>
+                <div class="field-value" style="display:flex;align-items:center;gap:8px;">
+                  <div class="avatar" style="width:22px;height:22px;background:#0F7B6C;font-size:10px;">PT</div>
+                  PT Maju Bersama Tbk
+                </div>
+              </div>
+              <div class="form-field">
+                <div class="field-label">Penanggung Jawab</div>
+                <div class="field-value" style="display:flex;align-items:center;gap:8px;">
+                  <div class="avatar" style="width:22px;height:22px;background:#3B4FC4;font-size:10px;">AR</div>
+                  Aldo Raditama
+                </div>
+              </div>
+              <div class="form-field">
+                <div class="field-label">Prioritas</div>
+                <div class="field-value" style="display:flex;align-items:center;gap:6px;">
+                  <span style="color:#DC2626;font-size:15px;">●</span> Tinggi
+                </div>
+              </div>
+              <div class="form-field">
+                <div class="field-label">Kategori</div>
+                <div class="field-value">Autentikasi &amp; Akses</div>
+              </div>
+              <div class="form-field">
+                <div class="field-label">SLA Deadline</div>
+                <div class="field-value" style="color:#DC2626;font-weight:600;">Hari ini, 17:00 WIB <span style="font-size:11px;font-weight:400;color:#DC2626;">· 2j 14m tersisa</span></div>
+              </div>
+              <div class="form-field">
+                <div class="field-label">Saluran</div>
+                <div class="field-value">Email</div>
+              </div>
+              <div class="form-field full">
+                <div class="field-label">Deskripsi</div>
+                <div class="field-value textarea">Sejak pembaruan sistem pada Rabu 21 Mei, pengguna di divisi Keuangan tidak dapat masuk menggunakan SSO. Pesan error: "Token tidak valid". Sudah dicoba dari 3 browser berbeda dan jaringan VPN maupun non-VPN.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chatter -->
+          <div class="chatter">
+            <div class="chatter-header">
+              <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h14a1 1 0 011 1v8a1 1 0 01-1 1H6l-4 3v-3H2a1 1 0 01-1-1V4a1 1 0 011-1Z"/></svg>
+              Percakapan
+              <span style="margin-left:auto;font-size:11px;font-weight:400;color:var(--fg-3);">5 pesan</span>
+            </div>
+            <div class="chatter-compose">
+              <div class="compose-box">Kirim pesan atau catatan internal…</div>
+              <div style="display:flex;gap:6px;margin-top:8px;">
+                <button class="pill-btn pill-btn-primary" style="font-size:11px;padding:3px 10px;">Kirim</button>
+                <button class="pill-btn pill-btn-outline" style="font-size:11px;padding:3px 10px;">Catatan Internal</button>
+              </div>
+            </div>
+            <div class="chatter-messages">
+              <div class="msg-row">
+                <div class="avatar" style="width:26px;height:26px;background:#0F7B6C;font-size:11px;">P</div>
+                <div class="msg-bubble">
+                  <div class="msg-sender">Pelanggan (Pak Rudi)</div>
+                  Halo, kami tidak bisa masuk sejak kemarin sore. Sudah coba reset password tapi tetap tidak bisa.
+                  <div class="msg-time">Kemarin, 14:32</div>
+                </div>
+              </div>
+              <div class="msg-row">
+                <div class="avatar" style="width:26px;height:26px;background:#3B4FC4;font-size:11px;">A</div>
+                <div class="msg-bubble">
+                  <div class="msg-sender">Aldo Raditama</div>
+                  Terima kasih Pak Rudi. Kami sedang investigasi. Bisa konfirmasi email yang digunakan?
+                  <div class="msg-time">Kemarin, 15:01</div>
+                </div>
+              </div>
+              <div class="msg-row">
+                <div class="avatar" style="width:26px;height:26px;background:#0F7B6C;font-size:11px;">P</div>
+                <div class="msg-bubble">
+                  <div class="msg-sender">Pelanggan (Pak Rudi)</div>
+                  rudi.k@majubersama.co.id — ada sekitar 12 orang yang sama-sama tidak bisa masuk.
+                  <div class="msg-time">Kemarin, 15:18</div>
+                </div>
+              </div>
+            </div>
+            <div class="chatter-log">
+              <div class="log-item">Tiket dibuat oleh sistem · Kemarin 14:30</div>
+              <div class="log-item">Ditugaskan ke Aldo Raditama · Kemarin 14:35</div>
+              <div class="log-item">Status diubah: Baru → Terbuka · Kemarin 15:00</div>
+              <div class="log-item">SLA diaktifkan · Kemarin 14:30</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- SCREEN B: List View                                         -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-b">
+  <div class="list-screen">
+    <div class="list-toolbar">
+      <div class="list-search">
+        <svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="5"/><line x1="12" y1="12" x2="16" y2="16"/></svg>
+        Cari tiket…
+      </div>
+      <div class="filter-chip">
+        Status: Terbuka <span class="remove">×</span>
+      </div>
+      <div class="filter-chip">
+        Prioritas: Tinggi <span class="remove">×</span>
+      </div>
+      <div class="filter-chip" style="background:var(--bg);color:var(--fg-3);border-color:var(--border);">
+        + Tambah Filter
+      </div>
+      <div class="group-by-btn">
+        <svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="5" x2="15" y2="5"/><line x1="3" y1="9" x2="15" y2="9"/><line x1="3" y1="13" x2="15" y2="13"/></svg>
+        Kelompokkan ▾
+      </div>
+      <button class="pill-btn pill-btn-primary" style="margin-left:8px;">+ Tiket Baru</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="td-check"><input type="checkbox"></th>
+            <th>Subjek <span class="sort-icon">↕</span></th>
+            <th>Pelanggan <span class="sort-icon">↕</span></th>
+            <th class="sorted">Prioritas <span class="sort-icon" style="color:var(--indigo);opacity:1;">↓</span></th>
+            <th>Status <span class="sort-icon">↕</span></th>
+            <th>Penanggung Jawab <span class="sort-icon">↕</span></th>
+            <th>SLA <span class="sort-icon">↕</span></th>
+            <th>Dibuat <span class="sort-icon">↕</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-check"><input type="checkbox" checked></td>
+            <td class="td-subject">
+              #HD-0042 · Tidak bisa login ke sistem sejak pembaruan
+              <div class="sub">Email · Autentikasi</div>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:7px;">
+                <div class="avatar" style="width:22px;height:22px;background:#0F7B6C;font-size:10px;">PT</div>
+                PT Maju Bersama
+              </div>
+            </td>
+            <td><span style="display:flex;align-items:center;gap:5px;"><span class="priority-dot" style="background:#DC2626;"></span>Tinggi</span></td>
+            <td><span class="badge badge-open">Terbuka</span></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:7px;">
+                <div class="avatar" style="width:22px;height:22px;background:#3B4FC4;font-size:10px;">AR</div>
+                Aldo R.
+              </div>
+            </td>
+            <td><span class="sla-badge sla-over">Terlampaui 2j</span></td>
+            <td style="color:var(--fg-3);font-size:12px;">21 Mei</td>
+          </tr>
+          <tr>
+            <td class="td-check"><input type="checkbox"></td>
+            <td class="td-subject">
+              #HD-0039 · Laporan pajak tidak bisa diekspor ke PDF
+              <div class="sub">WhatsApp · Keuangan</div>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:7px;">
+                <div class="avatar" style="width:22px;height:22px;background:#B35A00;font-size:10px;">CV</div>
+                CV Sinar Harapan
+              </div>
+            </td>
+            <td><span style="display:flex;align-items:center;gap:5px;"><span class="priority-dot" style="background:#DC2626;"></span>Tinggi</span></td>
+            <td><span class="badge badge-open">Terbuka</span></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:7px;">
+                <div class="avatar" style="width:22px;height:22px;background:#6B7280;font-size:10px;">–</div>
+                Belum ditugaskan
+              </div>
+            </td>
+            <td><span class="sla-badge sla-warn">3j 45m</span></td>
+            <td style="color:var(--fg-3);font-size:12px;">21 Mei</td>
+          </tr>
+          <tr>
+            <td class="td-check"><input type="checkbox"></td>
+            <td class="td-subject">
+              #HD-0037 · Perhitungan BPJS salah untuk karyawan kontrak
+              <div class="sub">Email · Payroll</div>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:7px;">
+                <div class="avatar" style="width:22px;height:22px;background:#3B4FC4;font-size:10px;">PT</div>
+                PT Bangun Nusa Indah
+              </div>
+            </td>
+            <td><span style="display:flex;align-items:center;gap:5px;"><span class="priority-dot" style="background:#DC2626;"></span>Tinggi</span></td>
+            <td><span class="badge badge-pending">Menunggu</span></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:7px;">
+                <div class="avatar" style="width:22px;height:22px;background:#0F7B6C;font-size:10px;">DS</div>
+                Dian S.
+              </div>
+            </td>
+            <td><span class="sla-badge sla-ok">8j 20m</span></td>
+            <td style="color:var(--fg-3);font-size:12px;">20 Mei</td>
+          </tr>
+          <tr>
+            <td class="td-check"><input type="checkbox"></td>
+            <td class="td-subject">
+              #HD-0035 · Integrasi e-Faktur gagal saat validasi NPWP
+              <div class="sub">Portal · Perpajakan</div>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:7px;">
+                <div class="avatar" style="width:22px;height:22px;background:#0F7B6C;font-size:10px;">TB</div>
+                Toko Berkah Mandiri
+              </div>
+            </td>
+            <td><span style="display:flex;align-items:center;gap:5px;"><span class="priority-dot" style="background:#D97706;"></span>Sedang</span></td>
+            <td><span class="badge badge-open">Terbuka</span></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:7px;">
+                <div class="avatar" style="width:22px;height:22px;background:#3B4FC4;font-size:10px;">AR</div>
+                Aldo R.
+              </div>
+            </td>
+            <td><span class="sla-badge sla-ok">1h 12j</span></td>
+            <td style="color:var(--fg-3);font-size:12px;">20 Mei</td>
+          </tr>
+          <tr>
+            <td class="td-check"><input type="checkbox"></td>
+            <td class="td-subject">
+              #HD-0033 · Laporan absensi tidak memuat data lembur
+              <div class="sub">Email · HR</div>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:7px;">
+                <div class="avatar" style="width:22px;height:22px;background:#B35A00;font-size:10px;">YK</div>
+                Yayasan Karya Mulia
+              </div>
+            </td>
+            <td><span style="display:flex;align-items:center;gap:5px;"><span class="priority-dot" style="background:#D97706;"></span>Sedang</span></td>
+            <td><span class="badge badge-pending">Menunggu</span></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:7px;">
+                <div class="avatar" style="width:22px;height:22px;background:#0F7B6C;font-size:10px;">DS</div>
+                Dian S.
+              </div>
+            </td>
+            <td><span class="sla-badge sla-ok">2h 4j</span></td>
+            <td style="color:var(--fg-3);font-size:12px;">19 Mei</td>
+          </tr>
+          <tr>
+            <td class="td-check"><input type="checkbox"></td>
+            <td class="td-subject">
+              #HD-0031 · Notifikasi WA tidak terkirim ke nomor Telkomsel
+              <div class="sub">Chat · Notifikasi</div>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:7px;">
+                <div class="avatar" style="width:22px;height:22px;background:#3B4FC4;font-size:10px;">UD</div>
+                UD Makmur Jaya
+              </div>
+            </td>
+            <td><span style="display:flex;align-items:center;gap:5px;"><span class="priority-dot" style="background:#6B7280;"></span>Rendah</span></td>
+            <td><span class="badge badge-open">Terbuka</span></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:7px;">
+                <div class="avatar" style="width:22px;height:22px;background:#6B7280;font-size:10px;">–</div>
+                Belum ditugaskan
+              </div>
+            </td>
+            <td><span class="sla-badge sla-ok">3h 2j</span></td>
+            <td style="color:var(--fg-3);font-size:12px;">18 Mei</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination-bar">
+      <div class="page-info">Menampilkan 1–6 dari 142 tiket</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="font-size:12px;color:var(--fg-3);">Baris per halaman:</div>
+        <select style="border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:12px;color:var(--fg-2);background:var(--surface);">
+          <option>25</option><option>50</option><option>100</option>
+        </select>
+        <div class="page-btns">
+          <div class="page-btn">‹</div>
+          <div class="page-btn active">1</div>
+          <div class="page-btn">2</div>
+          <div class="page-btn">3</div>
+          <div class="page-btn" style="border:none;background:none;color:var(--fg-3);">…</div>
+          <div class="page-btn">6</div>
+          <div class="page-btn">›</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- SCREEN C: Kanban View                                       -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-c">
+  <div class="kanban-screen">
+    <div class="kanban-toolbar">
+      <div class="list-search" style="min-width:180px;">
+        <svg width="13" height="13" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8" cy="8" r="5"/><line x1="12" y1="12" x2="16" y2="16"/></svg>
+        Cari…
+      </div>
+      <div class="filter-chip">Status: Aktif <span class="remove">×</span></div>
+      <div class="filter-chip" style="background:var(--bg);color:var(--fg-3);border-color:var(--border);">+ Filter</div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+        <div class="group-by-btn">Kelompokkan: Status ▾</div>
+        <button class="pill-btn pill-btn-primary">+ Tiket Baru</button>
+      </div>
+    </div>
+
+    <div class="kanban-board">
+
+      <!-- Baru -->
+      <div class="kanban-col">
+        <div class="kanban-col-header">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--indigo);flex-shrink:0;"></div>
+          <div class="col-title">Baru</div>
+          <div class="col-count new">12</div>
+          <div style="margin-left:auto;color:var(--fg-3);cursor:pointer;font-size:16px;">+</div>
+        </div>
+        <div class="kanban-card">
+          <div class="card-top">
+            <div class="card-subject">Tidak bisa login ke sistem sejak pembaruan terakhir</div>
+            <span style="color:#DC2626;font-size:16px;flex-shrink:0;">●</span>
+          </div>
+          <div style="font-size:11px;color:var(--fg-3);margin-bottom:6px;">PT Maju Bersama · Email</div>
+          <div class="card-meta">
+            <span class="card-tag">Autentikasi</span>
+            <div class="avatar" style="width:22px;height:22px;background:#3B4FC4;font-size:10px;margin-left:auto;">AR</div>
+            <span class="sla-badge sla-over" style="font-size:10px;">SLA</span>
+          </div>
+        </div>
+        <div class="kanban-card">
+          <div class="card-top">
+            <div class="card-subject">Integrasi e-Faktur gagal saat validasi NPWP pelanggan baru</div>
+            <span style="color:#DC2626;font-size:16px;flex-shrink:0;">●</span>
+          </div>
+          <div style="font-size:11px;color:var(--fg-3);margin-bottom:6px;">Toko Berkah Mandiri · Portal</div>
+          <div class="card-meta">
+            <span class="card-tag">Perpajakan</span>
+            <div class="avatar" style="width:22px;height:22px;background:#6B7280;font-size:10px;margin-left:auto;">–</div>
+            <span class="sla-badge sla-ok" style="font-size:10px;">1h 12j</span>
+          </div>
+        </div>
+        <div class="kanban-card">
+          <div class="card-top">
+            <div class="card-subject">Ekspor laporan stok kosong / tanpa data</div>
+            <span style="color:#D97706;font-size:16px;flex-shrink:0;">●</span>
+          </div>
+          <div style="font-size:11px;color:var(--fg-3);margin-bottom:6px;">CV Sinar Harapan · Chat</div>
+          <div class="card-meta">
+            <span class="card-tag">Inventori</span>
+            <div class="avatar" style="width:22px;height:22px;background:#0F7B6C;font-size:10px;margin-left:auto;">DS</div>
+            <span class="sla-badge sla-ok" style="font-size:10px;">6j</span>
+          </div>
+        </div>
+        <div class="ghost-card">+ Tambah Tiket</div>
+      </div>
+
+      <!-- Terbuka -->
+      <div class="kanban-col">
+        <div class="kanban-col-header">
+          <div style="width:10px;height:10px;border-radius:50%;background:#1D4ED8;flex-shrink:0;"></div>
+          <div class="col-title">Terbuka</div>
+          <div class="col-count open">8</div>
+          <div style="margin-left:auto;color:var(--fg-3);cursor:pointer;font-size:16px;">+</div>
+        </div>
+        <div class="kanban-card">
+          <div class="card-top">
+            <div class="card-subject">Laporan pajak tidak bisa diekspor ke PDF</div>
+            <span style="color:#DC2626;font-size:16px;flex-shrink:0;">●</span>
+          </div>
+          <div style="font-size:11px;color:var(--fg-3);margin-bottom:6px;">CV Sinar Harapan · WhatsApp</div>
+          <div class="card-meta">
+            <span class="card-tag">Keuangan</span>
+            <div class="avatar" style="width:22px;height:22px;background:#6B7280;font-size:10px;margin-left:auto;">–</div>
+            <span class="sla-badge sla-warn" style="font-size:10px;">3j 45m</span>
+          </div>
+        </div>
+        <div class="kanban-card">
+          <div class="card-top">
+            <div class="card-subject">Notifikasi WA tidak terkirim ke nomor Telkomsel</div>
+            <span style="color:#6B7280;font-size:16px;flex-shrink:0;">●</span>
+          </div>
+          <div style="font-size:11px;color:var(--fg-3);margin-bottom:6px;">UD Makmur Jaya · Chat</div>
+          <div class="card-meta">
+            <span class="card-tag">Notifikasi</span>
+            <div class="avatar" style="width:22px;height:22px;background:#6B7280;font-size:10px;margin-left:auto;">–</div>
+            <span class="sla-badge sla-ok" style="font-size:10px;">3h 2j</span>
+          </div>
+        </div>
+        <div class="kanban-card">
+          <div class="card-top">
+            <div class="card-subject">Akun pengguna terkunci setelah reset password massal</div>
+            <span style="color:#D97706;font-size:16px;flex-shrink:0;">●</span>
+          </div>
+          <div style="font-size:11px;color:var(--fg-3);margin-bottom:6px;">PT Bangun Nusa Indah · Email</div>
+          <div class="card-meta">
+            <span class="card-tag">Autentikasi</span>
+            <div class="avatar" style="width:22px;height:22px;background:#3B4FC4;font-size:10px;margin-left:auto;">AR</div>
+            <span class="sla-badge sla-ok" style="font-size:10px;">1h 8j</span>
+          </div>
+        </div>
+        <div class="ghost-card">+ Tambah Tiket</div>
+      </div>
+
+      <!-- Menunggu -->
+      <div class="kanban-col">
+        <div class="kanban-col-header">
+          <div style="width:10px;height:10px;border-radius:50%;background:#D97706;flex-shrink:0;"></div>
+          <div class="col-title">Menunggu Pelanggan</div>
+          <div class="col-count waiting">3</div>
+          <div style="margin-left:auto;color:var(--fg-3);cursor:pointer;font-size:16px;">+</div>
+        </div>
+        <div class="kanban-card">
+          <div class="card-top">
+            <div class="card-subject">Perhitungan BPJS salah untuk karyawan kontrak</div>
+            <span style="color:#DC2626;font-size:16px;flex-shrink:0;">●</span>
+          </div>
+          <div style="font-size:11px;color:var(--fg-3);margin-bottom:6px;">PT Bangun Nusa Indah · Email</div>
+          <div class="card-meta">
+            <span class="card-tag">Payroll</span>
+            <div class="avatar" style="width:22px;height:22px;background:#0F7B6C;font-size:10px;margin-left:auto;">DS</div>
+            <span class="sla-badge sla-ok" style="font-size:10px;">8j 20m</span>
+          </div>
+        </div>
+        <div class="kanban-card">
+          <div class="card-top">
+            <div class="card-subject">Laporan absensi tidak memuat data lembur bulan April</div>
+            <span style="color:#D97706;font-size:16px;flex-shrink:0;">●</span>
+          </div>
+          <div style="font-size:11px;color:var(--fg-3);margin-bottom:6px;">Yayasan Karya Mulia · Email</div>
+          <div class="card-meta">
+            <span class="card-tag">HR</span>
+            <div class="avatar" style="width:22px;height:22px;background:#0F7B6C;font-size:10px;margin-left:auto;">DS</div>
+            <span class="sla-badge sla-ok" style="font-size:10px;">2h 4j</span>
+          </div>
+        </div>
+        <div class="ghost-card">+ Tambah Tiket</div>
+      </div>
+
+      <!-- Selesai -->
+      <div class="kanban-col">
+        <div class="kanban-col-header">
+          <div style="width:10px;height:10px;border-radius:50%;background:#059669;flex-shrink:0;"></div>
+          <div class="col-title">Selesai</div>
+          <div class="col-count done">47</div>
+        </div>
+        <div class="kanban-card" style="opacity:0.7;">
+          <div class="card-top">
+            <div class="card-subject">Error saat cetak invoice format A4 landscape</div>
+            <span style="color:#6B7280;font-size:16px;flex-shrink:0;">●</span>
+          </div>
+          <div style="font-size:11px;color:var(--fg-3);margin-bottom:6px;">CV Mitra Usaha · Portal</div>
+          <div class="card-meta">
+            <span class="card-tag">Faktur</span>
+            <div class="avatar" style="width:22px;height:22px;background:#3B4FC4;font-size:10px;margin-left:auto;">AR</div>
+            <span class="badge badge-done" style="font-size:10px;padding:1px 7px;border-radius:99px;margin-left:0;">Selesai</span>
+          </div>
+        </div>
+        <div class="kanban-card" style="opacity:0.7;">
+          <div class="card-top">
+            <div class="card-subject">Sinkronisasi data karyawan dari sistem lama gagal</div>
+            <span style="color:#6B7280;font-size:16px;flex-shrink:0;">●</span>
+          </div>
+          <div style="font-size:11px;color:var(--fg-3);margin-bottom:6px;">PT Sentra Logistik · Email</div>
+          <div class="card-meta">
+            <span class="card-tag">Migrasi</span>
+            <div class="avatar" style="width:22px;height:22px;background:#0F7B6C;font-size:10px;margin-left:auto;">DS</div>
+            <span class="badge badge-done" style="font-size:10px;padding:1px 7px;border-radius:99px;margin-left:0;">Selesai</span>
+          </div>
+        </div>
+        <div class="ghost-card">+ Tambah Tiket</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- SCREEN D: AI Config Panel                                   -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-d">
+  <div class="ai-screen">
+
+    <!-- Host app (dimmed record view as background) -->
+    <div class="ai-host">
+      <div class="ai-host-bg"></div>
+      <div class="ai-host-label">
+        <strong>KantorCore · Help Desk</strong>
+        Konfigurasi modul aktif di panel kanan
+      </div>
+    </div>
+
+    <!-- AI Panel -->
+    <div class="ai-panel">
+      <div class="ai-panel-header">
+        <div style="width:32px;height:32px;background:var(--navy);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="5" width="12" height="9" rx="2.5"/><circle cx="7" cy="9" r="1.2" fill="white" stroke="none"/><circle cx="11" cy="9" r="1.2" fill="white" stroke="none"/><line x1="9" y1="5" x2="9" y2="2"/><circle cx="9" cy="2" r="1.2" fill="#0F7B6C" stroke="none"/></svg>
+        </div>
+        <div>
+          <div class="ai-panel-title">IS-AGENT · Konfigurasi AI</div>
+          <div class="ai-panel-sub">Tambah field, aturan, atau automasi lewat percakapan</div>
+        </div>
+        <div class="agent-badge">Aktif</div>
+      </div>
+
+      <div class="ai-messages">
+
+        <!-- Context message -->
+        <div style="background:var(--indigo-light);border:1px solid #C7CFEE;border-radius:8px;padding:10px 12px;font-size:12px;color:var(--fg-2);">
+          <div style="font-weight:700;color:var(--indigo);margin-bottom:3px;font-size:11.5px;">KONTEKS AKTIF</div>
+          Modul: Help Desk (IS-HD) &nbsp;·&nbsp; Formulir: Tiket &nbsp;·&nbsp; Versi skema: 2.4
+        </div>
+
+        <!-- User message 1 -->
+        <div class="ai-msg user">
+          <div class="avatar" style="width:28px;height:28px;background:var(--indigo);font-size:11px;">A</div>
+          <div class="ai-msg-bubble">
+            tambahkan field 'Kategori Produk' ke tiket dengan pilihan Hardware, Software, Network
+          </div>
+        </div>
+
+        <!-- Agent response -->
+        <div class="ai-msg agent">
+          <div class="agent-icon">🤖</div>
+          <div style="flex:1;">
+            <div class="ai-msg-bubble" style="max-width:100%;">
+              <div style="margin-bottom:8px;">Saya akan menambahkan field berikut ke formulir <strong>Tiket</strong>:</div>
+
+              <div class="field-preview-card">
+                <div class="fp-row">
+                  <div class="fp-name">Kategori Produk</div>
+                  <span class="field-type-tag">Pilihan (Enum)</span>
+                </div>
+                <div style="font-size:11.5px;color:var(--fg-3);margin-bottom:4px;">Wajib diisi &nbsp;·&nbsp; Tampil di list view &nbsp;·&nbsp; Tersedia di filter</div>
+                <div class="fp-options">
+                  <span class="fp-option">💻 Hardware</span>
+                  <span class="fp-option">🖥 Software</span>
+                  <span class="fp-option">🌐 Network</span>
+                </div>
+                <div class="confirm-btns">
+                  <button class="btn-confirm">✓ Terapkan Perubahan</button>
+                  <button class="btn-cancel">Batal</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User message 2 -->
+        <div class="ai-msg user">
+          <div class="avatar" style="width:28px;height:28px;background:var(--indigo);font-size:11px;">A</div>
+          <div class="ai-msg-bubble">
+            tambahkan juga opsi "Lainnya" dan buat field ini tidak wajib
+          </div>
+        </div>
+
+        <!-- Agent response 2 -->
+        <div class="ai-msg agent">
+          <div class="agent-icon">🤖</div>
+          <div style="flex:1;">
+            <div class="ai-msg-bubble" style="max-width:100%;">
+              <div style="margin-bottom:8px;">Diperbarui. Preview sebelum diterapkan:</div>
+              <div class="field-preview-card">
+                <div class="fp-row">
+                  <div class="fp-name">Kategori Produk</div>
+                  <span class="field-type-tag">Pilihan (Enum)</span>
+                </div>
+                <div style="font-size:11.5px;color:var(--fg-3);margin-bottom:4px;">Opsional &nbsp;·&nbsp; Tampil di list view &nbsp;·&nbsp; Tersedia di filter</div>
+                <div class="fp-options">
+                  <span class="fp-option">💻 Hardware</span>
+                  <span class="fp-option">🖥 Software</span>
+                  <span class="fp-option">🌐 Network</span>
+                  <span class="fp-option">➕ Lainnya</span>
+                </div>
+                <div class="confirm-btns">
+                  <button class="btn-confirm">✓ Terapkan Perubahan</button>
+                  <button class="btn-cancel">Batal</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Input -->
+      <div class="ai-input-area">
+        <textarea class="ai-input" placeholder="Ketik instruksi konfigurasi… (mis. tambah field, buat aturan, ubah tampilan)" rows="1"></textarea>
+        <button class="ai-send-btn" aria-label="Kirim">
+          <svg width="15" height="15" viewBox="0 0 18 18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="9" x2="15" y2="9"/>
+            <polyline points="10,4 15,9 10,14"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showTab(id) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', ['a','b','c','d'][i] === id);
+    });
+    document.querySelectorAll('.screen').forEach(s => {
+      s.classList.toggle('active', s.id === 'screen-' + id);
+    });
+  }
+</script>
+</body>
+</html>
