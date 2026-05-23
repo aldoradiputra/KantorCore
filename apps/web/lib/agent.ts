@@ -188,6 +188,8 @@ const DEFAULT_TOOLS: ReadonlyArray<{
   { name: 'crm.create_deal', module: 'crm', description: 'Buat deal baru di pipeline CRM.' },
   { name: 'crm.move_deal_stage', module: 'crm', description: 'Pindahkan deal ke stage berikutnya atau stage tertentu.' },
   { name: 'doc.list_documents', module: 'doc', description: 'Daftar dokumen/kontrak dengan filter tipe atau status.' },
+  { name: 'platform.list_entities',    module: 'platform', description: 'Mengembalikan daftar semua entitas yang terdaftar dalam sistem.' },
+  { name: 'platform.describe_entity',  module: 'platform', description: 'Mengembalikan metadata lengkap satu entitas (field, view, perizinan).' },
 ]
 
 /** Idempotent — re-running on a populated tenant is a no-op. */
