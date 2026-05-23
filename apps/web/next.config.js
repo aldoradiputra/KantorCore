@@ -5,7 +5,7 @@ const nextConfig = {
   // Monorepo: trace files from repo root so pnpm-symlinked workspace
   // packages and their native deps land in the Vercel lambda bundle.
   outputFileTracingRoot: path.join(__dirname, '../../'),
-  transpilePackages: ['@kantorcore/ui', '@kantorcore/db'],
+  transpilePackages: ['@kantorcore/ui', '@kantorcore/db', '@kantorcore/auth'],
   serverExternalPackages: ['@node-rs/argon2', 'postgres'],
   webpack: (config, { isServer }) => {
     if (isServer) {
