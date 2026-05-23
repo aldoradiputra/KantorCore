@@ -40,6 +40,7 @@ import { listDeals, createDeal, moveDealStage } from './crm'
 import { listDocuments } from './documents'
 import { recordAudit } from './audit'
 import type { IssuePriority, IssueStatus, EmploymentType, EmployeeStatus, DealStage } from '@kantorcore/db'
+import { MODEL_REGISTRY, getModel } from './platform/models'
 
 export interface ToolDispatchContext {
   tenantId: string
@@ -540,6 +541,52 @@ const TOOL_IMPLS: Record<string, ToolImpl> = {
     return { ok: true, result: { id: dealId, stage } }
   },
 
+  'platform.list_entities': async () => {
+    const entities = Object.values(MODEL_REGISTRY).map((m) => ({
+      entity: m.entity,
+      module: m.module,
+      label: m.label.id,
+      chatter: m.chatter ?? false,
+      activities: m.activities ?? false,
+    }))
+    return { ok: true, result: { count: entities.length, entities } }
+  },
+
+  'platform.describe_entity': async (_ctx, input) => {
+    const entity = String(input['entity'] ?? '').trim()
+    if (!entity) return { ok: false, error: 'Parameter "entity" wajib diisi.' }
+    const model = getModel(entity)
+    if (!model) return { ok: false, error: `Entitas '${entity}' tidak ditemukan.` }
+    // Project field metadata into a compact LLM-friendly shape
+    const fields = Object.values(model.fields).map((f) => ({
+      name: f.name,
+      label: f.label.id,
+      type: f.type,
+      required: f.required ?? false,
+      readonly: f.readonly ?? false,
+      target: f.target,
+      options: f.options?.map((o) => ({ value: o.value, label: o.label.id })),
+      help: f.help,
+    }))
+    return {
+      ok: true,
+      result: {
+        entity: model.entity,
+        module: model.module,
+        label: model.label.id,
+        pluralLabel: model.pluralLabel.id,
+        displayField: model.displayField,
+        help: model.help,
+        chatter: model.chatter ?? false,
+        activities: model.activities ?? false,
+        fields,
+        listColumns: model.views.list?.columns ?? [],
+        kanbanGroupBy: model.views.kanban?.groupBy,
+        permissions: model.perms,
+      },
+    }
+  },
+
   'doc.list_documents': async ({ tenantId }, input) => {
     const status = input['status'] ? String(input['status']) as 'draft' | 'active' | 'expired' | 'terminated' : undefined
     const type = input['type'] ? String(input['type']) as 'contract' | 'nda' | 'mou' | 'agreement' | 'po' | 'invoice' | 'permit' | 'other' : undefined
@@ -832,5 +879,21 @@ export const TOOL_SCHEMAS: Record<string, object> = {
         description: 'Filter tipe dokumen (opsional)',
       },
     },
+  },
+  'platform.list_entities': {
+    type: 'object',
+    properties: {},
+    description: 'Mengembalikan daftar semua entitas yang terdaftar dalam sistem (modul, label, apakah memiliki chatter/aktivitas).',
+  },
+  'platform.describe_entity': {
+    type: 'object',
+    properties: {
+      entity: {
+        type: 'string',
+        description: 'Nama entitas dengan namespace, contoh: "hd.ticket", "crm.deal", "fin.invoice".',
+      },
+    },
+    required: ['entity'],
+    description: 'Mengembalikan metadata lengkap satu entitas: daftar field (tipe, label, opsi enum), view list/kanban, perizinan, dan deskripsi bisnis.',
   },
 }
