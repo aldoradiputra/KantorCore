@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 48" width="260" height="48" fill="none">
+  <!-- Module grid mark: 3×3 dots suggesting a platform/app grid -->
+  <g id="mark">
+    <!-- Grid of rounded squares suggesting modules/apps -->
+    <rect x="4"  y="4"  width="9" height="9" rx="2" fill="#3B4FC4"/>
+    <rect x="16" y="4"  width="9" height="9" rx="2" fill="#3B4FC4"/>
+    <rect x="28" y="4"  width="9" height="9" rx="2" fill="#3B4FC4" opacity="0.55"/>
+
+    <rect x="4"  y="16" width="9" height="9" rx="2" fill="#3B4FC4"/>
+    <rect x="16" y="16" width="9" height="9" rx="2" fill="#3B4FC4" opacity="0.8"/>
+    <rect x="28" y="16" width="9" height="9" rx="2" fill="#3B4FC4" opacity="0.35"/>
+
+    <rect x="4"  y="28" width="9" height="9" rx="2" fill="#3B4FC4" opacity="0.6"/>
+    <rect x="16" y="28" width="9" height="9" rx="2" fill="#3B4FC4" opacity="0.4"/>
+    <rect x="28" y="28" width="9" height="9" rx="2" fill="#3B4FC4" opacity="0.2"/>
+
+    <!-- Accent dot bottom-right, teal, suggesting integration -->
+    <rect x="28" y="28" width="9" height="9" rx="2" fill="#0F7B6C" opacity="0.9"/>
+  </g>
+
+  <!-- Wordmark: KantorCore -->
+  <!-- Using text with geometric letter-spacing -->
+  <text
+    x="50"
+    y="34"
+    font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
+    font-size="26"
+    font-weight="800"
+    letter-spacing="-0.5"
+    fill="#1A2B5A"
+  >Kantor<tspan fill="#3B4FC4">Core</tspan></text>
+
+  <!-- Invisible bounding hint for viewBox reference -->
+  <!-- Total used area ~260×40; viewBox gives 4px top padding -->
+</svg>
