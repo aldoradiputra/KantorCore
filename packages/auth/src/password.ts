@@ -1,20 +1,17 @@
-import { hash, verify } from '@node-rs/argon2'
+import { Argon2id } from 'oslo/password'
 
-// `algorithm: 2` = Argon2id. Using the literal avoids importing the ambient
-// const enum from @node-rs/argon2, which trips Next.js isolatedModules.
-const OPTIONS = {
+const argon2id = new Argon2id({
   // OWASP minimums for interactive logins on 2024-era hardware.
-  algorithm: 2,
-  memoryCost: 65536, // 64 MiB
-  timeCost: 3,
+  memorySize: 65536, // 64 MiB
+  iterations: 3,
   parallelism: 1,
-  outputLen: 32,
-} as const
+  tagLength: 32,
+})
 
 export async function hashPassword(plain: string): Promise<string> {
-  return hash(plain, OPTIONS)
+  return argon2id.hash(plain)
 }
 
 export async function verifyPassword(plain: string, stored: string): Promise<boolean> {
-  return verify(stored, plain)
+  return argon2id.verify(stored, plain)
 }

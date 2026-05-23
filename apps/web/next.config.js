@@ -6,16 +6,16 @@ const nextConfig = {
   // packages and their native deps land in the Vercel lambda bundle.
   outputFileTracingRoot: path.join(__dirname, '../../'),
   transpilePackages: ['@kantorcore/ui', '@kantorcore/db', '@kantorcore/auth'],
-  serverExternalPackages: ['@node-rs/argon2', 'postgres'],
+  serverExternalPackages: ['postgres'],
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // Native bindings imported transitively via workspace packages bypass
-      // `serverExternalPackages`. Treat them as require()-at-runtime.
+      // postgres uses Node.js net/tls — treat as require()-at-runtime so
+      // webpack doesn't try to bundle it for the browser.
       const externals = Array.isArray(config.externals) ? config.externals : [config.externals]
       config.externals = [
         ...externals,
         ({ request }, cb) => {
-          if (request === '@node-rs/argon2' || request === 'postgres') {
+          if (request === 'postgres') {
             return cb(null, `commonjs ${request}`)
           }
           cb()
