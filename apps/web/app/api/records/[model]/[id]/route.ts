@@ -8,7 +8,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ model: 
   const result = await requireAuthedContext()
   if (!result.ok) return result.response
   const { ctx } = result
-  const def = await getModel(decodeURIComponent(model))
+  const def = await getModel(decodeURIComponent(model), ctx.tenant.id)
   if (!def) return NextResponse.json({ error: 'Unknown model.' }, { status: 404 })
   try {
     const record = await getRecord(ctx.tenant.id, def.model.key, id)
@@ -24,7 +24,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ model:
   const result = await requireAuthedContext()
   if (!result.ok) return result.response
   const { ctx } = result
-  const def = await getModel(decodeURIComponent(model))
+  const def = await getModel(decodeURIComponent(model), ctx.tenant.id)
   if (!def) return NextResponse.json({ error: 'Unknown model.' }, { status: 404 })
   const body = await req.json().catch(() => null)
   if (!body) return NextResponse.json({ error: 'Invalid body.' }, { status: 400 })
@@ -49,7 +49,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ mode
   const result = await requireAuthedContext()
   if (!result.ok) return result.response
   const { ctx } = result
-  const def = await getModel(decodeURIComponent(model))
+  const def = await getModel(decodeURIComponent(model), ctx.tenant.id)
   if (!def) return NextResponse.json({ error: 'Unknown model.' }, { status: 404 })
   try {
     await deleteRecord({

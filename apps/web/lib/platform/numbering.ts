@@ -23,7 +23,7 @@ export async function nextNumber(
   modelKey: string,
   now: Date = new Date(),
 ): Promise<string> {
-  const def = await getModel(modelKey)
+  const def = await getModel(modelKey, tenantId)
   if (!def) throw new Error(`Unknown model: ${modelKey}`)
   const format = def.model.numberingFormat
   const prefix = def.model.numberingPrefix ?? ''

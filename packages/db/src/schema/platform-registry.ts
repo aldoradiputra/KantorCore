@@ -12,6 +12,7 @@ import {
   index,
 } from 'drizzle-orm/pg-core'
 import { platform, tenants } from './tenants'
+import { users } from './users'
 import { membershipRole } from './memberships'
 
 /**
@@ -24,9 +25,13 @@ import { membershipRole } from './memberships'
  */
 
 // ── models ──────────────────────────────────────────────────────────────────
+// NOTE: `key` was originally globally unique. As of Phase 6 it is unique
+// per (tenant_id, key) — see migration 0035 — so tenants can register their
+// own entities (tenant_id IS NULL = system/global model).
 export const models = platform.table('models', {
   id:               uuid('id').primaryKey().defaultRandom(),
-  key:              varchar('key', { length: 128 }).notNull().unique(),
+  tenantId:         uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }),
+  key:              varchar('key', { length: 128 }).notNull(),
   label:            varchar('label', { length: 128 }).notNull(),
   labelPlural:      varchar('label_plural', { length: 128 }).notNull(),
   schemaName:       varchar('schema_name', { length: 64 }).notNull(),
@@ -178,6 +183,51 @@ export const modelLayouts = platform.table(
 )
 
 export type ModelLayout = typeof modelLayouts.$inferSelect
+
+// ── records (shared table for tenant-created entities) ─────────────────────
+export const tenantRecords = platform.table(
+  'records',
+  {
+    id:        uuid('id').primaryKey().defaultRandom(),
+    tenantId:  uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+    modelId:   uuid('model_id').notNull().references(() => models.id, { onDelete: 'cascade' }),
+    number:    varchar('number', { length: 64 }),
+    name:      varchar('name', { length: 255 }),
+    status:    varchar('status', { length: 64 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    tenantModelIdx: index('platform_records_tenant_model_idx').on(t.tenantId, t.modelId, t.createdAt),
+  }),
+)
+
+// ── views (saved list views) ────────────────────────────────────────────────
+export const views = platform.table(
+  'views',
+  {
+    id:         uuid('id').primaryKey().defaultRandom(),
+    tenantId:   uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+    modelId:    uuid('model_id').notNull().references(() => models.id, { onDelete: 'cascade' }),
+    name:       varchar('name', { length: 128 }).notNull(),
+    kind:       varchar('kind', { length: 32 }).notNull().default('list'),
+    columns:    jsonb('columns').$type<string[]>().notNull().default([]),
+    filters:    jsonb('filters').$type<Array<{ field: string; op: string; value: unknown }>>().notNull().default([]),
+    sorts:      jsonb('sorts').$type<Array<{ field: string; dir: 'asc' | 'desc' }>>().notNull().default([]),
+    isDefault:  boolean('is_default').notNull().default(false),
+    isShared:   boolean('is_shared').notNull().default(true),
+    createdBy:  uuid('created_by').references(() => users.id),
+    createdAt:  timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt:  timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    tenantModelIdx: index('platform_views_tenant_model_idx').on(t.tenantId, t.modelId),
+  }),
+)
+
+export type TenantRecord = typeof tenantRecords.$inferSelect
+export type View = typeof views.$inferSelect
+export type NewView = typeof views.$inferInsert
 
 export type Model = typeof models.$inferSelect
 export type FieldType = typeof fieldTypes.$inferSelect

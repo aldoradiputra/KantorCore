@@ -9,7 +9,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ model: s
   if (!result.ok) return result.response
   const { ctx } = result
 
-  const def = await getModel(decodeURIComponent(model))
+  const def = await getModel(decodeURIComponent(model), ctx.tenant.id)
   if (!def) return NextResponse.json({ error: 'Unknown model.' }, { status: 404 })
 
   const url = new URL(req.url)
@@ -30,7 +30,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ model: 
   if (!result.ok) return result.response
   const { ctx } = result
 
-  const def = await getModel(decodeURIComponent(model))
+  const def = await getModel(decodeURIComponent(model), ctx.tenant.id)
   if (!def) return NextResponse.json({ error: 'Unknown model.' }, { status: 404 })
 
   const body = await req.json().catch(() => null)

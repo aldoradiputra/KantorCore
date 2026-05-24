@@ -20,7 +20,7 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ ke
   const isAdmin = ctx.membership.role === 'owner' || ctx.membership.role === 'admin'
   if (!isAdmin) redirect('/settings/profile')
 
-  const def = await getModel(decodedKey)
+  const def = await getModel(decodedKey, ctx.tenant.id)
   if (!def) notFound()
   const [allFields, fieldTypes] = await Promise.all([
     listFields(decodedKey, ctx.tenant.id),

@@ -42,7 +42,7 @@ function isExpired() {
 async function loadSystemCache(): Promise<void> {
   const db = getDb()
   const [modelRows, fieldRows, stateRows, transitionRows] = await Promise.all([
-    db.select().from(modelsTable),
+    db.select().from(modelsTable).where(isNull(modelsTable.tenantId)),
     db.select().from(fieldsTable).where(isNull(fieldsTable.tenantId)).orderBy(asc(fieldsTable.displayOrder)),
     db.select().from(statusStatesTable).orderBy(asc(statusStatesTable.displayOrder)),
     db.select().from(transitionsTable).orderBy(asc(transitionsTable.displayOrder)),
@@ -64,19 +64,69 @@ async function loadSystemCache(): Promise<void> {
   cacheAt = Date.now()
 }
 
-export async function listModels(): Promise<ModelDefinition[]> {
-  if (isExpired()) await loadSystemCache()
-  return Array.from(systemCache!.values())
+/**
+ * Load a tenant-scoped (non-system) model definition. Not cached — invoked
+ * only when a tenant model is referenced.
+ */
+async function loadTenantModel(
+  tenantId: string,
+  predicate: { key?: string; id?: string },
+): Promise<ModelDefinition | null> {
+  const db = getDb()
+  const conds = [eq(modelsTable.tenantId, tenantId)]
+  if (predicate.key) conds.push(eq(modelsTable.key, predicate.key))
+  if (predicate.id) conds.push(eq(modelsTable.id, predicate.id))
+  const [m] = await db.select().from(modelsTable).where(and(...conds)).limit(1)
+  if (!m) return null
+  const [systemFields, statusStates, transitions] = await Promise.all([
+    db
+      .select()
+      .from(fieldsTable)
+      .where(and(eq(fieldsTable.modelId, m.id), isNull(fieldsTable.tenantId)))
+      .orderBy(asc(fieldsTable.displayOrder)),
+    db.select().from(statusStatesTable).where(eq(statusStatesTable.modelId, m.id)).orderBy(asc(statusStatesTable.displayOrder)),
+    db.select().from(transitionsTable).where(eq(transitionsTable.modelId, m.id)).orderBy(asc(transitionsTable.displayOrder)),
+  ])
+  return { model: m, systemFields, statusStates, transitions }
 }
 
-export async function getModel(key: string): Promise<ModelDefinition | null> {
+export async function listModels(tenantId?: string): Promise<ModelDefinition[]> {
   if (isExpired()) await loadSystemCache()
-  return systemCache!.get(key) ?? null
+  const sys = Array.from(systemCache!.values())
+  if (!tenantId) return sys
+  const db = getDb()
+  const tenantRows = await db.select().from(modelsTable).where(eq(modelsTable.tenantId, tenantId))
+  if (tenantRows.length === 0) return sys
+  const ids = tenantRows.map((m) => m.id)
+  const [fieldRows, stateRows, tranRows] = await Promise.all([
+    db.select().from(fieldsTable).where(isNull(fieldsTable.tenantId)).orderBy(asc(fieldsTable.displayOrder)),
+    db.select().from(statusStatesTable).orderBy(asc(statusStatesTable.displayOrder)),
+    db.select().from(transitionsTable).orderBy(asc(transitionsTable.displayOrder)),
+  ])
+  const tenantDefs: ModelDefinition[] = tenantRows.map((m) => ({
+    model: m,
+    systemFields: fieldRows.filter((f) => f.modelId === m.id),
+    statusStates: stateRows.filter((s) => s.modelId === m.id),
+    transitions: tranRows.filter((t) => t.modelId === m.id),
+  }))
+  void ids
+  return [...sys, ...tenantDefs]
 }
 
-export async function getModelById(id: string): Promise<ModelDefinition | null> {
+export async function getModel(key: string, tenantId?: string): Promise<ModelDefinition | null> {
   if (isExpired()) await loadSystemCache()
-  return systemCacheById!.get(id) ?? null
+  const sys = systemCache!.get(key)
+  if (sys) return sys
+  if (!tenantId) return null
+  return loadTenantModel(tenantId, { key })
+}
+
+export async function getModelById(id: string, tenantId?: string): Promise<ModelDefinition | null> {
+  if (isExpired()) await loadSystemCache()
+  const sys = systemCacheById!.get(id)
+  if (sys) return sys
+  if (!tenantId) return null
+  return loadTenantModel(tenantId, { id })
 }
 
 export function invalidateRegistry() {
@@ -92,7 +142,7 @@ export async function listFields(
   modelKey: string,
   tenantId: string,
 ): Promise<FieldDefinition[]> {
-  const def = await getModel(modelKey)
+  const def = await getModel(modelKey, tenantId)
   if (!def) return []
   const db = getDb()
   const customRows = await db

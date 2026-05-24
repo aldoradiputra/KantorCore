@@ -1,11 +1,25 @@
 import 'server-only'
 import { and, eq, sql } from 'drizzle-orm'
+import type { SQL } from 'drizzle-orm'
 import { fields as fieldsTable, recordValues as recordValuesTable } from '@kantorcore/db'
 import { withTenant } from '../db'
-import { getModel, listFields, type FieldDefinition } from './registry'
+import { getModel, listFields, type FieldDefinition, type ModelDefinition } from './registry'
 import { extractValue } from './custom-fields'
 import { nextNumber } from './numbering'
 import { recordAudit } from '../audit'
+
+/**
+ * True if a model lives in the shared platform.records table (tenant-defined
+ * entities). For those, every query needs an extra `model_id = ?` clause.
+ */
+function isSharedTable(def: ModelDefinition): boolean {
+  return def.model.schemaName === 'platform' && def.model.tableName === 'records'
+}
+
+function modelIdClause(def: ModelDefinition): SQL | null {
+  if (!isSharedTable(def)) return null
+  return sql`AND model_id = ${def.model.id}`
+}
 
 export interface GenericRecord {
   id: string
@@ -54,17 +68,27 @@ function coerceForValueColumn(typeKey: string, value: unknown) {
 export async function listRecords(
   tenantId: string,
   modelKey: string,
-  opts: { limit?: number; offset?: number } = {},
+  opts: {
+    limit?: number
+    offset?: number
+    whereSql?: ReturnType<typeof sql> | null
+    orderSql?: ReturnType<typeof sql> | null
+  } = {},
 ): Promise<GenericRecord[]> {
-  const def = await getModel(modelKey)
+  const def = await getModel(modelKey, tenantId)
   if (!def) throw new Error(`Unknown model: ${modelKey}`)
   const limit = Math.min(opts.limit ?? 100, 500)
   const offset = Math.max(opts.offset ?? 0, 0)
+  const extra = modelIdClause(def)
+  const filter = opts.whereSql ? sql`AND (${opts.whereSql})` : sql``
+  const order = opts.orderSql ? sql`ORDER BY ${opts.orderSql}` : sql`ORDER BY created_at DESC`
   return withTenant(tenantId, async (tx) => {
     const r = await tx.execute(sql`
       SELECT * FROM ${sql.identifier(def.model.schemaName)}.${sql.identifier(def.model.tableName)}
       WHERE tenant_id = ${tenantId}
-      ORDER BY created_at DESC
+      ${extra ?? sql``}
+      ${filter}
+      ${order}
       LIMIT ${limit} OFFSET ${offset}
     `)
     return (r as unknown as { rows: GenericRecord[] }).rows
@@ -78,12 +102,14 @@ export async function getRecord(
   modelKey: string,
   id: string,
 ): Promise<(GenericRecord & { custom: Record<string, unknown> }) | null> {
-  const def = await getModel(modelKey)
+  const def = await getModel(modelKey, tenantId)
   if (!def) throw new Error(`Unknown model: ${modelKey}`)
+  const extra = modelIdClause(def)
   return withTenant(tenantId, async (tx) => {
     const r = await tx.execute(sql`
       SELECT * FROM ${sql.identifier(def.model.schemaName)}.${sql.identifier(def.model.tableName)}
       WHERE id = ${id} AND tenant_id = ${tenantId}
+      ${extra ?? sql``}
       LIMIT 1
     `)
     const row = (r as unknown as { rows: GenericRecord[] }).rows[0]
@@ -128,7 +154,7 @@ export interface MutationInput {
 }
 
 export async function createRecord(input: MutationInput): Promise<GenericRecord> {
-  const def = await getModel(input.modelKey)
+  const def = await getModel(input.modelKey, input.tenantId)
   if (!def) throw new Error(`Unknown model: ${input.modelKey}`)
   const allFields = await listFields(input.modelKey, input.tenantId)
   const systemFields = allFields.filter((f) => f.isSystem)
@@ -162,6 +188,10 @@ export async function createRecord(input: MutationInput): Promise<GenericRecord>
     if (initialState && !cols.includes('status')) {
       cols.push('status')
       vals.push(initialState)
+    }
+    if (isSharedTable(def)) {
+      cols.push('model_id')
+      vals.push(def.model.id)
     }
 
     const colFragments = cols.map((c) => sql.identifier(c))
@@ -200,7 +230,7 @@ export async function createRecord(input: MutationInput): Promise<GenericRecord>
 /* ─── UPDATE ─────────────────────────────────────────────────────────────── */
 
 export async function updateRecord(input: MutationInput & { id: string }): Promise<GenericRecord> {
-  const def = await getModel(input.modelKey)
+  const def = await getModel(input.modelKey, input.tenantId)
   if (!def) throw new Error(`Unknown model: ${input.modelKey}`)
   const allFields = await listFields(input.modelKey, input.tenantId)
   const systemFields = allFields.filter((f) => f.isSystem)
@@ -215,10 +245,12 @@ export async function updateRecord(input: MutationInput & { id: string }): Promi
     }
     setFragments.push(sql`updated_at = now()`)
 
+    const extra = modelIdClause(def)
     const r = await tx.execute(sql`
       UPDATE ${sql.identifier(def.model.schemaName)}.${sql.identifier(def.model.tableName)}
       SET ${sql.join(setFragments, sql`, `)}
       WHERE id = ${input.id} AND tenant_id = ${input.tenantId}
+      ${extra ?? sql``}
       RETURNING *
     `)
     const row = (r as unknown as { rows: GenericRecord[] }).rows[0]
@@ -253,12 +285,14 @@ export async function deleteRecord(input: {
   id: string
   actorUserId: string
 }): Promise<void> {
-  const def = await getModel(input.modelKey)
+  const def = await getModel(input.modelKey, input.tenantId)
   if (!def) throw new Error(`Unknown model: ${input.modelKey}`)
+  const extra = modelIdClause(def)
   await withTenant(input.tenantId, async (tx) => {
     await tx.execute(sql`
       DELETE FROM ${sql.identifier(def.model.schemaName)}.${sql.identifier(def.model.tableName)}
       WHERE id = ${input.id} AND tenant_id = ${input.tenantId}
+      ${extra ?? sql``}
     `)
   })
   if (def.model.hasAudit) {

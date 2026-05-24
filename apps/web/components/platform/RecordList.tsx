@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { listRecords } from '../../lib/platform/records'
 import { getModel, listFields } from '../../lib/platform/registry'
 import { getLayout, type ListLayout } from '../../lib/platform/layouts'
+import { listViews, getView, getDefaultView, buildViewSql } from '../../lib/platform/views'
+import { SaveViewButton, DeleteViewButton } from './SaveViewButton'
 
 function formatValue(typeKey: string | undefined, raw: unknown): string {
   if (raw === null || raw === undefined || raw === '') return '—'
@@ -13,20 +15,36 @@ function formatValue(typeKey: string | undefined, raw: unknown): string {
   return String(raw)
 }
 
-export async function RecordList({ modelKey, tenantId }: { modelKey: string; tenantId: string }) {
-  const def = await getModel(modelKey)
+export async function RecordList({
+  modelKey,
+  tenantId,
+  viewId,
+}: {
+  modelKey: string
+  tenantId: string
+  viewId?: string
+}) {
+  const def = await getModel(modelKey, tenantId)
   if (!def) return <div>Model tidak dikenal: {modelKey}</div>
-  const [layout, fields, rows] = await Promise.all([
+
+  const [layout, fields, allViews, selectedView] = await Promise.all([
     getLayout<ListLayout>(modelKey, 'list', tenantId),
     listFields(modelKey, tenantId),
-    listRecords(tenantId, modelKey, { limit: 200 }),
+    listViews(tenantId, modelKey),
+    viewId ? getView(tenantId, viewId) : getDefaultView(tenantId, modelKey),
   ])
+
+  const { whereSql, orderSql } = buildViewSql(selectedView)
+  const rows = await listRecords(tenantId, modelKey, { limit: 200, whereSql, orderSql })
+
   const fieldByKey = new Map(fields.map((f) => [f.key, f]))
-  const cols = layout.columns ?? []
+  const cols = (selectedView?.columns && selectedView.columns.length > 0
+    ? selectedView.columns
+    : layout.columns) ?? []
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-4)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--s-3)' }}>
         <h2 style={{ margin: 0 }}>{def.model.labelPlural}</h2>
         <Link
           href={`/r/${encodeURIComponent(modelKey)}/new`}
@@ -38,6 +56,46 @@ export async function RecordList({ modelKey, tenantId }: { modelKey: string; ten
         >
           + {def.model.label} Baru
         </Link>
+      </div>
+
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{ font: '600 11px/1 var(--font-sans)', color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          View:
+        </span>
+        <Link
+          href={`/r/${encodeURIComponent(modelKey)}`}
+          style={{
+            padding: '5px 10px',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--r-sm)',
+            font: '12px/1 var(--font-sans)',
+            color: !selectedView ? 'var(--white)' : 'var(--fg-2)',
+            background: !selectedView ? 'var(--indigo)' : 'var(--surface)',
+            textDecoration: 'none',
+          }}
+        >
+          Default
+        </Link>
+        {allViews.map((v) => (
+          <div key={v.id} style={{ display: 'inline-flex', alignItems: 'center' }}>
+            <Link
+              href={`/r/${encodeURIComponent(modelKey)}?view=${v.id}`}
+              style={{
+                padding: '5px 10px',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r-sm)',
+                font: '12px/1 var(--font-sans)',
+                color: selectedView?.id === v.id ? 'var(--white)' : 'var(--fg-2)',
+                background: selectedView?.id === v.id ? 'var(--indigo)' : 'var(--surface)',
+                textDecoration: 'none',
+              }}
+            >
+              {v.name}{v.isDefault ? ' ★' : ''}
+            </Link>
+            {selectedView?.id === v.id && <DeleteViewButton viewId={v.id} />}
+          </div>
+        ))}
+        <SaveViewButton modelKey={modelKey} currentColumns={cols} />
       </div>
 
       {rows.length === 0 ? (

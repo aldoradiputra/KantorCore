@@ -22,7 +22,7 @@ export default async function EditRecordPage({
   if (!session) redirect('/sign-in')
   const ctx = await getCurrentTenant(session.user.id)
   if (!ctx) redirect('/sign-up')
-  const def = await getModel(modelKey)
+  const def = await getModel(modelKey, ctx.tenant.id)
   if (!def) notFound()
   const [fields, record] = await Promise.all([
     listFields(modelKey, ctx.tenant.id),

@@ -21,7 +21,7 @@ export interface CreateCustomFieldInput {
 }
 
 export async function createCustomField(input: CreateCustomFieldInput): Promise<FieldRow> {
-  const def = await getModel(input.modelKey)
+  const def = await getModel(input.modelKey, input.tenantId)
   if (!def) throw new Error(`Unknown model: ${input.modelKey}`)
   if (!/^[a-z][a-z0-9_]*$/.test(input.key)) {
     throw new Error('Field key harus lowercase, mulai dengan huruf, hanya a-z 0-9 _.')

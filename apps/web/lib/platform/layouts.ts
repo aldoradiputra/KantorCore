@@ -27,7 +27,7 @@ export async function getLayout<T = unknown>(
   viewKind: ViewKind,
   tenantId: string,
 ): Promise<T> {
-  const def = await getModel(modelKey)
+  const def = await getModel(modelKey, tenantId)
   if (!def) throw new Error(`Unknown model: ${modelKey}`)
 
   const rows = await getDb()

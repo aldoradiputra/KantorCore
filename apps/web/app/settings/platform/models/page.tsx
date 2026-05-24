@@ -4,6 +4,7 @@ import { getCurrentSession } from '../../../../lib/auth'
 import { getCurrentTenant } from '../../../../lib/tenants'
 import { listModels } from '../../../../lib/platform/registry'
 import { SettingsShell } from '../../SettingsShell'
+import { NewModelForm } from './NewModelForm'
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
@@ -17,7 +18,7 @@ export default async function PlatformModelsPage() {
   const isAdmin = ctx.membership.role === 'owner' || ctx.membership.role === 'admin'
   if (!isAdmin) redirect('/settings/profile')
 
-  const models = await listModels()
+  const models = await listModels(ctx.tenant.id)
 
   return (
     <SettingsShell
@@ -30,10 +31,14 @@ export default async function PlatformModelsPage() {
       <div style={{ flex: 1, overflow: 'auto', padding: 'var(--s-6) var(--content-gutter)' }}>
         <div style={{ maxWidth: 800, width: '100%' }}>
           <h2 style={{ margin: 0 }}>Model &amp; Custom Fields</h2>
-          <p style={{ font: '400 13px/1.5 var(--font-sans)', color: 'var(--fg-3)', margin: '4px 0 var(--s-5)', maxWidth: 600 }}>
+          <p style={{ font: '400 13px/1.5 var(--font-sans)', color: 'var(--fg-3)', margin: '4px 0 var(--s-4)', maxWidth: 600 }}>
             Daftar entitas yang terdaftar di Platform Registry. Klik salah satu untuk melihat
             field sistem dan menambahkan field kustom khusus workspace Anda.
           </p>
+
+          <div style={{ marginBottom: 'var(--s-5)', display: 'flex', flexDirection: 'column', gap: 'var(--s-3)' }}>
+            <NewModelForm />
+          </div>
 
           <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', overflow: 'hidden', background: 'var(--surface)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', font: '13px/1.4 var(--font-sans)' }}>

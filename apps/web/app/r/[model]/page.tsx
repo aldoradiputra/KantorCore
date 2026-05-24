@@ -8,8 +8,15 @@ function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
 }
 
-export default async function RecordsListPage({ params }: { params: Promise<{ model: string }> }) {
+export default async function RecordsListPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ model: string }>
+  searchParams: Promise<{ view?: string }>
+}) {
   const { model } = await params
+  const { view } = await searchParams
   const session = await getCurrentSession()
   if (!session) redirect('/sign-in')
   const ctx = await getCurrentTenant(session.user.id)
@@ -20,7 +27,7 @@ export default async function RecordsListPage({ params }: { params: Promise<{ mo
     <AppShell tenantName={ctx.tenant.name} userInitials={initials(session.user.name)} activeModule={null}>
       <div style={{ padding: 'var(--s-6) var(--content-gutter)' }}>
         <div style={{ maxWidth: 960, width: '100%' }}>
-          <RecordList modelKey={modelKey} tenantId={ctx.tenant.id} />
+          <RecordList modelKey={modelKey} tenantId={ctx.tenant.id} viewId={view} />
         </div>
       </div>
     </AppShell>

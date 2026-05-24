@@ -23,7 +23,7 @@ export async function RecordDetail({
   id: string
   tenantId: string
 }) {
-  const def = await getModel(modelKey)
+  const def = await getModel(modelKey, tenantId)
   if (!def) return <div>Model tidak dikenal: {modelKey}</div>
   const [record, layout, fields] = await Promise.all([
     getRecord(tenantId, modelKey, id),

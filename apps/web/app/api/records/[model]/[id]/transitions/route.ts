@@ -13,7 +13,7 @@ export async function POST(
   if (!result.ok) return result.response
   const { ctx } = result
 
-  const def = await getModel(decodeURIComponent(model))
+  const def = await getModel(decodeURIComponent(model), ctx.tenant.id)
   if (!def) return NextResponse.json({ error: 'Unknown model.' }, { status: 404 })
 
   const body = await req.json().catch(() => null)

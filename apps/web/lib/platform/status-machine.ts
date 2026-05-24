@@ -33,7 +33,7 @@ export async function applyTransition(input: {
   actorRole: Role
 }): Promise<TransitionResult> {
   const { tenantId, modelKey, recordId, toState, actorRole } = input
-  const def = await getModel(modelKey)
+  const def = await getModel(modelKey, tenantId)
   if (!def) throw new Error(`Unknown model: ${modelKey}`)
   if (!def.statusStates.length) throw new Error(`Model ${modelKey} has no status states.`)
   if (!def.statusStates.some((s) => s.key === toState)) {
