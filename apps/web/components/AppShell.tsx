@@ -178,26 +178,69 @@ function IconProses() {
 // ── Module list ───────────────────────────────────────────────
 type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'fin' | 'pay' | 'proses' | 'inv' | 'proc' | 'sales' | 'crm' | 'doc' | 'aip' | 'mig' | 'trig'
 
-const MODULES: { id: ModuleId; label: string; href: string; hotkey: string; Icon: () => React.ReactElement }[] = [
-  { id: 'home', label: 'Beranda', href: '/', hotkey: 'G H', Icon: IconHome },
-  { id: 'chat', label: 'Chat', href: '/chat', hotkey: 'G C', Icon: IconChat },
-  { id: 'proj', label: 'Proyek', href: '/proj', hotkey: 'G P', Icon: IconProj },
-  { id: 'hr', label: 'SDM', href: '/hr', hotkey: 'G R', Icon: IconHR },
-  { id: 'time', label: 'Waktu', href: '/time', hotkey: 'G W', Icon: IconTime },
-  { id: 'fin', label: 'Keuangan', href: '/fin', hotkey: 'G F', Icon: IconFin },
-  { id: 'pay', label: 'Penggajian', href: '/pay', hotkey: 'G Y', Icon: IconPay },
-  { id: 'inv',  label: 'Inventori',  href: '/inv/products', hotkey: 'G I', Icon: IconInv  },
-  { id: 'proc',  label: 'Pembelian',  href: '/proc/orders',  hotkey: 'G B', Icon: IconProc  },
-  { id: 'sales', label: 'Penjualan',  href: '/sales/orders', hotkey: 'G L', Icon: IconSales },
-  { id: 'crm',   label: 'CRM',        href: '/crm/deals',    hotkey: 'G M', Icon: IconCrm   },
-  { id: 'doc',   label: 'Dokumen',    href: '/doc/documents', hotkey: 'G D', Icon: IconDoc   },
-  { id: 'aip',   label: 'AI Search',  href: '/aip/search',   hotkey: 'G K', Icon: IconAip   },
-  { id: 'mig',   label: 'Import',     href: '/mig/import',   hotkey: 'G N', Icon: IconMig   },
-  { id: 'trig',  label: 'Triggers',   href: '/trig/rules',   hotkey: 'G T', Icon: IconTrig  },
-  { id: 'rent', label: 'Sewa', href: '/rent', hotkey: 'G S', Icon: IconRent },
-  { id: 'proses', label: 'Proses', href: '/proses', hotkey: 'G O', Icon: IconProses },
-  { id: 'agent', label: 'Agent', href: '/agent', hotkey: 'G A', Icon: IconAgent },
+type ModuleEntry = { id: ModuleId; label: string; href: string; hotkey: string; Icon: () => React.ReactElement }
+type ModuleGroup = { id: string; label: string; items: ModuleEntry[] }
+
+// Grouped nav rail. Workspace = personal/collaboration; Apps = business modules;
+// Platform = automation / AI / config primitives. Visual separators between groups.
+const MODULE_GROUPS: ModuleGroup[] = [
+  {
+    id: 'workspace',
+    label: 'Workspace',
+    items: [
+      { id: 'home', label: 'Beranda', href: '/', hotkey: 'G H', Icon: IconHome },
+      { id: 'chat', label: 'Chat', href: '/chat', hotkey: 'G C', Icon: IconChat },
+      { id: 'proj', label: 'Proyek', href: '/proj', hotkey: 'G P', Icon: IconProj },
+      { id: 'time', label: 'Waktu', href: '/time', hotkey: 'G W', Icon: IconTime },
+      { id: 'doc',  label: 'Dokumen', href: '/doc/documents', hotkey: 'G D', Icon: IconDoc },
+      { id: 'proses', label: 'Proses', href: '/proses', hotkey: 'G O', Icon: IconProses },
+    ],
+  },
+  {
+    id: 'apps',
+    label: 'Apps',
+    items: [
+      { id: 'crm',   label: 'CRM',       href: '/crm/deals',    hotkey: 'G M', Icon: IconCrm },
+      { id: 'sales', label: 'Penjualan', href: '/sales/orders', hotkey: 'G L', Icon: IconSales },
+      { id: 'proc',  label: 'Pembelian', href: '/proc/orders',  hotkey: 'G B', Icon: IconProc },
+      { id: 'inv',   label: 'Inventori', href: '/inv/products', hotkey: 'G I', Icon: IconInv },
+      { id: 'fin',   label: 'Keuangan',  href: '/fin', hotkey: 'G F', Icon: IconFin },
+      { id: 'hr',    label: 'SDM',       href: '/hr', hotkey: 'G R', Icon: IconHR },
+      { id: 'pay',   label: 'Penggajian', href: '/pay', hotkey: 'G Y', Icon: IconPay },
+      { id: 'rent',  label: 'Sewa',      href: '/rent', hotkey: 'G S', Icon: IconRent },
+    ],
+  },
+  {
+    id: 'platform',
+    label: 'Platform',
+    items: [
+      { id: 'aip',   label: 'AI Search', href: '/aip/search', hotkey: 'G K', Icon: IconAip },
+      { id: 'agent', label: 'Agent',     href: '/agent',      hotkey: 'G A', Icon: IconAgent },
+      { id: 'trig',  label: 'Triggers',  href: '/trig/rules', hotkey: 'G T', Icon: IconTrig },
+      { id: 'mig',   label: 'Import',    href: '/mig/import', hotkey: 'G N', Icon: IconMig },
+    ],
+  },
 ]
+
+/**
+ * Map a module id to the matching settings deep-link, when one exists.
+ * Used by the contextual "Settings for this app" button in the top bar.
+ */
+const MODULE_TO_SETTINGS: Partial<Record<ModuleId, string>> = {
+  chat: '/settings/chat',
+  proj: '/settings/proj',
+  agent: '/settings/agent',
+}
+
+// Cog icon for the settings entry at the bottom of the rail.
+function IconCog() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="10" r="2.5" />
+      <path d="M10 1.5v2.5M10 16v2.5M3.5 3.5l1.8 1.8M14.7 14.7l1.8 1.8M1.5 10h2.5M16 10h2.5M3.5 16.5l1.8-1.8M14.7 5.3l1.8-1.8" />
+    </svg>
+  )
+}
 
 // ── Shell ─────────────────────────────────────────────────────
 export function AppShell({
@@ -285,34 +328,76 @@ export function AppShell({
             flexDirection: 'column',
             alignItems: 'center',
             paddingTop: 'var(--s-3)',
+            paddingBottom: 'var(--s-3)',
             gap: 2,
             flexShrink: 0,
           }}
         >
-          {MODULES.map(({ id, label, href, hotkey, Icon }) => {
-            const active = activeModule === id
-            return (
-              <Link
-                key={id}
-                href={href}
-                title={`${label} (${hotkey})`}
-                style={{
-                  width: 40,
-                  height: 40,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: 'var(--r-md)',
-                  color: active ? 'var(--indigo)' : 'var(--fg-3)',
-                  background: active ? 'var(--indigo-light)' : 'transparent',
-                  textDecoration: 'none',
-                  transition: `background var(--d-fast) var(--ease), color var(--d-fast) var(--ease)`,
-                }}
-              >
-                <Icon />
-              </Link>
-            )
-          })}
+          {MODULE_GROUPS.map((group, gi) => (
+            <div
+              key={group.id}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
+            >
+              {gi > 0 && (
+                <div
+                  aria-hidden
+                  style={{
+                    width: 24,
+                    height: 1,
+                    background: 'var(--border)',
+                    margin: '6px 0',
+                  }}
+                />
+              )}
+              {group.items.map(({ id, label, href, hotkey, Icon }) => {
+                const active = activeModule === id
+                return (
+                  <Link
+                    key={id}
+                    href={href}
+                    title={`${label} · ${group.label} (${hotkey})`}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 'var(--r-md)',
+                      color: active ? 'var(--indigo)' : 'var(--fg-3)',
+                      background: active ? 'var(--indigo-light)' : 'transparent',
+                      textDecoration: 'none',
+                      transition: `background var(--d-fast) var(--ease), color var(--d-fast) var(--ease)`,
+                    }}
+                  >
+                    <Icon />
+                  </Link>
+                )
+              })}
+            </div>
+          ))}
+
+          {/* Settings entry pinned to bottom */}
+          <div style={{ flex: 1 }} />
+          <Link
+            href={activeModule && MODULE_TO_SETTINGS[activeModule]
+              ? MODULE_TO_SETTINGS[activeModule]!
+              : '/settings/profile'}
+            title={activeModule && MODULE_TO_SETTINGS[activeModule]
+              ? `Settings — modul aktif`
+              : 'Settings'}
+            style={{
+              width: 40,
+              height: 40,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 'var(--r-md)',
+              color: 'var(--fg-3)',
+              textDecoration: 'none',
+            }}
+          >
+            <IconCog />
+          </Link>
         </nav>
 
         {/* Module sidebar (optional) */}

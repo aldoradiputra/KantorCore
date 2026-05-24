@@ -1,6 +1,6 @@
-import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { AppShell } from '../../components/AppShell'
+import { SettingsSidebar, type SettingsNavItem } from './SettingsSidebar'
 
 export type SettingsSection =
   | 'profile'
@@ -80,59 +80,15 @@ const NAV: { group: string; items: NavItem[] }[] = [
   },
 ]
 
-function SettingsSidebar({
-  activeSection,
-  isAdmin,
-}: {
-  activeSection: SettingsSection
-  isAdmin: boolean
-}) {
-  return (
-    <div style={{
-      padding: 'var(--s-4)',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 'var(--s-4)',
-      height: '100%',
-      overflowY: 'auto',
-    }}>
-      {NAV.map(({ group, items }) => {
-        const visible = items.filter((i) => !i.adminOnly || isAdmin)
-        if (visible.length === 0) return null
-        return (
-          <div key={group}>
-            <div className="t-micro" style={{ marginBottom: 'var(--s-2)' }}>{group}</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {visible.map((item) => {
-                const active = item.section === activeSection
-                return (
-                  <Link
-                    key={item.section}
-                    href={item.href}
-                    style={{
-                      height: 32,
-                      padding: '0 8px',
-                      borderRadius: 'var(--r-sm)',
-                      font: '500 13px/32px var(--font-sans)',
-                      color: active ? 'var(--indigo)' : 'var(--fg-2)',
-                      background: active ? 'var(--indigo-light)' : 'transparent',
-                      textDecoration: 'none',
-                      display: 'block',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {item.label}
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )
+function flattenNav(isAdmin: boolean): SettingsNavItem[] {
+  const out: SettingsNavItem[] = []
+  for (const { group, items } of NAV) {
+    for (const it of items) {
+      if (it.adminOnly && !isAdmin) continue
+      out.push({ section: it.section, label: it.label, href: it.href, group })
+    }
+  }
+  return out
 }
 
 export function SettingsShell({
@@ -150,13 +106,14 @@ export function SettingsShell({
   userEmail?: string
   children: ReactNode
 }) {
+  const items = flattenNav(isAdmin)
   return (
     <AppShell
       tenantName={tenantName}
       userInitials={userInitials}
       userEmail={userEmail}
       activeModule={null}
-      sidebar={<SettingsSidebar activeSection={activeSection} isAdmin={isAdmin} />}
+      sidebar={<SettingsSidebar items={items} activeSection={activeSection} />}
     >
       {children}
     </AppShell>
