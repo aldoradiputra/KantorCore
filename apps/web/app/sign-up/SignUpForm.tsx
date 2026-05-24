@@ -42,6 +42,10 @@ export default function SignUpForm() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken) {
+      setError('Verifikasi keamanan belum selesai. Tunggu sebentar lalu coba lagi.')
+      return
+    }
     setPending(true)
     const res = await fetch('/api/auth/sign-up', {
       method: 'POST',
@@ -108,8 +112,17 @@ export default function SignUpForm() {
           />
         </div>
 
-        <Button variant="primary" size="md" fullWidth disabled={pending}>
-          {pending ? 'Memproses…' : 'Daftar & buat workspace'}
+        <Button
+          variant="primary"
+          size="md"
+          fullWidth
+          disabled={pending || (!!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken)}
+        >
+          {pending
+            ? 'Memproses…'
+            : process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken
+              ? 'Memuat verifikasi keamanan…'
+              : 'Daftar & buat workspace'}
         </Button>
         <div ref={turnstileRef} />
       </form>

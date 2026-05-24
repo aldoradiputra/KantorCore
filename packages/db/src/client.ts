@@ -15,9 +15,10 @@ export type Database = ReturnType<typeof createDb>
  */
 export function createDb(databaseUrl: string) {
   const sql = postgres(databaseUrl, {
-    max: 10,            // pool size
-    idle_timeout: 20,   // seconds
-    prepare: false,     // statement cache off — works better with pgbouncer
+    max: 1,             // serverless: 1 connection per lambda invocation
+    idle_timeout: 20,
+    prepare: false,     // off — required for pgbouncer/Supabase pooler
+    ssl: 'require',     // Supabase pooler requires SSL
   })
   return drizzle(sql, { schema })
 }
