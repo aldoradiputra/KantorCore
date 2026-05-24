@@ -3,6 +3,7 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import { views, type View, type NewView } from '@kantorcore/db'
 import { withTenant } from '../db'
 import { getModel } from './registry'
+import { auditConfig } from './audit-config'
 
 export type { View }
 
@@ -110,13 +111,23 @@ export async function createView(input: {
     }
 
     const rows = await tx.insert(views).values(newRow).returning()
-    return { ok: true as const, view: rows[0]! }
+    const created = rows[0]!
+    auditConfig({
+      tenantId: input.tenantId,
+      actorUserId: input.createdBy ?? null,
+      resource: 'view',
+      verb: 'created',
+      resourceId: created.id,
+      payload: { name: created.name, modelKey: input.modelKey, isDefault: created.isDefault },
+    })
+    return { ok: true as const, view: created }
   })
 }
 
 export async function updateView(input: {
   tenantId: string
   id: string
+  actorUserId?: string | null
   name?: string
   columns?: string[]
   filters?: ViewFilter[]

@@ -10,6 +10,7 @@ import {
   type PolicyPrincipalType,
 } from '@kantorcore/db'
 import { withTenant } from '../db'
+import { auditConfig } from './audit-config'
 
 export interface ActorRoles {
   membershipRole: 'owner' | 'admin' | 'member' | null
@@ -200,6 +201,7 @@ export async function listPolicies(tenantId: string): Promise<Policy[]> {
 
 export async function createPolicy(input: {
   tenantId: string
+  actorUserId?: string | null
   name: string
   description?: string | null
   resource: string
@@ -234,12 +236,22 @@ export async function createPolicy(input: {
       })
       .returning(),
   )
-  return { ok: true, policy: rows[0]! }
+  const created = rows[0]!
+  auditConfig({
+    tenantId: input.tenantId,
+    actorUserId: input.actorUserId,
+    resource: 'policy',
+    verb: 'created',
+    resourceId: created.id,
+    payload: { name: created.name, resource: created.resource, action: created.action, effect: created.effect },
+  })
+  return { ok: true, policy: created }
 }
 
 export async function deletePolicy(
   tenantId: string,
   id: string,
+  actorUserId?: string | null,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const rows = await withTenant(tenantId, (tx) =>
     tx
@@ -248,6 +260,7 @@ export async function deletePolicy(
       .returning({ id: policies.id }),
   )
   if (rows.length === 0) return { ok: false, error: 'Policy tidak ditemukan.' }
+  auditConfig({ tenantId, actorUserId, resource: 'policy', verb: 'deleted', resourceId: id })
   return { ok: true }
 }
 
@@ -261,6 +274,7 @@ export async function listCustomRoles(tenantId: string): Promise<CustomRole[]> {
 
 export async function createCustomRole(input: {
   tenantId: string
+  actorUserId?: string | null
   key: string
   name: string
   description?: string | null
@@ -282,7 +296,16 @@ export async function createCustomRole(input: {
         })
         .returning(),
     )
-    return { ok: true, role: rows[0]! }
+    const created = rows[0]!
+    auditConfig({
+      tenantId: input.tenantId,
+      actorUserId: input.actorUserId,
+      resource: 'role',
+      verb: 'created',
+      resourceId: created.id,
+      payload: { key: created.key, name: created.name },
+    })
+    return { ok: true, role: created }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     if (msg.includes('unique')) return { ok: false, error: `Key '${input.key}' sudah dipakai.` }
@@ -293,6 +316,7 @@ export async function createCustomRole(input: {
 export async function deleteCustomRole(
   tenantId: string,
   id: string,
+  actorUserId?: string | null,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const rows = await withTenant(tenantId, (tx) =>
     tx
@@ -307,6 +331,7 @@ export async function deleteCustomRole(
       .returning({ id: customRoles.id }),
   )
   if (rows.length === 0) return { ok: false, error: 'Role tidak ditemukan atau sistem.' }
+  auditConfig({ tenantId, actorUserId, resource: 'role', verb: 'deleted', resourceId: id })
   return { ok: true }
 }
 
@@ -328,6 +353,14 @@ export async function assignRole(input: {
         })
         .onConflictDoNothing(),
     )
+    auditConfig({
+      tenantId: input.tenantId,
+      actorUserId: input.grantedBy,
+      resource: 'role_assignment',
+      verb: 'granted',
+      resourceId: input.roleId,
+      payload: { userId: input.userId, roleId: input.roleId },
+    })
     return { ok: true }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) }
@@ -338,6 +371,7 @@ export async function unassignRole(input: {
   tenantId: string
   userId: string
   roleId: string
+  actorUserId?: string | null
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   await withTenant(input.tenantId, (tx) =>
     tx
@@ -350,6 +384,14 @@ export async function unassignRole(input: {
         ),
       ),
   )
+  auditConfig({
+    tenantId: input.tenantId,
+    actorUserId: input.actorUserId,
+    resource: 'role_assignment',
+    verb: 'revoked',
+    resourceId: input.roleId,
+    payload: { userId: input.userId, roleId: input.roleId },
+  })
   return { ok: true }
 }
 

@@ -1,5 +1,5 @@
 import 'server-only'
-import { and, desc, eq, inArray } from 'drizzle-orm'
+import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import {
   groups,
   groupMembers,
@@ -265,8 +265,13 @@ export async function listAuditLog(
   tenantId: string,
   limit = 100,
   offset = 0,
+  opts: { actionPrefix?: string } = {},
 ): Promise<AuditRow[]> {
   return withTenant(tenantId, async (tx) => {
+    const conds = [eq(auditLog.tenantId, tenantId)]
+    if (opts.actionPrefix) {
+      conds.push(sql`${auditLog.action} LIKE ${opts.actionPrefix + '%'}`)
+    }
     const rows = await tx
       .select({
         entry: auditLog,
@@ -275,7 +280,7 @@ export async function listAuditLog(
       })
       .from(auditLog)
       .leftJoin(users, eq(auditLog.actorUserId, users.id))
-      .where(eq(auditLog.tenantId, tenantId))
+      .where(and(...conds))
       .orderBy(desc(auditLog.createdAt))
       .limit(limit)
       .offset(offset)
