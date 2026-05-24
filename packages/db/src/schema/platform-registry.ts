@@ -159,6 +159,26 @@ export const recordValues = platform.table(
   }),
 )
 
+// ── model_layouts ───────────────────────────────────────────────────────────
+export const modelLayouts = platform.table(
+  'model_layouts',
+  {
+    id:         uuid('id').primaryKey().defaultRandom(),
+    modelId:    uuid('model_id').notNull().references(() => models.id, { onDelete: 'cascade' }),
+    tenantId:   uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }),
+    viewKind:   varchar('view_kind', { length: 16 }).notNull(),
+    blocks:     jsonb('blocks').notNull().default([]),
+    isSystem:   boolean('is_system').notNull().default(true),
+    createdAt:  timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt:  timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    modelTenantViewIdx: index('model_layouts_model_tenant_view_idx').on(t.modelId, t.tenantId, t.viewKind),
+  }),
+)
+
+export type ModelLayout = typeof modelLayouts.$inferSelect
+
 export type Model = typeof models.$inferSelect
 export type FieldType = typeof fieldTypes.$inferSelect
 export type FieldRow = typeof fields.$inferSelect
