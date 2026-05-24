@@ -16,6 +16,7 @@ export async function PATCH(
   const r = await updateView({
     tenantId: ctx.tenant.id,
     id,
+    actorUserId: ctx.session.user.id,
     name: body.name,
     columns: body.columns,
     filters: body.filters,
@@ -34,7 +35,7 @@ export async function DELETE(
   const result = await requireAuthedContext()
   if (!result.ok) return result.response
   const { ctx } = result
-  const r = await deleteView(ctx.tenant.id, id)
+  const r = await deleteView(ctx.tenant.id, id, ctx.session.user.id)
   if (!r.ok) return NextResponse.json({ error: r.error }, { status: 422 })
   return NextResponse.json({ ok: true })
 }

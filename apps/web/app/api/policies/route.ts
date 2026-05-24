@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
 
   const result = await createPolicy({
     tenantId: ctx.tenant.id,
+    actorUserId: session.user.id,
     name: body.name,
     description: body.description,
     resource: body.resource,

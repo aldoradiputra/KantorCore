@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
 
   const result = await createCustomRole({
     tenantId: ctx.tenant.id,
+    actorUserId: session.user.id,
     key: body.key,
     name: body.name,
     description: body.description,

@@ -16,7 +16,7 @@ export async function DELETE(
     return NextResponse.json({ error: 'Hanya admin/owner.' }, { status: 403 })
   }
 
-  const result = await deleteCustomRole(ctx.tenant.id, id)
+  const result = await deleteCustomRole(ctx.tenant.id, id, session.user.id)
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 422 })
   return NextResponse.json({ ok: true })
 }

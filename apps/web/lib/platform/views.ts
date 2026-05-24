@@ -162,21 +162,43 @@ export async function updateView(input: {
       .set(patch)
       .where(eq(views.id, input.id))
       .returning()
-    return { ok: true as const, view: rows[0]! }
+    const updated = rows[0]!
+    auditConfig({
+      tenantId: input.tenantId,
+      actorUserId: input.actorUserId ?? null,
+      resource: 'view',
+      verb: 'updated',
+      resourceId: updated.id,
+      payload: {
+        name: updated.name,
+        isDefault: updated.isDefault,
+        changed: Object.keys(patch).filter((k) => k !== 'updatedAt'),
+      },
+    })
+    return { ok: true as const, view: updated }
   })
 }
 
 export async function deleteView(
   tenantId: string,
   id: string,
+  actorUserId?: string | null,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const rows = await withTenant(tenantId, (tx) =>
     tx
       .delete(views)
       .where(and(eq(views.tenantId, tenantId), eq(views.id, id)))
-      .returning({ id: views.id }),
+      .returning({ id: views.id, name: views.name }),
   )
   if (rows.length === 0) return { ok: false, error: 'View tidak ditemukan.' }
+  auditConfig({
+    tenantId,
+    actorUserId,
+    resource: 'view',
+    verb: 'deleted',
+    resourceId: id,
+    payload: { name: rows[0]!.name },
+  })
   return { ok: true }
 }
 
