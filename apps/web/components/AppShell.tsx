@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import React from 'react'
-import LiveBadge from './LiveBadge'
+import PresenceBadge from './PresenceBadge'
 import NotificationBell from './NotificationBell'
 import KeyboardChrome, { SearchTrigger } from './KeyboardChrome'
 import AgentInboxPill from './AgentInboxPill'
@@ -306,7 +306,7 @@ export function AppShell({
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-2)', flexShrink: 0 }}>
           <SearchTrigger />
 
-          <LiveBadge />
+          <PresenceBadge />
 
           <AgentInboxPill />
 

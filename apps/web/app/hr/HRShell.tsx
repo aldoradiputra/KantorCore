@@ -2,12 +2,13 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { AppShell } from '../../components/AppShell'
 
-type HRSection = 'employees' | 'departments'
+type HRSection = 'employees' | 'departments' | 'time-off'
 
 function HRSidebar({ activeSection }: { activeSection: HRSection | null }) {
   const nav: { section: HRSection; label: string; href: string }[] = [
-    { section: 'employees', label: 'Karyawan', href: '/hr/employees' },
+    { section: 'employees',   label: 'Karyawan',   href: '/hr/employees' },
     { section: 'departments', label: 'Departemen', href: '/hr/departments' },
+    { section: 'time-off',    label: 'Cuti & Izin', href: '/hr/time-off' },
   ]
   return (
     <div style={{ padding: 'var(--s-4)', display: 'flex', flexDirection: 'column', gap: 'var(--s-3)', height: '100%' }}>
@@ -51,11 +52,13 @@ function HRSidebar({ activeSection }: { activeSection: HRSection | null }) {
 export function HRShell({
   tenantName,
   userInitials,
+  userEmail,
   activeSection,
   children,
 }: {
   tenantName: string
   userInitials: string
+  userEmail?: string
   activeSection: HRSection | null
   children: ReactNode
 }) {
@@ -63,6 +66,7 @@ export function HRShell({
     <AppShell
       tenantName={tenantName}
       userInitials={userInitials}
+      userEmail={userEmail}
       activeModule="hr"
       sidebar={<HRSidebar activeSection={activeSection} />}
     >
