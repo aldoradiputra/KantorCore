@@ -18,6 +18,7 @@ export type SettingsSection =
   | 'proj'
   | 'agent'
   | 'technical'
+  | 'platform-models'
 
 interface NavItem {
   section: SettingsSection
@@ -59,6 +60,12 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { section: 'chat',   label: 'Chat',    href: '/settings/chat' },
       { section: 'proj',   label: 'Proyek',  href: '/settings/proj' },
       { section: 'agent',  label: 'Agent',   href: '/settings/agent' },
+    ],
+  },
+  {
+    group: 'Platform',
+    items: [
+      { section: 'platform-models', label: 'Model & Custom Fields', href: '/settings/platform/models', adminOnly: true },
     ],
   },
   {
