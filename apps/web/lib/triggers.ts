@@ -5,6 +5,7 @@ import {
   type TriggerRule, type TriggerLog, type TriggerEvent, type TriggerAction,
 } from '@kantorcore/db'
 import { withTenant, getDb } from './db'
+import { resumeInstancesOnEvent } from './platform/workflow-executor'
 
 export type { TriggerRule, TriggerLog, TriggerEvent, TriggerAction }
 
@@ -146,7 +147,10 @@ export async function fireEvent(
           eq(triggerRules.status, 'active'),
         )),
     )
-    await Promise.allSettled(rules.map((rule) => executeRule(tenantId, rule, payload)))
+    await Promise.allSettled([
+      ...rules.map((rule) => executeRule(tenantId, rule, payload)),
+      resumeInstancesOnEvent(tenantId, event, payload),
+    ])
   } catch {
     // swallow — triggers are non-critical
   }

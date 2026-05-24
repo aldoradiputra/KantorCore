@@ -7,10 +7,12 @@ import {
   integer,
   boolean,
   pgEnum,
+  jsonb,
   uniqueIndex,
   index,
 } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
+import { users } from './users'
 
 /**
  * IS-FLOW — Workflow Automation. The `flow` schema starts with the
@@ -117,9 +119,100 @@ export const processSteps = flow.table(
   }),
 )
 
+// ── Instance status enums ─────────────────────────────────────────────────────
+export const instanceStatus = pgEnum('flow_instance_status', [
+  'pending',
+  'running',
+  'paused',
+  'completed',
+  'failed',
+  'cancelled',
+])
+
+export const stepRunStatus = pgEnum('flow_step_run_status', [
+  'pending',
+  'running',
+  'completed',
+  'skipped',
+  'failed',
+])
+
+// ── Process Instances ─────────────────────────────────────────────────────────
+export const processInstances = flow.table(
+  'process_instances',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    processId: uuid('process_id')
+      .notNull()
+      .references(() => processTemplates.id),
+    triggerRecordType: varchar('trigger_record_type', { length: 64 }),
+    triggerRecordId: uuid('trigger_record_id'),
+    status: instanceStatus('status').notNull().default('pending'),
+    currentSequence: integer('current_sequence').notNull().default(0),
+    context: jsonb('context').$type<Record<string, unknown>>().notNull().default({}),
+    startedBy: uuid('started_by').references(() => users.id),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    error: text('error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    tenantProcessIdx: index('flow_instances_tenant_process_idx').on(
+      t.tenantId,
+      t.processId,
+      t.status,
+    ),
+    triggerRecordIdx: index('flow_instances_trigger_record_idx').on(
+      t.tenantId,
+      t.triggerRecordType,
+      t.triggerRecordId,
+    ),
+  }),
+)
+
+// ── Process Run Steps ─────────────────────────────────────────────────────────
+export const processRunSteps = flow.table(
+  'process_run_steps',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    instanceId: uuid('instance_id')
+      .notNull()
+      .references(() => processInstances.id, { onDelete: 'cascade' }),
+    stepId: uuid('step_id')
+      .notNull()
+      .references(() => processSteps.id),
+    sequence: integer('sequence').notNull(),
+    status: stepRunStatus('status').notNull().default('pending'),
+    outcomeRecordType: varchar('outcome_record_type', { length: 64 }),
+    outcomeRecordId: uuid('outcome_record_id'),
+    completedBy: uuid('completed_by').references(() => users.id),
+    notes: text('notes'),
+    error: text('error'),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    instanceSeqIdx: index('flow_run_steps_instance_idx').on(t.instanceId, t.sequence),
+  }),
+)
+
 export type ProcessTemplate = typeof processTemplates.$inferSelect
 export type NewProcessTemplate = typeof processTemplates.$inferInsert
 export type ProcessStep = typeof processSteps.$inferSelect
 export type NewProcessStep = typeof processSteps.$inferInsert
 export type ProcessMode = (typeof processMode.enumValues)[number]
 export type StepKind = (typeof stepKind.enumValues)[number]
+export type ProcessInstance = typeof processInstances.$inferSelect
+export type NewProcessInstance = typeof processInstances.$inferInsert
+export type ProcessRunStep = typeof processRunSteps.$inferSelect
+export type NewProcessRunStep = typeof processRunSteps.$inferInsert
+export type InstanceStatus = (typeof instanceStatus.enumValues)[number]
+export type StepRunStatus = (typeof stepRunStatus.enumValues)[number]

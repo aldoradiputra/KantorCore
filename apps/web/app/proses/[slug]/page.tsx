@@ -11,6 +11,7 @@ import {
   STEP_KIND_LABEL,
 } from '../../../lib/processes'
 import { AppShell } from '../../../components/AppShell'
+import { StartProcessButton } from '../../../components/platform/ProcessInstancePanel'
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
@@ -46,7 +47,8 @@ export default async function ProsesDetailPage({ params }: { params: Promise<{ s
 
         {/* Header */}
         <header style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <h1 style={{ font: '600 22px/1.25 var(--font-sans)', color: 'var(--fg-1)', margin: 0 }}>
               {template.name}
             </h1>
@@ -65,6 +67,8 @@ export default async function ProsesDetailPage({ params }: { params: Promise<{ s
             >
               {PROCESS_MODE_LABEL[template.mode]}
             </span>
+            </div>
+            <StartProcessButton processSlug={template.slug} />
           </div>
           <p style={{ font: '14px/1.6 var(--font-sans)', color: 'var(--fg-2)', margin: 0, maxWidth: 720 }}>
             {template.description}

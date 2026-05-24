@@ -36,7 +36,8 @@ export default async function ProsesPage() {
       activeModule="proses"
     >
       <div style={{ padding: 'var(--s-6)', maxWidth: 960, display: 'flex', flexDirection: 'column', gap: 'var(--s-5)' }}>
-        <header>
+        <header style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--s-4)', flexWrap: 'wrap' }}>
+          <div>
           <h1 style={{ font: '600 24px/1.2 var(--font-sans)', color: 'var(--fg-1)', margin: 0 }}>
             Pustaka Proses
           </h1>
@@ -46,6 +47,25 @@ export default async function ProsesPage() {
             atau lewat <b style={{ color: 'var(--indigo)' }}>AI</b> (agent memutuskan dalam batas yang
             Anda tetapkan).
           </p>
+          </div>
+          <Link
+            href="/proses/instances"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              height: 34,
+              padding: '0 14px',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--r-sm)',
+              font: '600 12px/1 var(--font-sans)',
+              color: 'var(--fg-2)',
+              textDecoration: 'none',
+              background: 'var(--surface)',
+              flexShrink: 0,
+            }}
+          >
+            Lihat Instance →
+          </Link>
         </header>
 
         {/* Mode legend */}
