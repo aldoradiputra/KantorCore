@@ -8,6 +8,9 @@ export default function SecurityPolicyForm({ policy: initial }: { policy: Worksp
   const [pwdMin, setPwdMin] = useState(initial?.passwordMinLength ?? 8)
   const [sessionHours, setSessionHours] = useState(initial?.sessionTimeoutHours ?? 720)
   const [ipList, setIpList] = useState((initial?.ipAllowlist ?? []).join('\n'))
+  const [copyInfoMinRole, setCopyInfoMinRole] = useState<'owner' | 'admin' | 'member'>(
+    (initial?.copyInfoMinRole as 'owner' | 'admin' | 'member' | undefined) ?? 'member',
+  )
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [error, setError] = useState('')
 
@@ -18,7 +21,7 @@ export default function SecurityPolicyForm({ policy: initial }: { policy: Worksp
     const res = await fetch('/api/settings/security-policy', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ require2fa, passwordMinLength: pwdMin, sessionTimeoutHours: sessionHours, ipAllowlist }),
+      body: JSON.stringify({ require2fa, passwordMinLength: pwdMin, sessionTimeoutHours: sessionHours, ipAllowlist, copyInfoMinRole }),
     })
     if (res.ok) {
       setStatus('saved')
@@ -116,6 +119,45 @@ export default function SecurityPolicyForm({ policy: initial }: { policy: Worksp
             <p style={{ font: '400 11px/1.5 var(--font-sans)', color: 'var(--fg-3)', margin: '4px 0 0' }}>
               Hati-hati: jika Anda salah konfigurasi IP, Anda bisa terkunci dari workspace sendiri.
             </p>
+          </PolicyCard>
+
+          {/* Copy-info access */}
+          <PolicyCard
+            title="Akses Salin Info Record"
+            description="Tombol “Salin info” di faktur, tagihan, pesanan jual/beli, dan kontak menyalin info ringkas (nomor, lawan transaksi, nominal, tanggal, link) ke clipboard. Atur peran minimum yang boleh memakainya."
+            badge={{
+              label:
+                copyInfoMinRole === 'member' ? 'Semua anggota'
+                : copyInfoMinRole === 'admin' ? 'Admin & Owner'
+                : 'Owner saja',
+              color:
+                copyInfoMinRole === 'member' ? 'var(--teal)'
+                : copyInfoMinRole === 'admin' ? 'var(--indigo)'
+                : 'var(--amber)',
+            }}
+          >
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {(['member', 'admin', 'owner'] as const).map((r) => {
+                const on = copyInfoMinRole === r
+                const label = r === 'member' ? 'Semua anggota' : r === 'admin' ? 'Admin & Owner' : 'Owner saja'
+                return (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setCopyInfoMinRole(r)}
+                    style={{
+                      height: 30, padding: '0 12px', borderRadius: 999, cursor: 'pointer',
+                      border: `1px solid ${on ? 'var(--indigo)' : 'var(--border)'}`,
+                      background: on ? 'var(--indigo)' : 'transparent',
+                      color: on ? 'var(--white)' : 'var(--fg-2)',
+                      font: '500 12px/1 var(--font-sans)',
+                    }}
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
           </PolicyCard>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)', paddingTop: 4 }}>

@@ -6,6 +6,7 @@ import { getSO, soSubtotal } from '../../../../lib/sales'
 import { SalesShell } from '../../SalesShell'
 import { SOActions } from './SOActions'
 import { CopyRecordButton } from '../../../../components/CopyRecordButton'
+import { getSecurityPolicy, canCopyRecordInfo } from '../../../../lib/admin'
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
@@ -41,6 +42,8 @@ export default async function SODetailPage({ params }: { params: Promise<{ id: s
   const { so, lines, customerContact } = data
   const color = STATUS_COLOR[so.status] ?? 'var(--fg-3)'
   const subtotal = soSubtotal(lines)
+  const securityPolicy = await getSecurityPolicy(ctx.tenant.id)
+  const canCopy = canCopyRecordInfo(ctx.membership.role, securityPolicy)
 
   return (
     <SalesShell
@@ -57,7 +60,7 @@ export default async function SODetailPage({ params }: { params: Promise<{ id: s
             <h1 style={{ font: '600 22px/1.2 var(--font-sans)', color: 'var(--fg-1)', margin: 0, fontFamily: 'var(--font-mono, monospace)' }}>{so.soNumber}</h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <CopyRecordButton
+            {canCopy && <CopyRecordButton
               recordPath={`/sales/orders/${so.id}`}
               fields={[
                 { label: 'Pesanan', value: so.soNumber },
@@ -67,7 +70,7 @@ export default async function SODetailPage({ params }: { params: Promise<{ id: s
                 { label: 'Berlaku hingga', value: so.expiryDate },
                 { label: 'Status', value: STATUS_LABEL[so.status] ?? so.status },
               ]}
-            />
+            />}
             <span style={{ font: '600 11px/1 var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '5px 10px', borderRadius: 999, color, border: `1px solid ${color}` }}>
               {STATUS_LABEL[so.status] ?? so.status}
             </span>

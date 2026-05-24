@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import type { ContactRow, ContactStats } from '../../../lib/contacts'
 import type { ContactRole, ContactType } from '@kantorcore/db'
+import { CopyRecordButton } from '../../../components/CopyRecordButton'
 
 const ROLE_LABEL: Record<ContactRole, string> = {
   staff: 'Karyawan',
@@ -35,10 +36,12 @@ export default function ContactsPanel({
   contacts: initial,
   stats: initialStats,
   members,
+  canCopy = false,
 }: {
   contacts: ContactRow[]
   stats: ContactStats
   members: Member[]
+  canCopy?: boolean
 }) {
   const [contacts, setContacts] = useState<ContactRow[]>(initial)
   const [stats, setStats] = useState<ContactStats>(initialStats)
@@ -204,12 +207,24 @@ export default function ContactsPanel({
                       ) : '—'}
                     </td>
                     <td style={{ padding: '10px 14px', textAlign: 'right' }}>
-                      <button
-                        onClick={() => setEditing(row)}
-                        style={{ height: 26, padding: '0 10px', border: '1px solid var(--border)', background: 'transparent', borderRadius: 'var(--r-sm)', font: '500 11px/1 var(--font-sans)', color: 'var(--fg-2)', cursor: 'pointer' }}
-                      >
-                        Edit
-                      </button>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
+                        {canCopy && (
+                          <CopyRecordButton
+                            buttonLabel="Salin"
+                            fields={[
+                              { label: 'Nama', value: row.contact.name },
+                              { label: 'Telepon', value: row.contact.phone },
+                              { label: 'Email', value: row.contact.email },
+                            ]}
+                          />
+                        )}
+                        <button
+                          onClick={() => setEditing(row)}
+                          style={{ height: 26, padding: '0 10px', border: '1px solid var(--border)', background: 'transparent', borderRadius: 'var(--r-sm)', font: '500 11px/1 var(--font-sans)', color: 'var(--fg-2)', cursor: 'pointer' }}
+                        >
+                          Edit
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

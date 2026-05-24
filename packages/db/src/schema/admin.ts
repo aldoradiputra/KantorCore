@@ -10,6 +10,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import { platform, tenants } from './tenants'
 import { users } from './users'
+import { membershipRole } from './memberships'
 
 /**
  * Workspace-level user groups. Used for mentions, notification routing,
@@ -117,6 +118,9 @@ export const workspaceSecurityPolicy = platform.table(
     passwordMinLength: integer('password_min_length').notNull().default(8),
     sessionTimeoutHours: integer('session_timeout_hours').notNull().default(720),
     ipAllowlist: text('ip_allowlist').array().notNull().default([]),
+    // Minimum membership role required to use the "Salin info" copy-record button
+    // on invoices, bills, sales orders, purchase orders, and contacts.
+    copyInfoMinRole: membershipRole('copy_info_min_role').notNull().default('member'),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
   },

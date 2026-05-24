@@ -6,6 +6,7 @@ import { getInvoice, formatIDR, DOC_STATUS_LABEL, DOC_STATUS_COLOR, getInvoiceTa
 import { FinShell } from '../../FinShell'
 import { InvoiceActions } from './InvoiceActions'
 import { CopyRecordButton } from '../../../../components/CopyRecordButton'
+import { getSecurityPolicy, canCopyRecordInfo } from '../../../../lib/admin'
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
@@ -23,10 +24,12 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
   const { invoice, lines, total } = data
   const statusColor = DOC_STATUS_COLOR[invoice.status] ?? 'var(--fg-3)'
-  const [breakdown, allTaxes] = await Promise.all([
+  const [breakdown, allTaxes, securityPolicy] = await Promise.all([
     getInvoiceTaxBreakdown(ctx.tenant.id, id),
     listTaxes(ctx.tenant.id, { scope: 'sale' }),
+    getSecurityPolicy(ctx.tenant.id),
   ])
+  const canCopy = canCopyRecordInfo(ctx.membership.role, securityPolicy)
   const taxById = new Map(allTaxes.map((t) => [t.id, t]))
 
   return (
@@ -52,7 +55,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <CopyRecordButton
+            {canCopy && <CopyRecordButton
               recordPath={`/fin/invoices/${invoice.id}`}
               fields={[
                 { label: 'Faktur', value: invoice.invoiceNumber },
@@ -62,7 +65,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                 { label: 'Jatuh tempo', value: invoice.dueDate },
                 { label: 'Status', value: DOC_STATUS_LABEL[invoice.status] ?? invoice.status },
               ]}
-            />
+            />}
             <span style={{
               font: '600 11px/1 var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase',
               padding: '6px 10px', borderRadius: 999, color: statusColor, border: `1px solid ${statusColor}`,

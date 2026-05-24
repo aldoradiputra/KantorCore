@@ -197,6 +197,8 @@ export async function getSecurityPolicy(tenantId: string): Promise<WorkspaceSecu
   })
 }
 
+export type CopyInfoMinRole = 'owner' | 'admin' | 'member'
+
 export async function saveSecurityPolicy(input: {
   tenantId: string
   updatedBy: string
@@ -204,6 +206,7 @@ export async function saveSecurityPolicy(input: {
   passwordMinLength: number
   sessionTimeoutHours: number
   ipAllowlist: string[]
+  copyInfoMinRole: CopyInfoMinRole
 }): Promise<WorkspaceSecurityPolicy> {
   return withTenant(input.tenantId, async (tx) => {
     const [row] = await tx
@@ -214,6 +217,7 @@ export async function saveSecurityPolicy(input: {
         passwordMinLength: input.passwordMinLength,
         sessionTimeoutHours: input.sessionTimeoutHours,
         ipAllowlist: input.ipAllowlist,
+        copyInfoMinRole: input.copyInfoMinRole,
         updatedAt: new Date(),
         updatedBy: input.updatedBy,
       })
@@ -224,6 +228,7 @@ export async function saveSecurityPolicy(input: {
           passwordMinLength: input.passwordMinLength,
           sessionTimeoutHours: input.sessionTimeoutHours,
           ipAllowlist: input.ipAllowlist,
+          copyInfoMinRole: input.copyInfoMinRole,
           updatedAt: new Date(),
           updatedBy: input.updatedBy,
         },
@@ -231,6 +236,21 @@ export async function saveSecurityPolicy(input: {
       .returning()
     return row!
   })
+}
+
+/**
+ * Returns true when the given membership role meets the workspace's minimum
+ * role for the "Salin info" copy-record feature. Defaults to permissive
+ * ('member' = everyone) when the policy row hasn't been created yet.
+ */
+const ROLE_RANK: Record<CopyInfoMinRole, number> = { member: 0, admin: 1, owner: 2 }
+
+export function canCopyRecordInfo(
+  role: 'owner' | 'admin' | 'member',
+  policy: WorkspaceSecurityPolicy | null,
+): boolean {
+  const minRole = (policy?.copyInfoMinRole ?? 'member') as CopyInfoMinRole
+  return ROLE_RANK[role] >= ROLE_RANK[minRole]
 }
 
 /* ── Audit log ───────────────────────────────────────────────────────── */

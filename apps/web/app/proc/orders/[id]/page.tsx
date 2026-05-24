@@ -6,6 +6,7 @@ import { getPO, poSubtotal } from '../../../../lib/procurement'
 import { ProcShell } from '../../ProcShell'
 import { POActions } from './POActions'
 import { CopyRecordButton } from '../../../../components/CopyRecordButton'
+import { getSecurityPolicy, canCopyRecordInfo } from '../../../../lib/admin'
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
@@ -43,6 +44,8 @@ export default async function PODetailPage({ params }: { params: Promise<{ id: s
   const { po, lines, vendorContact } = data
   const color = STATUS_COLOR[po.status] ?? 'var(--fg-3)'
   const subtotal = poSubtotal(lines)
+  const securityPolicy = await getSecurityPolicy(ctx.tenant.id)
+  const canCopy = canCopyRecordInfo(ctx.membership.role, securityPolicy)
 
   return (
     <ProcShell
@@ -59,7 +62,7 @@ export default async function PODetailPage({ params }: { params: Promise<{ id: s
             <h1 style={{ font: '600 22px/1.2 var(--font-sans)', color: 'var(--fg-1)', margin: 0, fontFamily: 'var(--font-mono, monospace)' }}>{po.poNumber}</h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <CopyRecordButton
+            {canCopy && <CopyRecordButton
               recordPath={`/proc/orders/${po.id}`}
               fields={[
                 { label: 'PO', value: po.poNumber },
@@ -69,7 +72,7 @@ export default async function PODetailPage({ params }: { params: Promise<{ id: s
                 { label: 'Tgl ekspektasi', value: po.expectedDate },
                 { label: 'Status', value: STATUS_LABEL[po.status] ?? po.status },
               ]}
-            />
+            />}
             <span style={{ font: '600 11px/1 var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '5px 10px', borderRadius: 999, color, border: `1px solid ${color}` }}>
               {STATUS_LABEL[po.status] ?? po.status}
             </span>

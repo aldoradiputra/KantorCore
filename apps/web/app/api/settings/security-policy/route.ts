@@ -28,6 +28,11 @@ export async function PUT(req: Request) {
   if (pwdMin < 6 || pwdMin > 128) return NextResponse.json({ error: 'Panjang kata sandi harus 6–128.' }, { status: 400 })
   if (sessionHours < 1 || sessionHours > 8760) return NextResponse.json({ error: 'Session timeout harus 1–8760 jam.' }, { status: 400 })
 
+  const copyInfoMinRole = body.copyInfoMinRole ?? 'member'
+  if (copyInfoMinRole !== 'owner' && copyInfoMinRole !== 'admin' && copyInfoMinRole !== 'member') {
+    return NextResponse.json({ error: 'copyInfoMinRole tidak valid.' }, { status: 400 })
+  }
+
   const policy = await saveSecurityPolicy({
     tenantId: ctx.tenant.id,
     updatedBy: ctx.session.user.id,
@@ -35,6 +40,7 @@ export async function PUT(req: Request) {
     passwordMinLength: pwdMin,
     sessionTimeoutHours: sessionHours,
     ipAllowlist: Array.isArray(body.ipAllowlist) ? body.ipAllowlist.filter((s: unknown) => typeof s === 'string') : [],
+    copyInfoMinRole,
   })
   return NextResponse.json({ policy })
 }

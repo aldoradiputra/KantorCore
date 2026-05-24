@@ -6,6 +6,7 @@ import { getBill, formatIDR, DOC_STATUS_LABEL, DOC_STATUS_COLOR, getBillTaxBreak
 import { FinShell } from '../../FinShell'
 import { BillActions } from './BillActions'
 import { CopyRecordButton } from '../../../../components/CopyRecordButton'
+import { getSecurityPolicy, canCopyRecordInfo } from '../../../../lib/admin'
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
@@ -23,10 +24,12 @@ export default async function BillDetailPage({ params }: { params: Promise<{ id:
 
   const { bill, lines, total } = data
   const statusColor = DOC_STATUS_COLOR[bill.status] ?? 'var(--fg-3)'
-  const [breakdown, allTaxes] = await Promise.all([
+  const [breakdown, allTaxes, securityPolicy] = await Promise.all([
     getBillTaxBreakdown(ctx.tenant.id, id),
     listTaxes(ctx.tenant.id, { scope: 'purchase' }),
+    getSecurityPolicy(ctx.tenant.id),
   ])
+  const canCopy = canCopyRecordInfo(ctx.membership.role, securityPolicy)
   const taxById = new Map(allTaxes.map((t) => [t.id, t]))
 
   return (
@@ -50,7 +53,7 @@ export default async function BillDetailPage({ params }: { params: Promise<{ id:
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <CopyRecordButton
+            {canCopy && <CopyRecordButton
               recordPath={`/fin/bills/${bill.id}`}
               fields={[
                 { label: 'Tagihan', value: bill.billNumber },
@@ -61,7 +64,7 @@ export default async function BillDetailPage({ params }: { params: Promise<{ id:
                 { label: 'Jatuh tempo', value: bill.dueDate },
                 { label: 'Status', value: DOC_STATUS_LABEL[bill.status] ?? bill.status },
               ]}
-            />
+            />}
             <span style={{ font: '600 11px/1 var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '6px 10px', borderRadius: 999, color: statusColor, border: `1px solid ${statusColor}` }}>
               {DOC_STATUS_LABEL[bill.status] ?? bill.status}
             </span>
