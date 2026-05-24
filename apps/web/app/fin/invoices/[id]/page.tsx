@@ -5,6 +5,7 @@ import { getCurrentTenant } from '../../../../lib/tenants'
 import { getInvoice, formatIDR, DOC_STATUS_LABEL, DOC_STATUS_COLOR, getInvoiceTaxBreakdown, listTaxes } from '../../../../lib/finance'
 import { FinShell } from '../../FinShell'
 import { InvoiceActions } from './InvoiceActions'
+import { CopyRecordButton } from '../../../../components/CopyRecordButton'
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
@@ -50,12 +51,25 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               {invoice.customerName}{invoice.customerEmail ? ` · ${invoice.customerEmail}` : ''}
             </div>
           </div>
-          <span style={{
-            font: '600 11px/1 var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase',
-            padding: '6px 10px', borderRadius: 999, color: statusColor, border: `1px solid ${statusColor}`,
-          }}>
-            {DOC_STATUS_LABEL[invoice.status] ?? invoice.status}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <CopyRecordButton
+              recordPath={`/fin/invoices/${invoice.id}`}
+              fields={[
+                { label: 'Faktur', value: invoice.invoiceNumber },
+                { label: 'Pelanggan', value: invoice.customerName },
+                { label: 'Total', value: formatIDR(breakdown.grandTotal) },
+                { label: 'Tanggal', value: invoice.date },
+                { label: 'Jatuh tempo', value: invoice.dueDate },
+                { label: 'Status', value: DOC_STATUS_LABEL[invoice.status] ?? invoice.status },
+              ]}
+            />
+            <span style={{
+              font: '600 11px/1 var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase',
+              padding: '6px 10px', borderRadius: 999, color: statusColor, border: `1px solid ${statusColor}`,
+            }}>
+              {DOC_STATUS_LABEL[invoice.status] ?? invoice.status}
+            </span>
+          </div>
         </header>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s-3)' }}>

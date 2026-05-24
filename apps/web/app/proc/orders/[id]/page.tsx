@@ -5,6 +5,7 @@ import { getCurrentTenant } from '../../../../lib/tenants'
 import { getPO, poSubtotal } from '../../../../lib/procurement'
 import { ProcShell } from '../../ProcShell'
 import { POActions } from './POActions'
+import { CopyRecordButton } from '../../../../components/CopyRecordButton'
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
@@ -57,9 +58,22 @@ export default async function PODetailPage({ params }: { params: Promise<{ id: s
             </div>
             <h1 style={{ font: '600 22px/1.2 var(--font-sans)', color: 'var(--fg-1)', margin: 0, fontFamily: 'var(--font-mono, monospace)' }}>{po.poNumber}</h1>
           </div>
-          <span style={{ font: '600 11px/1 var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '5px 10px', borderRadius: 999, color, border: `1px solid ${color}`, flexShrink: 0 }}>
-            {STATUS_LABEL[po.status] ?? po.status}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <CopyRecordButton
+              recordPath={`/proc/orders/${po.id}`}
+              fields={[
+                { label: 'PO', value: po.poNumber },
+                { label: 'Vendor', value: po.vendorName },
+                { label: 'Total', value: formatIDR(subtotal) },
+                { label: 'Tanggal PO', value: po.date },
+                { label: 'Tgl ekspektasi', value: po.expectedDate },
+                { label: 'Status', value: STATUS_LABEL[po.status] ?? po.status },
+              ]}
+            />
+            <span style={{ font: '600 11px/1 var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '5px 10px', borderRadius: 999, color, border: `1px solid ${color}` }}>
+              {STATUS_LABEL[po.status] ?? po.status}
+            </span>
+          </div>
         </div>
 
         {/* Header info */}

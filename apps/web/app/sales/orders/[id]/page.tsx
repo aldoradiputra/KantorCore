@@ -5,6 +5,7 @@ import { getCurrentTenant } from '../../../../lib/tenants'
 import { getSO, soSubtotal } from '../../../../lib/sales'
 import { SalesShell } from '../../SalesShell'
 import { SOActions } from './SOActions'
+import { CopyRecordButton } from '../../../../components/CopyRecordButton'
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
@@ -55,9 +56,22 @@ export default async function SODetailPage({ params }: { params: Promise<{ id: s
             </div>
             <h1 style={{ font: '600 22px/1.2 var(--font-sans)', color: 'var(--fg-1)', margin: 0, fontFamily: 'var(--font-mono, monospace)' }}>{so.soNumber}</h1>
           </div>
-          <span style={{ font: '600 11px/1 var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '5px 10px', borderRadius: 999, color, border: `1px solid ${color}`, flexShrink: 0 }}>
-            {STATUS_LABEL[so.status] ?? so.status}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <CopyRecordButton
+              recordPath={`/sales/orders/${so.id}`}
+              fields={[
+                { label: 'Pesanan', value: so.soNumber },
+                { label: 'Pelanggan', value: so.customerName },
+                { label: 'Total', value: formatIDR(subtotal) },
+                { label: 'Tanggal', value: so.date },
+                { label: 'Berlaku hingga', value: so.expiryDate },
+                { label: 'Status', value: STATUS_LABEL[so.status] ?? so.status },
+              ]}
+            />
+            <span style={{ font: '600 11px/1 var(--font-sans)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '5px 10px', borderRadius: 999, color, border: `1px solid ${color}` }}>
+              {STATUS_LABEL[so.status] ?? so.status}
+            </span>
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s-4)', padding: 'var(--s-4)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--surface)' }}>
