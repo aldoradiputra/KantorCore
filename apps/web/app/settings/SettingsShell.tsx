@@ -19,6 +19,8 @@ export type SettingsSection =
   | 'agent'
   | 'technical'
   | 'platform-models'
+  | 'platform-policies'
+  | 'platform-roles'
 
 interface NavItem {
   section: SettingsSection
@@ -65,7 +67,9 @@ const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: 'Platform',
     items: [
-      { section: 'platform-models', label: 'Model & Custom Fields', href: '/settings/platform/models', adminOnly: true },
+      { section: 'platform-models',   label: 'Model & Custom Fields', href: '/settings/platform/models',   adminOnly: true },
+      { section: 'platform-roles',    label: 'Custom Roles',          href: '/settings/platform/roles',    adminOnly: true },
+      { section: 'platform-policies', label: 'Policies',              href: '/settings/platform/policies', adminOnly: true },
     ],
   },
   {

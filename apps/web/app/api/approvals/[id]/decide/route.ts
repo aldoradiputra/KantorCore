@@ -1,0 +1,31 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getCurrentSession } from '../../../../../lib/auth'
+import { getCurrentTenant } from '../../../../../lib/tenants'
+import { decideStepApproval } from '../../../../../lib/platform/workflow-executor'
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params
+  const session = await getCurrentSession()
+  if (!session) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
+  const ctx = await getCurrentTenant(session.user.id)
+  if (!ctx) return NextResponse.json({ error: 'No tenant' }, { status: 403 })
+
+  const body = await req.json().catch(() => null)
+  if (!body || (body.decision !== 'approved' && body.decision !== 'rejected')) {
+    return NextResponse.json({ error: "decision harus 'approved' atau 'rejected'." }, { status: 400 })
+  }
+
+  const result = await decideStepApproval({
+    tenantId: ctx.tenant.id,
+    approvalId: id,
+    actorId: session.user.id,
+    decision: body.decision,
+    notes: body.notes,
+  })
+
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: 422 })
+  return NextResponse.json({ ok: true })
+}

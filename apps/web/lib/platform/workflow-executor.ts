@@ -13,6 +13,7 @@ import { withTenant } from '../db'
 import { getProcessBySlug } from '../processes'
 import { createRecord } from './records'
 import { recordAudit } from '../audit'
+import { createApproval, decideApproval } from './approvals'
 
 export type { ProcessInstance, ProcessRunStep }
 
@@ -262,7 +263,21 @@ async function runInstance(tenantId: string, instanceId: string): Promise<void> 
   if (nextStep.kind === 'action') {
     await executeActionStep(tenantId, instanceId, stepRun.id, nextStep, instance)
   } else if (nextStep.kind === 'human' || nextStep.kind === 'agent') {
-    // Pause and wait for human/agent to advance
+    // Pause and wait for human/agent to advance.
+    // If a required role is set, automatically open an approval request.
+    if (nextStep.requiredRole) {
+      await createApproval({
+        tenantId,
+        resourceType: 'flow.process_instances',
+        resourceId: instanceId,
+        action: 'advance_step',
+        title: `Persetujuan: ${nextStep.name}`,
+        description: nextStep.description ?? null,
+        requesterId: instance.startedBy ?? null,
+        requiredRole: nextStep.requiredRole,
+        context: { stepRunId: stepRun.id, sequence: nextStep.sequence },
+      }).catch(() => {})
+    }
     await withTenant(tenantId, (tx) =>
       tx
         .update(processInstances)
@@ -388,6 +403,42 @@ function triggerMatches(triggerText: string | null, event: string): boolean {
   }
   const patterns = eventMap[eventLower] ?? []
   return patterns.some((p) => triggerLower.includes(p))
+}
+
+/**
+ * Decide an approval whose resource is a process instance step.
+ * On approval, advance the corresponding human step automatically.
+ */
+export async function decideStepApproval(input: {
+  tenantId: string
+  approvalId: string
+  actorId: string
+  decision: 'approved' | 'rejected'
+  notes?: string
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const result = await decideApproval({
+    tenantId: input.tenantId,
+    approvalId: input.approvalId,
+    actorId: input.actorId,
+    decision: input.decision,
+    notes: input.notes,
+    onApproved: async (approval) => {
+      if (approval.resourceType !== 'flow.process_instances') return
+      const stepRunId = (approval.context as Record<string, unknown>)['stepRunId'] as
+        | string
+        | undefined
+      if (!stepRunId) return
+      await advanceHumanStep({
+        tenantId: input.tenantId,
+        instanceId: approval.resourceId,
+        stepRunId,
+        actorId: input.actorId,
+        notes: input.notes,
+      })
+    },
+  })
+  if (!result.ok) return { ok: false, error: result.error }
+  return { ok: true }
 }
 
 // ── Cancel ────────────────────────────────────────────────────────────────────

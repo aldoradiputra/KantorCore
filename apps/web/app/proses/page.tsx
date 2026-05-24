@@ -48,24 +48,42 @@ export default async function ProsesPage() {
             Anda tetapkan).
           </p>
           </div>
-          <Link
-            href="/proses/instances"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              height: 34,
-              padding: '0 14px',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--r-sm)',
-              font: '600 12px/1 var(--font-sans)',
-              color: 'var(--fg-2)',
-              textDecoration: 'none',
-              background: 'var(--surface)',
-              flexShrink: 0,
-            }}
-          >
-            Lihat Instance →
-          </Link>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <Link
+              href="/approvals"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                height: 34,
+                padding: '0 14px',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r-sm)',
+                font: '600 12px/1 var(--font-sans)',
+                color: 'var(--fg-2)',
+                textDecoration: 'none',
+                background: 'var(--surface)',
+              }}
+            >
+              Persetujuan
+            </Link>
+            <Link
+              href="/proses/instances"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                height: 34,
+                padding: '0 14px',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r-sm)',
+                font: '600 12px/1 var(--font-sans)',
+                color: 'var(--fg-2)',
+                textDecoration: 'none',
+                background: 'var(--surface)',
+              }}
+            >
+              Lihat Instance →
+            </Link>
+          </div>
         </header>
 
         {/* Mode legend */}
