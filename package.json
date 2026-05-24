@@ -11,8 +11,6 @@
     "build:roadmap": "turbo build --filter=@kantorcore/roadmap",
     "dev:marketing":   "turbo dev --filter=@kantorcore/marketing",
     "build:marketing": "turbo build --filter=@kantorcore/marketing",
-    "dev:docs":   "turbo dev --filter=@kantorcore/docs",
-    "build:docs": "turbo build --filter=@kantorcore/docs",
     "dev:web":   "turbo dev --filter=@kantorcore/web",
     "build:web": "turbo build --filter=@kantorcore/web",
     "db:generate": "pnpm --filter=@kantorcore/db db:generate",

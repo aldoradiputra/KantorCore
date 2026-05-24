@@ -1,27 +1,16 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { DOCS_MAP } from '../docs-content'
 import { useLocale, STRINGS } from '../locale-context'
 import type { Node } from '@kantorcore/types'
 
-type DocResult  = { kind: 'doc';  id: string; title: string; breadcrumb: string }
-type NodeResult = { kind: 'node'; id: string; label: string; phase: number; code?: string }
-type Result = DocResult | NodeResult
+type NodeResult = { id: string; label: string; phase: number; code?: string }
 
 const PHASE_COLOR: Record<number, string> = { 1: 'var(--indigo)', 2: 'var(--teal)', 3: 'var(--amber)' }
 
-// Build static index once
-const DOC_INDEX: DocResult[] = Object.values(DOCS_MAP).map(p => ({
-  kind: 'doc',
-  id: p.id,
-  title: p.title,
-  breadcrumb: p.breadcrumb ?? 'Documentation',
-}))
-
 type Props = {
   nodes: Node[]
-  onNavigate: (kind: 'doc' | 'node', id: string) => void
+  onNavigate: (id: string) => void
   onClose: () => void
 }
 
@@ -36,32 +25,23 @@ export default function SearchModal({ nodes, onNavigate, onClose }: Props) {
 
   const NODE_INDEX: NodeResult[] = nodes
     .filter(n => n.type === 'module' || n.type === 'app')
-    .map(n => ({ kind: 'node', id: n.id, label: n.label, phase: n.phase, code: n.code }))
+    .map(n => ({ id: n.id, label: n.label, phase: n.phase, code: n.code }))
 
   const q = query.toLowerCase().trim()
-
-  const docResults: DocResult[] = q
-    ? DOC_INDEX.filter(r =>
-        r.title.toLowerCase().includes(q) ||
-        r.breadcrumb.toLowerCase().includes(q)
-      ).slice(0, 6)
-    : DOC_INDEX.slice(0, 5)
 
   const nodeResults: NodeResult[] = q
     ? NODE_INDEX.filter(r =>
         r.label.toLowerCase().includes(q) ||
         r.code?.toLowerCase().includes(q)
-      ).slice(0, 6)
-    : NODE_INDEX.filter(r => r.phase === 1).slice(0, 5)
-
-  const allResults: Result[] = [...docResults, ...nodeResults]
+      ).slice(0, 12)
+    : NODE_INDEX.filter(r => r.phase === 1).slice(0, 10)
 
   useEffect(() => { setCursor(0) }, [query])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); setCursor(c => Math.min(c + 1, allResults.length - 1)) }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setCursor(c => Math.min(c + 1, nodeResults.length - 1)) }
     if (e.key === 'ArrowUp')   { e.preventDefault(); setCursor(c => Math.max(c - 1, 0)) }
-    if (e.key === 'Enter' && allResults[cursor]) onNavigate(allResults[cursor].kind, allResults[cursor].id)
+    if (e.key === 'Enter' && nodeResults[cursor]) onNavigate(nodeResults[cursor].id)
     if (e.key === 'Escape') onClose()
   }
 
@@ -104,80 +84,47 @@ export default function SearchModal({ nodes, onNavigate, onClose }: Props) {
 
         {/* Results */}
         <div style={{ maxHeight: 420, overflowY: 'auto' }}>
-          {allResults.length === 0 ? (
+          {nodeResults.length === 0 ? (
             <div style={{ padding: '28px 16px', textAlign: 'center', fontSize: 13, color: 'var(--muted)' }}>
               {s.searchEmpty} &ldquo;{query}&rdquo;
             </div>
           ) : (
             <>
-              {docResults.length > 0 && (
-                <>
-                  <div style={{ padding: '10px 16px 6px', fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                    {s.searchGroupDocs}
-                  </div>
-                  {docResults.map((r, i) => {
-                    const active = cursor === i
-                    return (
-                      <button
-                        key={r.id}
-                        onClick={() => onNavigate(r.kind, r.id)}
-                        onMouseEnter={() => setCursor(i)}
-                        style={{
-                          display: 'block', width: '100%', textAlign: 'left',
-                          padding: '10px 16px', border: 'none', cursor: 'pointer',
-                          background: active ? 'var(--indigo-light)' : 'transparent',
-                          borderLeft: `2px solid ${active ? 'var(--indigo)' : 'transparent'}`,
-                          fontFamily: 'inherit', transition: 'background 0.1s',
-                        }}
-                      >
-                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--navy)', marginBottom: 2 }}>{r.title}</div>
-                        <div style={{ fontSize: 11, color: 'var(--muted)' }}>{r.breadcrumb}</div>
-                      </button>
-                    )
-                  })}
-                </>
-              )}
-
-              {nodeResults.length > 0 && (
-                <>
-                  <div style={{ padding: '10px 16px 6px', fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                    {s.searchGroupModules}
-                  </div>
-                  {nodeResults.map((r, i) => {
-                    const idx    = docResults.length + i
-                    const active = cursor === idx
-                    const color  = PHASE_COLOR[r.phase] ?? 'var(--muted)'
-                    return (
-                      <button
-                        key={r.id}
-                        onClick={() => onNavigate(r.kind, r.id)}
-                        onMouseEnter={() => setCursor(idx)}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 12,
-                          width: '100%', textAlign: 'left',
-                          padding: '10px 16px', border: 'none', cursor: 'pointer',
-                          background: active ? 'var(--indigo-light)' : 'transparent',
-                          borderLeft: `2px solid ${active ? 'var(--indigo)' : 'transparent'}`,
-                          fontFamily: 'inherit', transition: 'background 0.1s',
-                        }}
-                      >
-                        <div style={{
-                          flexShrink: 0, width: 28, height: 28, borderRadius: 6,
-                          background: 'var(--bg)', border: `1px solid ${color}`,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 9, fontWeight: 800, color, letterSpacing: '0.3px',
-                        }}>
-                          P{r.phase}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--navy)', marginBottom: 1 }}>{r.label}</div>
-                          {r.code && <div style={{ fontSize: 11, color: 'var(--muted)' }}>{r.code}</div>}
-                        </div>
-                      </button>
-                    )
-                  })}
-                </>
-              )}
+              <div style={{ padding: '10px 16px 6px', fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                {s.searchGroupModules}
+              </div>
+              {nodeResults.map((r, i) => {
+                const active = cursor === i
+                const color  = PHASE_COLOR[r.phase] ?? 'var(--muted)'
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => onNavigate(r.id)}
+                    onMouseEnter={() => setCursor(i)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      width: '100%', textAlign: 'left',
+                      padding: '10px 16px', border: 'none', cursor: 'pointer',
+                      background: active ? 'var(--indigo-light)' : 'transparent',
+                      borderLeft: `2px solid ${active ? 'var(--indigo)' : 'transparent'}`,
+                      fontFamily: 'inherit', transition: 'background 0.1s',
+                    }}
+                  >
+                    <div style={{
+                      flexShrink: 0, width: 28, height: 28, borderRadius: 6,
+                      background: 'var(--bg)', border: `1px solid ${color}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 9, fontWeight: 800, color, letterSpacing: '0.3px',
+                    }}>
+                      P{r.phase}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--navy)', marginBottom: 1 }}>{r.label}</div>
+                      {r.code && <div style={{ fontSize: 11, color: 'var(--muted)' }}>{r.code}</div>}
+                    </div>
+                  </button>
+                )
+              })}
             </>
           )}
         </div>

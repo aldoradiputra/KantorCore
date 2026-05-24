@@ -25,32 +25,25 @@ No test runner or linter is configured yet.
 ### Current project structure (fully built):
 
 ```
-app/
-  layout.tsx                  # Root layout
-  globals.css                 # CSS variables + resets + map animations
-  page.tsx                    # Main shell — renders RoadmapApp
-  types.ts                    # Node type definition
-  locale-context.ts           # Locale helpers
-  docs-content.ts             # Static docs content
-  api/
-    chat/
-      route.ts                # Claude API proxy (ANTHROPIC_API_KEY, streaming)
-  components/
-    RoadmapApp.tsx            # Top-level state, view routing (Map/List/Docs/Learn)
-    TopNav.tsx                # Navigation bar with view toggle + search trigger
-    MapView.tsx               # SVG map: pannable, zoomable, expandable nodes
-    ListView.tsx              # Grouped list view by phase
-    DetailPanel.tsx           # Right-side node detail slide-in panel
-    ChatPanel.tsx             # Collapsible AI chat panel
-    SearchModal.tsx           # Keyboard-triggered search overlay
-    SearchFilterBar.tsx       # Filter controls
-    DocsView.tsx              # Docs view shell
-    DocSidebar.tsx            # Docs navigation sidebar
-    DocContent.tsx            # Rendered doc content
-    LearnView.tsx             # Learn view
-data/
-  features.json               # All roadmap nodes (v0.9, 480 nodes)
+apps/roadmap/
+  app/
+    layout.tsx                # Root layout
+    globals.css               # CSS variables + resets + map animations
+    page.tsx                  # Main shell — renders RoadmapApp
+    locale-context.ts         # Locale helpers (en/id)
+    components/
+      RoadmapApp.tsx          # Top-level state, view toggle (List/Map)
+      TopNav.tsx              # Logo + search trigger + locale + version
+      MapView.tsx             # SVG map: pannable, zoomable, expandable nodes
+      ListView.tsx            # Grouped list view by phase
+      DetailPanel.tsx         # Right-side node detail slide-in panel
+      SearchModal.tsx         # Keyboard-triggered (⌘K) search overlay
+      SearchFilterBar.tsx     # Filter controls
+  data/
+    features.json             # All roadmap nodes (v0.9, 654 nodes)
 ```
+
+The roadmap is one of several apps in the monorepo (`apps/marketing`, `apps/web` for KantorCore itself). Docs and Learn views were removed in May 2026 — `docs.kantorcore.com` is deprecated; roadmap content stands alone.
 
 ### `features.json` node schema
 
@@ -88,31 +81,12 @@ data/
 - **Multi-line labels**: long labels word-wrap to 2 lines; box heights grow dynamically per node based on line count
 - **Smooth position transitions**: nodes use CSS `transform: translate(Xpx, Ypx)` with `transition: transform 0.45s` so expanding/collapsing smoothly redistributes the layout
 
-### `/api/chat` system prompt:
-
-```
-You are the AI assistant for Indonesia System's public product roadmap.
-Indonesia System is a long-term vision for a national corporate operating system for Indonesia —
-simpler than Odoo, powerful enough to replace SAP, natively integrated with Indonesian
-government infrastructure (BPJS, Ketenagakerjaan, taxation, national identifiers).
-
-You have access to the full feature list and roadmap. Answer questions about features,
-phases, status, and product direction. Be concise and helpful.
-Keep responses short — this is a chat panel, not a document.
-```
-
 ## Styling Rules
 
 - Use CSS Modules or inline styles only — **no Tailwind**
 - All design tokens are CSS variables in `globals.css` — use them, don't hardcode colors
 - Font: system-ui / -apple-system stack (no external fonts)
 - `html, body` are `overflow: hidden` — the map canvas takes full viewport
-
-## Environment Variables
-
-```
-ANTHROPIC_API_KEY=sk-ant-...   # Set in Vercel dashboard, never commit
-```
 
 ## Deployment
 

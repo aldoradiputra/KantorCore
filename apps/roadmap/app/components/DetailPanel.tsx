@@ -1,7 +1,6 @@
 'use client'
 
 import type { Node } from '@kantorcore/types'
-import { DOCS_MAP } from '../docs-content'
 
 const PHASE_LABELS: Record<number, string> = {
   0: 'Core',
@@ -31,10 +30,9 @@ type Props = {
   node: Node | null
   allNodes: Node[]
   onClose: () => void
-  onViewDocs: (id: string) => void
 }
 
-export default function DetailPanel({ node, allNodes, onClose, onViewDocs }: Props) {
+export default function DetailPanel({ node, allNodes, onClose }: Props) {
   return (
     <div style={{
       width: node ? 300 : 0,
@@ -46,20 +44,18 @@ export default function DetailPanel({ node, allNodes, onClose, onViewDocs }: Pro
       display: 'flex',
       flexDirection: 'column',
     }}>
-      {node && <PanelContent node={node} allNodes={allNodes} onClose={onClose} onViewDocs={onViewDocs} />}
+      {node && <PanelContent node={node} allNodes={allNodes} onClose={onClose} />}
     </div>
   )
 }
 
-function PanelContent({ node, allNodes, onClose, onViewDocs }: {
+function PanelContent({ node, allNodes, onClose }: {
   node: Node
   allNodes: Node[]
   onClose: () => void
-  onViewDocs: (id: string) => void
 }) {
-  const color   = PHASE_COLORS[node.phase] ?? 'var(--navy)'
-  const bg      = PHASE_BG[node.phase] ?? 'var(--indigo-light)'
-  const hasDoc  = !!DOCS_MAP[node.id]
+  const color = PHASE_COLORS[node.phase] ?? 'var(--navy)'
+  const bg    = PHASE_BG[node.phase] ?? 'var(--indigo-light)'
 
   // Compute children for module/app nodes
   const children = allNodes.filter(n => n.parent === node.id)
@@ -168,27 +164,6 @@ function PanelContent({ node, allNodes, onClose, onViewDocs }: {
           </div>
         )}
 
-        {/* View docs link */}
-        {hasDoc && (
-          <button
-            onClick={() => onViewDocs(node.id)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              width: '100%', padding: '9px 12px',
-              background: bg, border: `1px solid ${color}`,
-              borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit',
-              transition: 'opacity 0.12s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
-            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
-            </svg>
-            <span style={{ fontSize: 12, fontWeight: 700, color, flex: 1, textAlign: 'left' }}>Read the docs</span>
-            <span style={{ fontSize: 12, color, opacity: 0.7 }}>→</span>
-          </button>
-        )}
       </div>
     </div>
   )
