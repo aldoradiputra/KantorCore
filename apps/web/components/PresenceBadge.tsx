@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
 
-type PresenceStatus = 'online' | 'away' | 'offline'
+type PresenceStatus = 'online' | 'afk' | 'meeting' | 'offline'
 
 interface PresenceRow {
   userId: string
@@ -41,14 +41,33 @@ const LEAVE_LABELS: Record<string, string> = {
 
 const STATUS_DOT: Record<PresenceStatus, string> = {
   online:  'var(--teal)',
-  away:    'var(--amber)',
+  meeting: 'var(--indigo)',
+  afk:     'var(--amber)',
   offline: 'var(--fg-3)',
 }
 
 const STATUS_LABEL: Record<PresenceStatus, string> = {
   online:  'Online',
-  away:    'AFK',
+  meeting: 'In a Meeting',
+  afk:     'AFK',
   offline: 'Offline',
+}
+
+// Inline SVG calendar icon for the meeting section header
+function CalendarIcon() {
+  return (
+    <svg
+      width="10"
+      height="10"
+      viewBox="0 0 16 16"
+      fill="none"
+      style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }}
+    >
+      <rect x="1" y="3" width="14" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+      <path d="M1 7h14" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M5 1v4M11 1v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
 }
 
 function StatusDot({ status, size = 7 }: { status: PresenceStatus; size?: number }) {
@@ -67,18 +86,41 @@ function leaveTypeLabel(t: string) {
   return LEAVE_LABELS[t] ?? t
 }
 
-function PresenceGroup({ label, rows }: { label: string; rows: PresenceRow[] }) {
+function PresenceGroup({
+  label,
+  rows,
+  showCalendarIcon = false,
+}: {
+  label: string
+  rows: PresenceRow[]
+  showCalendarIcon?: boolean
+}) {
   if (rows.length === 0) return null
   return (
     <div>
-      <div style={{ font: '600 10px/1 var(--font-sans)', color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '8px 12px 4px' }}>
+      <div style={{
+        font: '600 10px/1 var(--font-sans)',
+        color: 'var(--fg-3)',
+        textTransform: 'uppercase',
+        letterSpacing: '0.06em',
+        padding: '8px 12px 4px',
+        display: 'flex',
+        alignItems: 'center',
+      }}>
+        {showCalendarIcon && <CalendarIcon />}
         {label} ({rows.length})
       </div>
       {rows.map(r => (
         <div key={r.userId} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px' }}>
           <StatusDot status={r.status} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ font: '500 12px/1.3 var(--font-sans)', color: 'var(--fg-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{
+              font: '500 12px/1.3 var(--font-sans)',
+              color: 'var(--fg-1)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
               {r.name}
             </div>
           </div>
@@ -92,14 +134,31 @@ function LeaveSection({ label, rows, color }: { label: string; rows: LeaveRow[];
   if (rows.length === 0) return null
   return (
     <div>
-      <div style={{ font: '600 10px/1 var(--font-sans)', color, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '8px 12px 4px' }}>
+      <div style={{
+        font: '600 10px/1 var(--font-sans)',
+        color,
+        textTransform: 'uppercase',
+        letterSpacing: '0.06em',
+        padding: '8px 12px 4px',
+      }}>
         {label} ({rows.length})
       </div>
       {rows.map(r => (
         <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px' }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: r.leaveType === 'sick_leave' ? '#c0392b' : color, flexShrink: 0 }} />
+          <span style={{
+            width: 7, height: 7,
+            borderRadius: '50%',
+            background: r.leaveType === 'sick_leave' ? '#c0392b' : color,
+            flexShrink: 0,
+          }} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ font: '500 12px/1.3 var(--font-sans)', color: 'var(--fg-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{
+              font: '500 12px/1.3 var(--font-sans)',
+              color: 'var(--fg-1)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
               {r.employeeName}
             </div>
             <div style={{ font: '11px/1 var(--font-sans)', color: 'var(--fg-3)', marginTop: 1 }}>
@@ -116,44 +175,59 @@ function Divider() {
   return <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
 }
 
+// Idle threshold: 5 minutes of no activity → afk
+const IDLE_MS = 5 * 60 * 1000
+
 export default function PresenceBadge() {
   const [networkOnline, setNetworkOnline] = useState(true)
   const [open, setOpen]                   = useState(false)
   const [presence, setPresence]           = useState<PresenceRow[]>([])
   const [leave, setLeave]                 = useState<LeaveAround>({ yesterday: [], today: [], tomorrow: [] })
   const [loading, setLoading]             = useState(false)
-  const panelRef = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<HTMLDivElement>(null)
+  const panelRef    = useRef<HTMLDivElement>(null)
+  const triggerRef  = useRef<HTMLDivElement>(null)
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const lastActivity = useRef(Date.now())
 
   // Network connectivity
   useEffect(() => {
     setNetworkOnline(navigator.onLine)
-    const on = () => setNetworkOnline(true)
+    const on  = () => setNetworkOnline(true)
     const off = () => setNetworkOnline(false)
-    window.addEventListener('online', on)
+    window.addEventListener('online',  on)
     window.addEventListener('offline', off)
-    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
+    return () => {
+      window.removeEventListener('online',  on)
+      window.removeEventListener('offline', off)
+    }
   }, [])
 
-  // Heartbeat — keep presence alive every 25 seconds
+  // Activity tracking — mousemove, keydown, scroll, touchstart
+  useEffect(() => {
+    const track = () => { lastActivity.current = Date.now() }
+    window.addEventListener('mousemove',   track, { passive: true })
+    window.addEventListener('keydown',     track, { passive: true })
+    window.addEventListener('scroll',      track, { passive: true })
+    window.addEventListener('touchstart',  track, { passive: true })
+    return () => {
+      window.removeEventListener('mousemove',  track)
+      window.removeEventListener('keydown',    track)
+      window.removeEventListener('scroll',     track)
+      window.removeEventListener('touchstart', track)
+    }
+  }, [])
+
+  // Heartbeat — keep presence alive every 25 seconds.
+  // Client only determines online vs afk — meeting is server-determined via calendar blocks.
   const sendHeartbeat = useCallback(async () => {
     if (!networkOnline) return
-    const idle = document.hidden || (Date.now() - lastActivity.current > 5 * 60 * 1000)
+    const idle = document.hidden || (Date.now() - lastActivity.current > IDLE_MS)
     await fetch('/api/presence', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: idle ? 'away' : 'online' }),
+      body: JSON.stringify({ status: idle ? 'afk' : 'online' }),
     }).catch(() => {})
   }, [networkOnline])
-
-  const lastActivity = useRef(Date.now())
-  useEffect(() => {
-    const track = () => { lastActivity.current = Date.now() }
-    window.addEventListener('mousemove', track, { passive: true })
-    window.addEventListener('keydown', track, { passive: true })
-    return () => { window.removeEventListener('mousemove', track); window.removeEventListener('keydown', track) }
-  }, [])
 
   useEffect(() => {
     sendHeartbeat()
@@ -189,7 +263,7 @@ export default function PresenceBadge() {
     if (!open) return
     const handler = (e: MouseEvent) => {
       if (
-        panelRef.current && !panelRef.current.contains(e.target as Node) &&
+        panelRef.current   && !panelRef.current.contains(e.target as Node) &&
         triggerRef.current && !triggerRef.current.contains(e.target as Node)
       ) {
         setOpen(false)
@@ -199,11 +273,16 @@ export default function PresenceBadge() {
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
+  // Popover data grouping — offline users are not shown (they clutter the panel)
+  const meeting = presence.filter(p => p.status === 'meeting')
   const online  = presence.filter(p => p.status === 'online')
-  const away    = presence.filter(p => p.status === 'away')
+  const afk     = presence.filter(p => p.status === 'afk')
 
-  const hasPresence = online.length + away.length > 0
-  const hasLeave = leave.yesterday.length + leave.today.length + leave.tomorrow.length > 0
+  // Badge count: online + meeting are both "active / reachable"
+  const activeCount = online.length + meeting.length
+
+  const hasPresence = meeting.length + online.length + afk.length > 0
+  const hasLeave    = leave.yesterday.length + leave.today.length + leave.tomorrow.length > 0
 
   return (
     <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -235,7 +314,9 @@ export default function PresenceBadge() {
           letterSpacing: '0.6px',
           color: networkOnline ? 'var(--teal)' : 'var(--amber)',
         }}>
-          {networkOnline ? (online.length > 0 ? `${online.length} online` : 'Live') : 'Offline'}
+          {networkOnline
+            ? (activeCount > 0 ? `${activeCount} online` : 'Live')
+            : 'Offline'}
         </span>
       </div>
 
@@ -280,11 +361,12 @@ export default function PresenceBadge() {
             </div>
           ) : (
             <>
-              {/* Presence section */}
+              {/* Presence section — online/meeting/afk only, no offline */}
               {hasPresence ? (
                 <>
-                  <PresenceGroup label="Online" rows={online} />
-                  <PresenceGroup label="AFK" rows={away} />
+                  <PresenceGroup label="In a Meeting" rows={meeting} showCalendarIcon />
+                  <PresenceGroup label="Online"       rows={online} />
+                  <PresenceGroup label="AFK"          rows={afk} />
                 </>
               ) : (
                 <div style={{ padding: '10px 12px', font: '12px var(--font-sans)', color: 'var(--fg-3)' }}>
@@ -296,12 +378,18 @@ export default function PresenceBadge() {
               {hasLeave && (
                 <>
                   <Divider />
-                  <div style={{ font: '600 10px/1 var(--font-sans)', color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '8px 12px 2px' }}>
+                  <div style={{
+                    font: '600 10px/1 var(--font-sans)',
+                    color: 'var(--fg-3)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    padding: '8px 12px 2px',
+                  }}>
                     Cuti & Izin
                   </div>
                   <LeaveSection label="Kemarin" rows={leave.yesterday} color="var(--fg-3)" />
-                  <LeaveSection label="Hari Ini"  rows={leave.today}    color="var(--amber)" />
-                  <LeaveSection label="Besok"     rows={leave.tomorrow} color="var(--indigo)" />
+                  <LeaveSection label="Hari Ini" rows={leave.today}    color="var(--amber)" />
+                  <LeaveSection label="Besok"    rows={leave.tomorrow} color="var(--indigo)" />
                 </>
               )}
 

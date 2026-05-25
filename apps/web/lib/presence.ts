@@ -1,9 +1,9 @@
 import 'server-only'
-import { and, eq, sql } from 'drizzle-orm'
-import { userPresence, type UserPresence, users, memberships } from '@kantorcore/db'
+import { and, eq, lte, gte, sql } from 'drizzle-orm'
+import { userPresence, userCalendarBlocks, users, memberships } from '@kantorcore/db'
 import { withTenant } from './db'
 
-export type PresenceStatus = 'online' | 'away' | 'offline'
+export type PresenceStatus = 'online' | 'afk' | 'meeting' | 'offline'
 
 export interface PresenceRow {
   userId: string
@@ -15,7 +15,7 @@ export interface PresenceRow {
 
 /**
  * Returns all workspace members with their presence status, ordered by
- * status ('online' first, 'away' second, 'offline' last), then by name.
+ * status (online → meeting → afk → offline), then by name.
  */
 export async function listPresence(tenantId: string): Promise<PresenceRow[]> {
   return withTenant(tenantId, async (tx) => {
@@ -40,8 +40,9 @@ export async function listPresence(tenantId: string): Promise<PresenceRow[]> {
       .orderBy(
         sql`CASE
           WHEN ${userPresence.status} = 'online'  THEN 1
-          WHEN ${userPresence.status} = 'away'    THEN 2
-          ELSE 3
+          WHEN ${userPresence.status} = 'meeting' THEN 2
+          WHEN ${userPresence.status} = 'afk'     THEN 3
+          ELSE 4
         END`,
         users.name,
       )
@@ -57,8 +58,33 @@ export async function listPresence(tenantId: string): Promise<PresenceRow[]> {
 }
 
 /**
+ * Checks whether the user currently has an active calendar block.
+ * Returns true if any block's [starts_at, ends_at] window covers now().
+ */
+async function checkUserInMeeting(tenantId: string, userId: string, tx: any): Promise<boolean> {
+  const now = sql`now()`
+  const result = await tx
+    .select({ id: userCalendarBlocks.id })
+    .from(userCalendarBlocks)
+    .where(
+      and(
+        eq(userCalendarBlocks.tenantId, tenantId),
+        eq(userCalendarBlocks.userId, userId),
+        lte(userCalendarBlocks.startsAt, now),
+        gte(userCalendarBlocks.endsAt, now),
+      ),
+    )
+    .limit(1)
+  return result.length > 0
+}
+
+/**
  * Upserts a presence row for (tenantId, userId). On conflict updates status,
  * lastSeenAt, and updatedAt.
+ *
+ * After upserting the client-reported status, checks the calendar blocks table.
+ * If the user has an active block and their status is not 'offline', the status
+ * is overridden to 'meeting'.
  */
 export async function upsertPresence(
   tenantId: string,
@@ -66,6 +92,7 @@ export async function upsertPresence(
   status: PresenceStatus,
 ): Promise<void> {
   await withTenant(tenantId, async (tx) => {
+    // 1. Upsert the client-reported status
     await tx
       .insert(userPresence)
       .values({
@@ -83,6 +110,23 @@ export async function upsertPresence(
           updatedAt: new Date(),
         },
       })
+
+    // 2. Override to 'meeting' if the user has an active calendar block
+    //    (never override if the client explicitly went offline)
+    if (status !== 'offline') {
+      const inMeeting = await checkUserInMeeting(tenantId, userId, tx)
+      if (inMeeting) {
+        await tx
+          .update(userPresence)
+          .set({ status: 'meeting', updatedAt: new Date() })
+          .where(
+            and(
+              eq(userPresence.tenantId, tenantId),
+              eq(userPresence.userId, userId),
+            ),
+          )
+      }
+    }
   })
 }
 

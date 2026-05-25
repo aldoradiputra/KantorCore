@@ -18,7 +18,8 @@ export async function POST(req: Request) {
   if (!result.ok) return result.response
   const { ctx } = result
   const body = await req.json().catch(() => null)
-  const status = body?.status === 'away' ? 'away' : 'online'
+  // Client sends 'afk' (idle) or defaults to 'online'. Meeting status is server-determined.
+  const status = body?.status === 'afk' ? 'afk' : 'online'
   await upsertPresence(ctx.tenant.id, ctx.session.user.id, status)
   return NextResponse.json({ ok: true })
 }
