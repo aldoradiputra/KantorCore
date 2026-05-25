@@ -1,9 +1,13 @@
 'use client'
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams, } from 'next/navigation'
 import { useCallback } from 'react'
-import type { ForecastResult } from '../../../lib/crm-forecast'
+import type { ForecastResult, UtmBreakdown } from '../../../lib/crm-forecast'
 import type { DealStage } from '../../../lib/crm'
+import type { TrendPoint } from '../../../components/charts/StageValueTrend'
+import { ForecastWaterfall } from '../../../components/charts/ForecastWaterfall'
+import { StageValueTrend } from '../../../components/charts/StageValueTrend'
+import { UtmSourceDonut } from '../../../components/charts/UtmSourceDonut'
 
 const STAGE_LABEL: Record<DealStage, string> = {
   lead: 'Prospek', qualified: 'Terverifikasi', proposal: 'Penawaran',
@@ -33,11 +37,13 @@ function formatIDR(v: number) {
 interface Props {
   forecast: ForecastResult
   teams: { id: string; name: string }[]
+  trend: TrendPoint[]
+  utmData: UtmBreakdown[]
   selectedTeamId: string | null
   selectedPreset: string
 }
 
-export default function ForecastClient({ forecast, teams, selectedTeamId, selectedPreset }: Props) {
+export default function ForecastClient({ forecast, teams, trend, utmData, selectedTeamId, selectedPreset }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -136,6 +142,35 @@ export default function ForecastClient({ forecast, teams, selectedTeamId, select
         </div>
       )}
 
+      {/* Waterfall + Pipeline trend */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s-4)', flexShrink: 0 }}>
+        <ChartCard title="Best / Expected / Worst vs Target">
+          <ForecastWaterfall
+            data={{
+              bestCase:      f.bestCase,
+              expectedCase:  f.expectedCase,
+              worstCase:     f.worstCase,
+              closedRevenue: f.closedRevenue,
+              target:        f.target,
+              periodLabel:   f.period.label,
+            }}
+            height={220}
+          />
+        </ChartCard>
+        <ChartCard title="Tren Pipeline (8 minggu)">
+          <StageValueTrend data={trend} height={220} />
+        </ChartCard>
+      </div>
+
+      {/* UTM donut */}
+      {utmData.length > 0 && (
+        <div style={{ flexShrink: 0 }}>
+          <ChartCard title="Atribusi Sumber (UTM)" subtitle="Nilai deal per saluran">
+            <UtmSourceDonut data={utmData} metric="revenue" height={220} />
+          </ChartCard>
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s-5)' }}>
         {/* Pipeline by stage */}
         <section>
@@ -197,6 +232,18 @@ export default function ForecastClient({ forecast, teams, selectedTeamId, select
           </div>
         </section>
       </div>
+    </div>
+  )
+}
+
+function ChartCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 'var(--s-4)' }}>
+      <div style={{ marginBottom: 'var(--s-3)' }}>
+        <div style={{ font: '600 13px/1 var(--font-sans)', color: 'var(--fg-1)' }}>{title}</div>
+        {subtitle && <div style={{ font: '11px/1 var(--font-sans)', color: 'var(--fg-3)', marginTop: 4 }}>{subtitle}</div>}
+      </div>
+      {children}
     </div>
   )
 }

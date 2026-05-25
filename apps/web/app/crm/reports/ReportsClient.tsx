@@ -2,8 +2,8 @@
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
-import type { SalespersonReport } from '../../../lib/crm-forecast'
-import type { ForecastPeriod } from '../../../lib/crm-forecast'
+import type { SalespersonReport, ForecastPeriod, UtmBreakdown } from '../../../lib/crm-forecast'
+import { UtmSourceDonut } from '../../../components/charts/UtmSourceDonut'
 
 const PRESETS = [
   { value: 'this_month',   label: 'Bulan Ini' },
@@ -34,12 +34,13 @@ function WinRateBar({ pct }: { pct: number }) {
 interface Props {
   report: SalespersonReport[]
   teams: { id: string; name: string }[]
+  utmData: UtmBreakdown[]
   period: ForecastPeriod
   selectedTeamId: string | null
   selectedPreset: string
 }
 
-export default function ReportsClient({ report, teams, period, selectedTeamId, selectedPreset }: Props) {
+export default function ReportsClient({ report, teams, utmData, period, selectedTeamId, selectedPreset }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -115,6 +116,14 @@ export default function ReportsClient({ report, teams, period, selectedTeamId, s
           </div>
         ))}
       </div>
+
+      {/* UTM attribution donut */}
+      {utmData.length > 0 && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 'var(--s-4)', flexShrink: 0 }}>
+          <div style={{ font: '600 13px/1 var(--font-sans)', color: 'var(--fg-1)', marginBottom: 'var(--s-3)' }}>Atribusi Sumber Deal</div>
+          <UtmSourceDonut data={utmData} metric="revenue" height={220} />
+        </div>
+      )}
 
       {/* Leaderboard */}
       <section style={{ flexShrink: 0 }}>

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import type { TeamWithMembers, TeamMemberWithStats, TeamPerformanceSummary, AssignmentRule } from '../../../../lib/crm-teams'
+import { MemberPerformanceBars } from '../../../../components/charts/MemberPerformanceBars'
 
 function formatIDR(v: number) {
   if (v === 0) return '—'
@@ -32,6 +33,7 @@ interface Props {
 export default function TeamDashboardClient({ team, performance, rules }: Props) {
   const [assigning, setAssigning] = useState(false)
   const [assignResult, setAssignResult] = useState<string | null>(null)
+  const [chartMetric, setChartMetric] = useState<'revenue' | 'deals'>('revenue')
 
   const perf = performance
   const targetPct = perf && perf.targetRevenue > 0
@@ -126,6 +128,23 @@ export default function TeamDashboardClient({ team, performance, rules }: Props)
           <div style={{ height: 6, background: 'var(--bg)', borderRadius: 3, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${targetPct}%`, background: targetPct >= 100 ? 'var(--teal)' : 'var(--indigo)', borderRadius: 3, transition: 'width .4s' }} />
           </div>
+        </div>
+      )}
+
+      {/* Member performance chart */}
+      {team.members.length > 1 && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 'var(--s-4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--s-3)' }}>
+            <div style={{ font: '600 13px/1 var(--font-sans)', color: 'var(--fg-1)' }}>Kinerja Anggota</div>
+            <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', overflow: 'hidden' }}>
+              {(['revenue', 'deals'] as const).map((m) => (
+                <button key={m} onClick={() => setChartMetric(m)} style={{ padding: '4px 10px', border: 'none', borderRight: '1px solid var(--border)', background: chartMetric === m ? 'var(--indigo)' : 'var(--surface)', color: chartMetric === m ? 'white' : 'var(--fg-3)', font: '11px/1 var(--font-sans)', cursor: 'pointer' }}>
+                  {m === 'revenue' ? 'Pendapatan' : 'Deal'}
+                </button>
+              ))}
+            </div>
+          </div>
+          <MemberPerformanceBars members={team.members} metric={chartMetric} teamTarget={team.targetRevenue || undefined} height={240} />
         </div>
       )}
 

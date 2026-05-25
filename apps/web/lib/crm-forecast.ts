@@ -223,6 +223,112 @@ export interface SalespersonReport {
   target: number
 }
 
+// ── UTM source breakdown ──────────────────────────────────────────────────────
+
+export interface UtmBreakdown {
+  source: string
+  dealCount: number
+  revenue: number
+}
+
+export async function getUtmBreakdown(
+  tenantId: string,
+  opts: { teamId?: string | null } = {},
+): Promise<UtmBreakdown[]> {
+  return withTenant(tenantId, async (tx) => {
+    const conditions = [eq(deals.tenantId, tenantId), isNull(deals.deletedAt)]
+    if (opts.teamId) conditions.push(eq(deals.teamId, opts.teamId))
+
+    const rows = await tx
+      .select({
+        utmSource:    deals.utmSource,
+        count:        sql<number>`count(*)::int`,
+        revenue:      sql<number>`COALESCE(SUM(expected_value),0)::int`,
+      })
+      .from(deals)
+      .where(and(...conditions)!)
+      .groupBy(deals.utmSource)
+
+    return rows.map((r) => ({
+      source:    r.utmSource ?? '',
+      dealCount: r.count,
+      revenue:   r.revenue,
+    })).sort((a, b) => b.revenue - a.revenue)
+  })
+}
+
+// ── Probability distribution ──────────────────────────────────────────────────
+
+export interface ProbabilityPoint {
+  probability: number
+  expectedValue: number
+}
+
+export async function getProbabilityDistribution(
+  tenantId: string,
+  opts: { teamId?: string | null } = {},
+): Promise<ProbabilityPoint[]> {
+  return withTenant(tenantId, async (tx) => {
+    const conditions = [
+      eq(deals.tenantId, tenantId),
+      isNull(deals.deletedAt),
+      // only open deals — won/lost have 100/0 and skew the histogram
+    ]
+    if (opts.teamId) conditions.push(eq(deals.teamId, opts.teamId))
+
+    const rows = await tx
+      .select({ probability: deals.probability, expectedValue: deals.expectedValue })
+      .from(deals)
+      .where(and(...conditions)!)
+
+    return rows
+  })
+}
+
+// ── Pipeline weekly trend ─────────────────────────────────────────────────────
+
+import type { TrendPoint } from '../components/charts/StageValueTrend'
+
+export async function getPipelineTrend(
+  tenantId: string,
+  opts: { teamId?: string | null; weeks?: number } = {},
+): Promise<TrendPoint[]> {
+  const weeksBack = opts.weeks ?? 8
+  return withTenant(tenantId, async (tx) => {
+    const conditions = [eq(deals.tenantId, tenantId), isNull(deals.deletedAt)]
+    if (opts.teamId) conditions.push(eq(deals.teamId, opts.teamId))
+
+    // Group by ISO week + stage
+    const rows = await tx
+      .select({
+        week:       sql<string>`to_char(created_at, 'IYYY-IW')`,
+        stage:      deals.stage,
+        totalValue: sql<number>`COALESCE(SUM(expected_value),0)::int`,
+      })
+      .from(deals)
+      .where(and(...conditions, sql`created_at >= now() - interval '${sql.raw(String(weeksBack))} weeks'`)!)
+      .groupBy(sql`to_char(created_at, 'IYYY-IW')`, deals.stage)
+      .orderBy(sql`to_char(created_at, 'IYYY-IW')`)
+
+    // Pivot into TrendPoint[]
+    const weekMap = new Map<string, TrendPoint>()
+    for (const row of rows) {
+      if (!weekMap.has(row.week)) weekMap.set(row.week, { week: row.week })
+      weekMap.get(row.week)![row.stage] = row.totalValue
+    }
+
+    return [...weekMap.values()].map((p) => ({
+      ...p,
+      week: (() => {
+        // Convert YYYY-WW to readable label like "Mei W3"
+        const [y, w] = p.week.split('-')
+        const d = new Date(Number(y), 0, 1 + (Number(w) - 1) * 7)
+        return d.toLocaleString('id-ID', { month: 'short' }) + ` W${w}`
+      })(),
+    }))
+  })
+}
+
 export async function getSalespersonReport(
   tenantId: string,
   opts: { teamId?: string | null; period: ForecastPeriod },

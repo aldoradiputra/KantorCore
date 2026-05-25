@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { getCurrentSession } from '../../../lib/auth'
 import { getCurrentTenant } from '../../../lib/tenants'
 import { listTeams } from '../../../lib/crm-teams'
-import { getSalespersonReport, presetPeriod } from '../../../lib/crm-forecast'
+import { getSalespersonReport, presetPeriod, getUtmBreakdown } from '../../../lib/crm-forecast'
 import { CrmShell } from '../CrmShell'
 import ReportsClient from './ReportsClient'
 
@@ -25,9 +25,10 @@ export default async function ReportsPage({
   const teamId = params.teamId ?? null
   const period = presetPeriod(preset)
 
-  const [teams, report] = await Promise.all([
+  const [teams, report, utmData] = await Promise.all([
     listTeams(ctx.tenant.id),
     getSalespersonReport(ctx.tenant.id, { teamId, period }),
+    getUtmBreakdown(ctx.tenant.id, { teamId }),
   ])
 
   return (
@@ -40,6 +41,7 @@ export default async function ReportsPage({
       <ReportsClient
         report={report}
         teams={teams.map((t) => ({ id: t.id, name: t.name }))}
+        utmData={utmData}
         period={period}
         selectedTeamId={teamId}
         selectedPreset={preset}
