@@ -21,6 +21,8 @@ export type ChartId =
   | 'stage_value_trend'
   | 'member_performance_bars'
   | 'utm_source_donut'
+  | 'revenue_stacked_trend'
+  | 'top_customers_bar'
 
 export interface ChartMeta {
   id:          ChartId
@@ -114,6 +116,26 @@ export const CHART_REGISTRY: Record<ChartId, ChartMeta> = {
     ],
     pages: ['/crm/forecast', '/crm/reports'],
     tags:  ['attribution', 'utm', 'marketing'],
+  },
+
+  revenue_stacked_trend: {
+    id:          'revenue_stacked_trend',
+    name:        'Tren Pendapatan Mingguan',
+    description: 'Stacked bar chart per minggu — quotation / confirmed / done.',
+    dataKey:     'getRevenueTrend',
+    defaultProps: { height: 260 },
+    pages: ['/sales'],
+    tags:  ['sales', 'revenue', 'time-series'],
+  },
+
+  top_customers_bar: {
+    id:          'top_customers_bar',
+    name:        'Pelanggan Teratas',
+    description: 'Horizontal bar chart 10 pelanggan dengan nilai order tertinggi.',
+    dataKey:     'getTopCustomers',
+    defaultProps: { height: 260 },
+    pages: ['/sales'],
+    tags:  ['sales', 'customers', 'ranking'],
   },
 
 }

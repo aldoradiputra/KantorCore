@@ -1,11 +1,12 @@
 import 'server-only'
-import { and, asc, desc, eq, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm'
 import {
-  salesOrders, soLines, products, contacts,
+  salesOrders, soLines, products, contacts, deals,
   type SalesOrder, type SoLine, type SoStatus,
 } from '@kantorcore/db'
 import { withTenant } from './db'
 import { createInvoice } from './finance'
+import { getSalesSettings, formatSoNumber } from './sales-settings'
 
 export type { SalesOrder, SoLine, SoStatus }
 
@@ -40,21 +41,45 @@ async function nextSoNumber(tx: any, tenantId: string): Promise<string> {
         sql`EXTRACT(YEAR FROM created_at) = ${year}`,
       ),
     )
-  const seq = String(count + 1).padStart(4, '0')
-  return `SO/${year}/${seq}`
+  const settings = await getSalesSettings(tenantId)
+  return formatSoNumber(settings.soNumberFormat, settings.soNumberPrefix, count + 1)
+}
+
+/** Calculate line totals using settings (tax rate + tax-inclusive flag). */
+function computeTotals(
+  lines: { qty: number; unitPrice: number }[],
+  taxRate: number,
+  taxInclusive: boolean,
+  discountAmount = 0,
+): { subtotal: number; tax: number; total: number } {
+  const subtotal = lines.reduce((s, l) => s + l.qty * l.unitPrice, 0)
+  const afterDiscount = Math.max(0, subtotal - discountAmount)
+  if (taxInclusive) {
+    const tax = Math.round(afterDiscount - afterDiscount / (1 + taxRate / 100))
+    return { subtotal, tax, total: afterDiscount }
+  }
+  const tax = Math.round(afterDiscount * taxRate / 100)
+  return { subtotal, tax, total: afterDiscount + tax }
 }
 
 // ── List & Get ────────────────────────────────────────────────────────────────
 
 export async function listSOs(
   tenantId: string,
-  opts: { status?: SoStatus } = {},
+  opts: { status?: SoStatus; teamId?: string; assignedTo?: string; limit?: number; offset?: number } = {},
 ): Promise<SalesOrder[]> {
   return withTenant(tenantId, (tx) => {
-    const where = opts.status
-      ? and(eq(salesOrders.tenantId, tenantId), eq(salesOrders.status, opts.status))
-      : eq(salesOrders.tenantId, tenantId)
-    return tx.select().from(salesOrders).where(where!).orderBy(desc(salesOrders.createdAt))
+    const conditions = [eq(salesOrders.tenantId, tenantId), isNull(salesOrders.deletedAt)]
+    if (opts.status)     conditions.push(eq(salesOrders.status, opts.status))
+    if (opts.teamId)     conditions.push(eq(salesOrders.teamId, opts.teamId))
+    if (opts.assignedTo) conditions.push(eq(salesOrders.assignedTo, opts.assignedTo))
+    return tx
+      .select()
+      .from(salesOrders)
+      .where(and(...conditions)!)
+      .orderBy(desc(salesOrders.createdAt))
+      .limit(opts.limit ?? 100)
+      .offset(opts.offset ?? 0)
   })
 }
 
@@ -112,9 +137,40 @@ export async function createSO(input: {
   expiryDate?: string | null
   notes?: string | null
   lines: SoLineInput[]
+  teamId?: string | null
+  assignedTo?: string | null
+  dealId?: string | null
+  discountAmount?: number
+  paymentTerms?: string | null
 }): Promise<{ ok: true; so: SalesOrder } | { ok: false; error: string }> {
   if (!input.customerName.trim()) return { ok: false, error: 'Nama pelanggan wajib diisi.' }
   if (input.lines.length === 0) return { ok: false, error: 'Tambahkan minimal satu baris.' }
+
+  const settings = await getSalesSettings(input.tenantId)
+  const { subtotal, tax, total } = computeTotals(
+    input.lines,
+    settings.defaultTaxRate,
+    settings.taxInclusive,
+    input.discountAmount ?? 0,
+  )
+
+  // Compute payment due date from terms
+  let paymentDueDate: string | null = null
+  const terms = input.paymentTerms ?? settings.defaultPaymentTerms
+  const netMatch = terms.match(/Net\s*(\d+)/i)
+  if (netMatch) {
+    const days = Number(netMatch[1])
+    const due = new Date(input.date)
+    due.setDate(due.getDate() + days)
+    paymentDueDate = due.toISOString().slice(0, 10)
+  }
+
+  // Expiry from settings if not provided
+  const expiryDate = input.expiryDate ?? (() => {
+    const d = new Date(input.date)
+    d.setDate(d.getDate() + settings.quoteValidityDays)
+    return d.toISOString().slice(0, 10)
+  })()
 
   return withTenant(input.tenantId, async (tx) => {
     const soNumber = await nextSoNumber(tx, input.tenantId)
@@ -122,15 +178,24 @@ export async function createSO(input: {
     const [so] = await tx
       .insert(salesOrders)
       .values({
-        tenantId:     input.tenantId,
+        tenantId:       input.tenantId,
         soNumber,
-        status:       'quotation',
-        contactId:    input.contactId ?? null,
-        customerName: input.customerName.trim(),
-        date:         input.date,
-        expiryDate:   input.expiryDate ?? null,
-        notes:        input.notes?.trim() ?? null,
-        createdBy:    input.userId,
+        status:         'quotation',
+        contactId:      input.contactId ?? null,
+        customerName:   input.customerName.trim(),
+        date:           input.date,
+        expiryDate,
+        notes:          input.notes?.trim() ?? null,
+        teamId:         input.teamId ?? null,
+        assignedTo:     input.assignedTo ?? input.userId,
+        dealId:         input.dealId ?? null,
+        subtotalAmount: subtotal,
+        discountAmount: input.discountAmount ?? 0,
+        taxAmount:      tax,
+        totalAmount:    total,
+        paymentTerms:   terms,
+        paymentDueDate,
+        createdBy:      input.userId,
       })
       .returning()
 
@@ -150,6 +215,65 @@ export async function createSO(input: {
     )
 
     return { ok: true as const, so: so! }
+  })
+}
+
+// ── CRM → SO conversion ───────────────────────────────────────────────────────
+
+export async function createSOFromDeal(input: {
+  tenantId: string
+  userId: string
+  dealId: string
+  expectedClose?: string | null
+}): Promise<{ ok: true; so: SalesOrder } | { ok: false; error: string }> {
+  return withTenant(input.tenantId, async (tx) => {
+    const [deal] = await tx
+      .select()
+      .from(deals)
+      .where(and(eq(deals.id, input.dealId), eq(deals.tenantId, input.tenantId)))
+      .limit(1)
+
+    if (!deal) return { ok: false as const, error: 'Deal tidak ditemukan.' }
+
+    // Check if SO already exists for this deal
+    const [existing] = await tx
+      .select({ id: salesOrders.id, soNumber: salesOrders.soNumber })
+      .from(salesOrders)
+      .where(and(eq(salesOrders.dealId, input.dealId), isNull(salesOrders.deletedAt)))
+      .limit(1)
+    if (existing) {
+      return { ok: false as const, error: `SO ${existing.soNumber} sudah dibuat untuk deal ini.` }
+    }
+
+    const customerName = deal.contactName ?? 'Pelanggan'
+    const today = new Date().toISOString().slice(0, 10)
+
+    const result = await createSO({
+      tenantId:     input.tenantId,
+      userId:       input.userId,
+      contactId:    deal.contactId,
+      customerName,
+      date:         today,
+      teamId:       deal.teamId,
+      assignedTo:   deal.assignedTo ?? input.userId,
+      dealId:       deal.id,
+      notes:        `Dibuat dari deal CRM: ${deal.title}`,
+      lines:        [{
+        description: deal.title,
+        qty:         1,
+        unitPrice:   deal.expectedValue,
+      }],
+    })
+
+    if (result.ok) {
+      // Write back-reference so deal detail page can link to SO
+      await tx
+        .update(deals)
+        .set({ soId: result.so.id, updatedAt: new Date() })
+        .where(eq(deals.id, deal.id))
+    }
+
+    return result
   })
 }
 
