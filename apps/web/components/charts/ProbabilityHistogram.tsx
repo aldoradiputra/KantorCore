@@ -4,6 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   Cell, CartesianGrid,
 } from 'recharts'
+import { formatIDR, TOOLTIP_STYLE, AXIS_TICK, MONO_TICK } from './_tokens'
 
 const BUCKETS = [
   { label: '0–20%',  min: 0,  max: 20 },
@@ -14,14 +15,8 @@ const BUCKETS = [
   { label: '100%',   min: 100, max: 100 },
 ]
 
+// Low→high probability = red→green (risk gradient)
 const BUCKET_COLORS = ['#DC2626', '#B35A00', '#6B7280', '#3B4FC4', '#7C3AED', '#0F7B6C']
-
-function formatIDR(v: number) {
-  if (v >= 1_000_000_000) return `Rp${(v / 1_000_000_000).toFixed(1)}M`
-  if (v >= 1_000_000) return `Rp${(v / 1_000_000).toFixed(0)}jt`
-  if (v === 0) return '—'
-  return 'Rp' + v.toLocaleString('id-ID')
-}
 
 export interface ProbabilityDeal {
   probability: number
@@ -38,10 +33,7 @@ function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
   return (
-    <div style={{
-      padding: '10px 12px', background: 'var(--surface)', border: '1px solid var(--border)',
-      borderRadius: 'var(--r-md)', font: '12px/1.5 var(--font-sans)',
-    }}>
+    <div style={TOOLTIP_STYLE}>
       <div style={{ fontWeight: 600, color: 'var(--fg-1)', marginBottom: 4 }}>{d.label}</div>
       <div style={{ color: 'var(--fg-2)' }}>{d.count} deal</div>
       <div style={{ color: 'var(--fg-2)', fontFamily: 'var(--font-mono, monospace)' }}>{formatIDR(d.totalValue)}</div>

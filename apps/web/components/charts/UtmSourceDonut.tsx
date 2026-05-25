@@ -3,17 +3,7 @@
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
-
-const PALETTE = [
-  '#3B4FC4', '#0F7B6C', '#B35A00', '#7C3AED', '#DC2626',
-  '#0891B2', '#65A30D', '#DB2777', '#9333EA', '#6B7280',
-]
-
-function formatIDR(v: number) {
-  if (v >= 1_000_000_000) return `Rp${(v / 1_000_000_000).toFixed(1)}M`
-  if (v >= 1_000_000) return `Rp${(v / 1_000_000).toFixed(0)}jt`
-  return 'Rp' + v.toLocaleString('id-ID')
-}
+import { SERIES_PALETTE as PALETTE, formatIDR, TOOLTIP_STYLE } from './_tokens'
 
 export interface UtmEntry {
   source: string
@@ -31,10 +21,7 @@ function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload as UtmEntry & { pct: number }
   return (
-    <div style={{
-      padding: '10px 12px', background: 'var(--surface)', border: '1px solid var(--border)',
-      borderRadius: 'var(--r-md)', font: '12px/1.5 var(--font-sans)',
-    }}>
+    <div style={TOOLTIP_STYLE}>
       <div style={{ fontWeight: 600, color: 'var(--fg-1)', marginBottom: 4 }}>{d.source || '(langsung)'}</div>
       <div style={{ color: 'var(--fg-2)' }}>{d.dealCount} deal</div>
       <div style={{ color: 'var(--fg-2)', fontFamily: 'var(--font-mono, monospace)' }}>{formatIDR(d.revenue)}</div>

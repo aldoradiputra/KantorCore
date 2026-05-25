@@ -5,22 +5,7 @@ import {
   CartesianGrid, Legend,
 } from 'recharts'
 import type { DealStage } from '../../lib/crm'
-
-const STAGE_COLOR: Record<DealStage, string> = {
-  lead: '#6B7280', qualified: '#3B4FC4', proposal: '#7C3AED',
-  negotiation: '#B35A00', won: '#0F7B6C', lost: '#DC2626',
-}
-
-const STAGE_LABEL: Record<DealStage, string> = {
-  lead: 'Prospek', qualified: 'Terverifikasi', proposal: 'Penawaran',
-  negotiation: 'Negosiasi', won: 'Menang', lost: 'Kalah',
-}
-
-function formatIDR(v: number) {
-  if (v >= 1_000_000_000) return `Rp${(v / 1_000_000_000).toFixed(1)}M`
-  if (v >= 1_000_000) return `Rp${(v / 1_000_000).toFixed(0)}jt`
-  return 'Rp' + v.toLocaleString('id-ID')
-}
+import { STAGE_LABEL, STAGE_COLOR, formatIDR, TOOLTIP_STYLE, AXIS_TICK, MONO_TICK } from './_tokens'
 
 export interface TrendPoint {
   week: string   // e.g. "Mei W3"
@@ -38,10 +23,7 @@ const DEFAULT_STAGES: DealStage[] = ['lead', 'qualified', 'proposal', 'negotiati
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
   return (
-    <div style={{
-      padding: '10px 12px', background: 'var(--surface)', border: '1px solid var(--border)',
-      borderRadius: 'var(--r-md)', font: '12px/1.5 var(--font-sans)', minWidth: 160,
-    }}>
+    <div style={{ ...TOOLTIP_STYLE, minWidth: 160 }}>
       <div style={{ fontWeight: 600, color: 'var(--fg-1)', marginBottom: 6 }}>{label}</div>
       {payload.map((p: any) => (
         <div key={p.dataKey} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, color: p.stroke }}>

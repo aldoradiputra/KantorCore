@@ -3,7 +3,7 @@
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useCallback } from 'react'
 import type { SalespersonReport, ForecastPeriod, UtmBreakdown } from '../../../lib/crm-forecast'
-import { UtmSourceDonut } from '../../../components/charts/UtmSourceDonut'
+import { UtmSourceDonut } from '../../../components/charts'
 
 const PRESETS = [
   { value: 'this_month',   label: 'Bulan Ini' },

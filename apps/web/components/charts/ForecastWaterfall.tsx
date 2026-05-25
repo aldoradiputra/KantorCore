@@ -4,13 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   ReferenceLine, Cell, CartesianGrid,
 } from 'recharts'
-
-function formatIDR(v: number) {
-  if (v === 0) return 'Rp 0'
-  if (v >= 1_000_000_000) return `Rp ${(v / 1_000_000_000).toFixed(1)}M`
-  if (v >= 1_000_000) return `Rp ${(v / 1_000_000).toFixed(1)}jt`
-  return 'Rp ' + v.toLocaleString('id-ID')
-}
+import { formatIDR, TOOLTIP_STYLE, AXIS_TICK, MONO_TICK } from './_tokens'
 
 export interface WaterfallData {
   bestCase: number
@@ -30,10 +24,7 @@ function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null
   const item = payload[0]
   return (
-    <div style={{
-      padding: '10px 12px', background: 'var(--surface)', border: '1px solid var(--border)',
-      borderRadius: 'var(--r-md)', font: '12px/1.5 var(--font-sans)',
-    }}>
+    <div style={TOOLTIP_STYLE}>
       <div style={{ fontWeight: 600, color: 'var(--fg-1)', marginBottom: 4 }}>{item.payload.label}</div>
       <div style={{ color: item.fill, fontFamily: 'var(--font-mono, monospace)' }}>{formatIDR(item.value)}</div>
     </div>
@@ -64,14 +55,14 @@ export function ForecastWaterfall({ data, height = 240 }: Props) {
             type="number"
             domain={[0, maxVal * 1.1]}
             tickFormatter={(v) => formatIDR(v)}
-            tick={{ fontSize: 10, fill: 'var(--fg-3)', fontFamily: 'var(--font-mono, monospace)' }}
+            tick={MONO_TICK}
             axisLine={false} tickLine={false}
           />
           <YAxis
             type="category"
             dataKey="label"
             width={80}
-            tick={{ fontSize: 11, fill: 'var(--fg-2)', fontFamily: 'var(--font-sans)' }}
+            tick={AXIS_TICK}
             axisLine={false} tickLine={false}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--bg)' }} />

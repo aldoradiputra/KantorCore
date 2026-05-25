@@ -5,9 +5,7 @@ import { useCallback } from 'react'
 import type { ForecastResult, UtmBreakdown } from '../../../lib/crm-forecast'
 import type { DealStage } from '../../../lib/crm'
 import type { TrendPoint } from '../../../components/charts/StageValueTrend'
-import { ForecastWaterfall } from '../../../components/charts/ForecastWaterfall'
-import { StageValueTrend } from '../../../components/charts/StageValueTrend'
-import { UtmSourceDonut } from '../../../components/charts/UtmSourceDonut'
+import { ForecastWaterfall, StageValueTrend, UtmSourceDonut, ChartCard } from '../../../components/charts'
 
 const STAGE_LABEL: Record<DealStage, string> = {
   lead: 'Prospek', qualified: 'Terverifikasi', proposal: 'Penawaran',
@@ -236,14 +234,3 @@ export default function ForecastClient({ forecast, teams, trend, utmData, select
   )
 }
 
-function ChartCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
-  return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 'var(--s-4)' }}>
-      <div style={{ marginBottom: 'var(--s-3)' }}>
-        <div style={{ font: '600 13px/1 var(--font-sans)', color: 'var(--fg-1)' }}>{title}</div>
-        {subtitle && <div style={{ font: '11px/1 var(--font-sans)', color: 'var(--fg-3)', marginTop: 4 }}>{subtitle}</div>}
-      </div>
-      {children}
-    </div>
-  )
-}

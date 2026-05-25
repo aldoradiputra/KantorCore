@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import type { TeamWithMembers, TeamMemberWithStats, TeamPerformanceSummary, AssignmentRule } from '../../../../lib/crm-teams'
-import { MemberPerformanceBars } from '../../../../components/charts/MemberPerformanceBars'
+import { MemberPerformanceBars } from '../../../../components/charts'
 
 function formatIDR(v: number) {
   if (v === 0) return '—'
