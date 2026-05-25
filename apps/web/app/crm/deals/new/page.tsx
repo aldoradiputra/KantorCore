@@ -21,7 +21,7 @@ export default async function NewDealPage() {
     <CrmShell
       tenantName={ctx.tenant.name}
       userInitials={initials(session.user.name)}
-      activeSection="deals"
+      activeSection="pipeline"
     >
       <NewDealForm contacts={contacts.map((c) => ({ id: c.contact.id, name: c.contact.name }))} />
     </CrmShell>

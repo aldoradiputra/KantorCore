@@ -41,7 +41,7 @@ export default async function DealDetailPage({ params }: { params: Promise<{ id:
     <CrmShell
       tenantName={ctx.tenant.name}
       userInitials={initials(session.user.name)}
-      activeSection="deals"
+      activeSection="pipeline"
     >
       <div style={{ padding: 'var(--s-6)', display: 'flex', flexDirection: 'column', gap: 'var(--s-5)', maxWidth: 900 }}>
         {/* Header */}

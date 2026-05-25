@@ -39,7 +39,8 @@ export default async function CrmDealsPage() {
     <CrmShell
       tenantName={ctx.tenant.name}
       userInitials={initials(session.user.name)}
-      activeSection="deals"
+      userEmail={session.user.email}
+      activeSection="pipeline"
     >
       <div style={{ padding: 'var(--s-6)', display: 'flex', flexDirection: 'column', gap: 'var(--s-5)', maxWidth: 1200 }}>
         <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--s-4)' }}>

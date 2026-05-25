@@ -2,11 +2,11 @@ import 'server-only'
 import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import {
   deals, activities, contacts, users,
-  type Deal, type Activity, type DealStage, type ActivityType,
+  type Deal, type Activity, type DealStage, type ActivityType, type RecurringType,
 } from '@kantorcore/db'
 import { withTenant } from './db'
 
-export type { Deal, Activity, DealStage, ActivityType }
+export type { Deal, Activity, DealStage, ActivityType, RecurringType }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -103,9 +103,17 @@ export async function createDeal(input: {
   contactId?: string | null
   contactName?: string | null
   expectedValue?: number
+  probability?: number
   expectedClose?: string | null
   notes?: string | null
   stage?: DealStage
+  teamId?: string | null
+  utmSource?: string | null
+  utmMedium?: string | null
+  utmCampaign?: string | null
+  isRecurring?: boolean
+  recurringType?: RecurringType | null
+  recurringAmountMonthly?: number | null
 }): Promise<{ ok: true; deal: Deal } | { ok: false; error: string }> {
   if (!input.title.trim()) return { ok: false, error: 'Judul deal wajib diisi.' }
 
@@ -115,17 +123,25 @@ export async function createDeal(input: {
     const [deal] = await tx
       .insert(deals)
       .values({
-        tenantId:      input.tenantId,
+        tenantId:              input.tenantId,
         dealNumber,
-        title:         input.title.trim(),
-        stage:         input.stage ?? 'lead',
-        contactId:     input.contactId ?? null,
-        contactName:   input.contactName?.trim() ?? null,
-        expectedValue: input.expectedValue ?? 0,
-        expectedClose: input.expectedClose ?? null,
-        notes:         input.notes?.trim() ?? null,
-        createdBy:     input.userId,
-        assignedTo:    input.userId,
+        title:                 input.title.trim(),
+        stage:                 input.stage ?? 'lead',
+        probability:           input.probability ?? 20,
+        contactId:             input.contactId ?? null,
+        contactName:           input.contactName?.trim() ?? null,
+        expectedValue:         input.expectedValue ?? 0,
+        expectedClose:         input.expectedClose ?? null,
+        notes:                 input.notes?.trim() ?? null,
+        createdBy:             input.userId,
+        assignedTo:            input.userId,
+        teamId:                input.teamId ?? null,
+        utmSource:             input.utmSource ?? null,
+        utmMedium:             input.utmMedium ?? null,
+        utmCampaign:           input.utmCampaign ?? null,
+        isRecurring:           input.isRecurring ?? false,
+        recurringType:         input.recurringType ?? null,
+        recurringAmountMonthly: input.recurringAmountMonthly ?? null,
       })
       .returning()
 
