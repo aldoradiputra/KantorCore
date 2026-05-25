@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { RecordToolbar } from '../../../components/RecordToolbar'
+import type { ViewFilter, ViewSort, FieldDef, SavedView } from '../../../components/RecordToolbar'
 
 type LeaveRow = {
   id: string
@@ -38,6 +40,17 @@ const GROUP_COLOR: Record<string, string> = {
   other:        'var(--fg-3)',
 }
 
+const LEAVE_OPTIONS = Object.keys(LEAVE_LABELS)
+const STATUS_OPTIONS = Object.keys(STATUS_STYLE)
+
+const FIELDS: FieldDef[] = [
+  { key: 'employeeName', label: 'Karyawan', type: 'text' },
+  { key: 'leaveType',    label: 'Jenis Cuti', type: 'select', options: LEAVE_OPTIONS },
+  { key: 'status',       label: 'Status',     type: 'select', options: STATUS_OPTIONS },
+  { key: 'startDate',    label: 'Mulai',      type: 'date' },
+  { key: 'endDate',      label: 'Selesai',    type: 'date' },
+]
+
 function formatDate(d: string) {
   return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d + 'T00:00:00'))
 }
@@ -52,14 +65,39 @@ function daySpan(start: string, end: string, half: boolean): string {
 
 type GroupedRows = Record<string, LeaveRow[]>
 
+function applyFilter(row: LeaveRow, f: ViewFilter): boolean {
+  const rawVal = row[f.field as keyof LeaveRow]
+  const val = rawVal == null ? '' : String(rawVal)
+  const fv = String(f.value ?? '')
+  switch (f.op) {
+    case 'eq':       return val === fv
+    case 'ne':       return val !== fv
+    case 'contains': return val.toLowerCase().includes(fv.toLowerCase())
+    case 'gt':       return val > fv
+    case 'gte':      return val >= fv
+    case 'lt':       return val < fv
+    case 'lte':      return val <= fv
+    case 'in':       return Array.isArray(f.value) ? (f.value as string[]).includes(val) : val === fv
+    case 'not_in':   return Array.isArray(f.value) ? !(f.value as string[]).includes(val) : val !== fv
+    default:         return true
+  }
+}
+
 export function TimeOffPanel({ employees }: { employees: { id: string; name: string }[] }) {
   const [rows, setRows]         = useState<LeaveRow[]>([])
   const [total, setTotal]       = useState(0)
   const [loading, setLoading]   = useState(true)
   const [showNew, setShowNew]   = useState(false)
   const [busy, setBusy]         = useState(false)
-  const [groupBy, setGroupBy]   = useState<'leaveType' | 'status'>('leaveType')
-  const [filterStatus, setFilterStatus] = useState<string>('all')
+
+  // Toolbar state
+  const [search, setSearch]     = useState('')
+  const [filters, setFilters]   = useState<ViewFilter[]>([])
+  const [sorts, setSorts]       = useState<ViewSort[]>([])
+  const [groupBy, setGroupBy]   = useState<string | null>('leaveType')
+  const [savedViews, setSavedViews] = useState<SavedView[]>([])
+  const [activeViewId, setActiveViewId] = useState<string | null>(null)
+
   const [form, setForm] = useState({
     employeeId: '',
     leaveType: 'annual_leave',
@@ -104,64 +142,108 @@ export function TimeOffPanel({ employees }: { employees: { id: string; name: str
     setBusy(false)
   }
 
-  const filtered = filterStatus === 'all' ? rows : rows.filter(r => r.status === filterStatus)
+  // Client-side filtering
+  const filtered = useMemo(() => {
+    let result = rows
+
+    // Text search across employeeName
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      result = result.filter(r =>
+        r.employeeName.toLowerCase().includes(q) ||
+        (LEAVE_LABELS[r.leaveType] ?? r.leaveType).toLowerCase().includes(q)
+      )
+    }
+
+    // Apply ViewFilter array
+    for (const f of filters) {
+      result = result.filter(r => applyFilter(r, f))
+    }
+
+    // Apply sorts
+    if (sorts.length > 0) {
+      result = [...result].sort((a, b) => {
+        for (const s of sorts) {
+          const av = String(a[s.field as keyof LeaveRow] ?? '')
+          const bv = String(b[s.field as keyof LeaveRow] ?? '')
+          const cmp = av.localeCompare(bv)
+          if (cmp !== 0) return s.dir === 'asc' ? cmp : -cmp
+        }
+        return 0
+      })
+    }
+
+    return result
+  }, [rows, search, filters, sorts])
 
   const grouped: GroupedRows = {}
-  for (const r of filtered) {
-    const key = groupBy === 'leaveType' ? r.leaveType : r.status
-    if (!grouped[key]) grouped[key] = []
-    grouped[key].push(r)
+  if (groupBy) {
+    for (const r of filtered) {
+      const key = String(r[groupBy as keyof LeaveRow] ?? 'other')
+      if (!grouped[key]) grouped[key] = []
+      grouped[key].push(r)
+    }
+  } else {
+    grouped['all'] = filtered
+  }
+
+  function handleViewSelect(id: string | null) {
+    setActiveViewId(id)
+    if (!id) {
+      setFilters([])
+      setSorts([])
+      setGroupBy('leaveType')
+      return
+    }
+    const view = savedViews.find(v => v.id === id)
+    if (view) {
+      setFilters(view.filters)
+      setSorts(view.sorts)
+      // groupBy not stored in SavedView — keep current
+    }
   }
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Toolbar */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '10px var(--content-gutter)',
-        borderBottom: '1px solid var(--border)',
-        background: 'var(--surface)', flexShrink: 0,
-      }}>
-        <span style={{ font: '600 13px/1 var(--font-sans)', color: 'var(--fg-1)' }}>
-          {total} permintaan
-        </span>
-        <span style={{ flex: 1 }} />
-
-        {/* Filter by status */}
-        <select
-          value={filterStatus}
-          onChange={e => setFilterStatus(e.target.value)}
-          style={selectStyle}
-        >
-          <option value="all">Semua status</option>
-          <option value="pending">Menunggu</option>
-          <option value="approved">Disetujui</option>
-          <option value="rejected">Ditolak</option>
-        </select>
-
-        {/* Group by */}
-        <select
-          value={groupBy}
-          onChange={e => setGroupBy(e.target.value as typeof groupBy)}
-          style={selectStyle}
-        >
-          <option value="leaveType">Kelompokkan: Jenis Cuti</option>
-          <option value="status">Kelompokkan: Status</option>
-        </select>
-
-        <button
-          onClick={() => setShowNew(v => !v)}
-          style={{
-            height: 30, padding: '0 12px',
-            background: showNew ? 'var(--surface)' : 'var(--indigo)',
-            color: showNew ? 'var(--fg-2)' : 'var(--white)',
-            border: showNew ? '1px solid var(--border)' : 'none',
-            borderRadius: 'var(--r-sm)',
-            font: '600 12px/1 var(--font-sans)', cursor: 'pointer',
-          }}
-        >
-          {showNew ? 'Tutup' : '+ Ajukan Cuti'}
-        </button>
+      {/* RecordToolbar */}
+      <div style={{ position: 'relative' }}>
+        <RecordToolbar
+          modelKey="hr.time_off_request"
+          fields={FIELDS}
+          search={search}
+          onSearchChange={setSearch}
+          filters={filters}
+          onFiltersChange={setFilters}
+          sorts={sorts}
+          onSortsChange={setSorts}
+          groupBy={groupBy}
+          onGroupByChange={setGroupBy}
+          savedViews={savedViews}
+          activeViewId={activeViewId}
+          onViewSelect={handleViewSelect}
+          onViewSaved={view => setSavedViews(prev => [...prev, view])}
+          onViewDeleted={id => setSavedViews(prev => prev.filter(v => v.id !== id))}
+          totalCount={total}
+          visibleCount={filtered.length !== total ? filtered.length : undefined}
+        />
+        {/* New request button sits inside toolbar row — appended via absolute or just next to it */}
+        <div style={{
+          position: 'absolute', top: 6, right: 'var(--content-gutter)',
+        }}>
+          <button
+            onClick={() => setShowNew(v => !v)}
+            style={{
+              height: 28, padding: '0 12px',
+              background: showNew ? 'var(--surface)' : 'var(--indigo)',
+              color: showNew ? 'var(--fg-2)' : 'var(--white)',
+              border: showNew ? '1px solid var(--border)' : 'none',
+              borderRadius: 'var(--r-sm)',
+              font: '600 12px/1 var(--font-sans)', cursor: 'pointer',
+            }}
+          >
+            {showNew ? 'Tutup' : '+ Ajukan Cuti'}
+          </button>
+        </div>
       </div>
 
       {/* New leave form */}
@@ -233,16 +315,24 @@ export function TimeOffPanel({ employees }: { employees: { id: string; name: str
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-5)' }}>
             {Object.entries(grouped).map(([key, items]) => {
-              const color = groupBy === 'leaveType' ? (GROUP_COLOR[key] ?? 'var(--fg-3)') : (STATUS_STYLE[key]?.color ?? 'var(--fg-3)')
-              const label = groupBy === 'leaveType' ? (LEAVE_LABELS[key] ?? key) : (STATUS_STYLE[key]?.label ?? key)
+              const isGrouped = groupBy !== null && key !== 'all'
+              const color = !isGrouped ? 'var(--fg-2)'
+                : groupBy === 'leaveType' ? (GROUP_COLOR[key] ?? 'var(--fg-3)')
+                : (STATUS_STYLE[key]?.color ?? 'var(--fg-3)')
+              const label = !isGrouped ? ''
+                : groupBy === 'leaveType' ? (LEAVE_LABELS[key] ?? key)
+                : (STATUS_STYLE[key]?.label ?? key)
+
               return (
                 <div key={key}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <span style={{ font: '700 11px/1 var(--font-sans)', color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                      {label}
-                    </span>
-                    <span style={{ font: '600 11px/1 var(--font-sans)', color: 'var(--fg-3)' }}>({items.length})</span>
-                  </div>
+                  {isGrouped && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <span style={{ font: '700 11px/1 var(--font-sans)', color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        {label}
+                      </span>
+                      <span style={{ font: '600 11px/1 var(--font-sans)', color: 'var(--fg-3)' }}>({items.length})</span>
+                    </div>
+                  )}
                   <div style={{
                     border: '1px solid var(--border)', borderRadius: 'var(--r-md)',
                     overflow: 'hidden', background: 'var(--surface)',
@@ -300,13 +390,6 @@ export function TimeOffPanel({ employees }: { employees: { id: string; name: str
       </div>
     </div>
   )
-}
-
-const selectStyle: React.CSSProperties = {
-  height: 30, padding: '0 8px',
-  border: '1px solid var(--border)', borderRadius: 'var(--r-sm)',
-  font: '12px var(--font-sans)', color: 'var(--fg-1)',
-  background: 'var(--bg)', cursor: 'pointer',
 }
 
 const inputStyle: React.CSSProperties = {
