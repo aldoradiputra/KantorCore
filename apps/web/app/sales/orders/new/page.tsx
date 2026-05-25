@@ -4,6 +4,7 @@ import { getCurrentTenant } from '../../../../lib/tenants'
 import { listAccounts, listTaxes } from '../../../../lib/finance'
 import { listContacts } from '../../../../lib/contacts'
 import { listProducts } from '../../../../lib/products'
+import { listLocations } from '../../../../lib/inventory'
 import { SalesShell } from '../../SalesShell'
 import { NewSOForm } from './NewSOForm'
 
@@ -17,14 +18,16 @@ export default async function NewSOPage() {
   const ctx = await getCurrentTenant(session.user.id)
   if (!ctx) redirect('/sign-up')
 
-  const [accounts, taxes, contacts, products] = await Promise.all([
+  const [accounts, taxes, contacts, products, locations] = await Promise.all([
     listAccounts(ctx.tenant.id),
     listTaxes(ctx.tenant.id, { scope: 'sale', activeOnly: true }),
     listContacts(ctx.tenant.id, { role: 'customer' }),
     listProducts(ctx.tenant.id, { activeOnly: true }),
+    listLocations(ctx.tenant.id),
   ])
 
   const revenueAccounts = accounts.filter((a) => a.type === 'revenue')
+  const internalWarehouses = locations.filter((l) => l.type === 'internal')
 
   return (
     <SalesShell
@@ -45,6 +48,7 @@ export default async function NewSOPage() {
           defaultTaxIds: p.product.defaultSaleTaxIds,
           uomSymbol: p.uomSymbol,
         }))}
+        warehouses={internalWarehouses.map((w) => ({ id: w.id, code: w.code, name: w.name }))}
       />
     </SalesShell>
   )

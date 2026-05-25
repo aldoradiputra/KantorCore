@@ -5,6 +5,8 @@ import { getCurrentTenant } from '../../../../lib/tenants'
 import { getSO, soSubtotal } from '../../../../lib/sales'
 import { SalesShell } from '../../SalesShell'
 import { SOActions } from './SOActions'
+import { ThreeWayMatchPanel } from './ThreeWayMatchPanel'
+import { DownPaymentPanel } from './DownPaymentPanel'
 import { CopyRecordButton } from '../../../../components/CopyRecordButton'
 import { getSecurityPolicy, canCopyRecordInfo } from '../../../../lib/admin'
 
@@ -120,6 +122,20 @@ export default async function SODetailPage({ params }: { params: Promise<{ id: s
             </div>
           </div>
         </div>
+
+        {/* Three-way match — shown once SO is confirmed */}
+        {(so.status === 'confirmed' || so.status === 'done') && (
+          <ThreeWayMatchPanel soId={so.id} />
+        )}
+
+        {/* Down payment — only for confirmed SO without existing DP invoice */}
+        {so.status === 'confirmed' && (
+          <DownPaymentPanel
+            soId={so.id}
+            totalAmount={so.totalAmount}
+            dpInvoiceId={so.dpInvoiceId ?? null}
+          />
+        )}
 
         {so.status !== 'cancelled' && so.status !== 'done' && (
           <SOActions id={so.id} status={so.status} />
