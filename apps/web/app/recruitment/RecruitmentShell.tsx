@@ -2,24 +2,22 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { AppShell } from '../../components/AppShell'
 
-type HRSection = 'employees' | 'departments' | 'org-chart' | 'time-off' | 'skills' | 'contracts'
+type RecruitSection = 'overview' | 'jobs' | 'applications' | 'assessments'
 
-function HRSidebar({ activeSection }: { activeSection: HRSection | null }) {
+function RecruitSidebar({ activeSection }: { activeSection: RecruitSection | null }) {
   const groups = [
     {
-      label: 'Karyawan',
+      label: 'Rekrutmen',
       items: [
-        { section: 'employees' as const,   label: 'Direktori',     href: '/hr/employees' },
-        { section: 'departments' as const, label: 'Departemen',    href: '/hr/departments' },
-        { section: 'org-chart' as const,   label: 'Org Chart',     href: '/hr/org-chart' },
-        { section: 'contracts' as const,   label: 'Kontrak',       href: '/hr/contracts' },
+        { section: 'overview' as const,      label: 'Ringkasan',   href: '/recruitment' },
+        { section: 'jobs' as const,          label: 'Posisi Kerja', href: '/recruitment/jobs' },
+        { section: 'applications' as const,  label: 'Lamaran',     href: '/recruitment/applications' },
       ],
     },
     {
-      label: 'Pengembangan',
+      label: 'Asesmen',
       items: [
-        { section: 'skills' as const,    label: 'Kompetensi',   href: '/hr/skills' },
-        { section: 'time-off' as const,  label: 'Cuti & Izin',  href: '/hr/time-off' },
+        { section: 'assessments' as const, label: 'Bank Soal', href: '/recruitment/assessments' },
       ],
     },
   ]
@@ -27,9 +25,9 @@ function HRSidebar({ activeSection }: { activeSection: HRSection | null }) {
   return (
     <div style={{ padding: 'var(--s-4)', display: 'flex', flexDirection: 'column', gap: 'var(--s-4)', height: '100%' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span className="t-micro">SDM</span>
-        <Link href="/hr/employees/new" style={{ font: '600 11px/1 var(--font-sans)', color: 'var(--indigo)', textDecoration: 'none' }}>
-          + Karyawan
+        <span className="t-micro">REKRUTMEN</span>
+        <Link href="/recruitment/jobs/new" style={{ font: '600 11px/1 var(--font-sans)', color: 'var(--indigo)', textDecoration: 'none' }}>
+          + Posisi
         </Link>
       </div>
       {groups.map((g) => (
@@ -57,22 +55,20 @@ function HRSidebar({ activeSection }: { activeSection: HRSection | null }) {
   )
 }
 
-export function HRShell({
-  tenantName, userInitials, userEmail, activeSection, children,
+export function RecruitmentShell({
+  tenantName, userInitials, activeSection, children,
 }: {
   tenantName:    string
   userInitials:  string
-  userEmail?:    string
-  activeSection: HRSection | null
+  activeSection: RecruitSection | null
   children:      ReactNode
 }) {
   return (
     <AppShell
       tenantName={tenantName}
       userInitials={userInitials}
-      userEmail={userEmail}
-      activeModule="hr"
-      sidebar={<HRSidebar activeSection={activeSection} />}
+      activeModule="recruitment"
+      sidebar={<RecruitSidebar activeSection={activeSection} />}
     >
       {children}
     </AppShell>
