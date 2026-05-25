@@ -9,6 +9,9 @@ import {
   uniqueIndex,
   boolean,
   integer,
+  bigint,
+  smallint,
+  numeric,
 } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
 import { users } from './users'
@@ -169,3 +172,90 @@ export const stockQuants = inv.table('stock_quants', {
 
 export type StockQuant = typeof stockQuants.$inferSelect
 
+
+// ── Product Attributes ───────────────────────────────────────────────────────
+
+export const productAttributes = inv.table('product_attributes', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  tenantId:    uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  name:        varchar('name', { length: 64 }).notNull(),
+  displayType: varchar('display_type', { length: 20 }).notNull().default('select'),
+  createdAt:   timestamp('created_at').notNull().defaultNow(),
+}, (t) => ({
+  tenantIdx:     index('inv_attr_tenant_idx').on(t.tenantId),
+  tenantNameIdx: uniqueIndex('inv_attr_tenant_name_idx').on(t.tenantId, t.name),
+}))
+
+export type ProductAttribute = typeof productAttributes.$inferSelect
+
+export const productAttributeValues = inv.table('product_attribute_values', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  attributeId: uuid('attribute_id').notNull().references(() => productAttributes.id, { onDelete: 'cascade' }),
+  value:       varchar('value', { length: 128 }).notNull(),
+  colorHex:    varchar('color_hex', { length: 7 }),
+  sortOrder:   smallint('sort_order').notNull().default(0),
+}, (t) => ({
+  attrIdx:     index('inv_attr_val_attr_idx').on(t.attributeId),
+  attrValUniq: uniqueIndex('inv_attr_val_uniq_idx').on(t.attributeId, t.value),
+}))
+
+export type ProductAttributeValue = typeof productAttributeValues.$inferSelect
+
+// ── Product Variants ─────────────────────────────────────────────────────────
+
+export const productVariants = inv.table('product_variants', {
+  id:                 uuid('id').primaryKey().defaultRandom(),
+  tenantId:           uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  productId:          uuid('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+  sku:                varchar('sku', { length: 64 }),
+  barcode:            varchar('barcode', { length: 64 }),
+  attributeValueIds:  uuid('attribute_value_ids').array().notNull().default([]),
+  salePrice:          bigint('sale_price', { mode: 'number' }),
+  costPrice:          bigint('cost_price', { mode: 'number' }),
+  isActive:           boolean('is_active').notNull().default(true),
+  createdAt:          timestamp('created_at').notNull().defaultNow(),
+  updatedAt:          timestamp('updated_at').notNull().defaultNow(),
+}, (t) => ({
+  productIdx: index('inv_var_product_idx').on(t.productId),
+  tenantIdx:  index('inv_var_tenant_idx').on(t.tenantId),
+}))
+
+export type ProductVariant = typeof productVariants.$inferSelect
+export type NewProductVariant = typeof productVariants.$inferInsert
+
+export const productAttributeLines = inv.table('product_attribute_lines', {
+  id:          uuid('id').primaryKey().defaultRandom(),
+  productId:   uuid('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+  attributeId: uuid('attribute_id').notNull().references(() => productAttributes.id, { onDelete: 'cascade' }),
+}, (t) => ({
+  uniq: uniqueIndex('inv_attr_line_uniq').on(t.productId, t.attributeId),
+}))
+
+// ── UoM Conversions & Packagings ─────────────────────────────────────────────
+
+export const productUomConversions = inv.table('product_uom_conversions', {
+  id:        uuid('id').primaryKey().defaultRandom(),
+  tenantId:  uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  productId: uuid('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+  altUomId:  uuid('alt_uom_id').notNull().references(() => uom.id, { onDelete: 'restrict' }),
+  factor:    numeric('factor', { precision: 12, scale: 4 }).notNull(),
+}, (t) => ({
+  productIdx: index('inv_uom_conv_product_idx').on(t.productId),
+  uniq:       uniqueIndex('inv_uom_conv_uniq').on(t.productId, t.altUomId),
+}))
+
+export type ProductUomConversion = typeof productUomConversions.$inferSelect
+
+export const productPackagings = inv.table('product_packagings', {
+  id:            uuid('id').primaryKey().defaultRandom(),
+  tenantId:      uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  productId:     uuid('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+  name:          varchar('name', { length: 64 }).notNull(),
+  qtyPerPackage: integer('qty_per_package').notNull(),
+  barcode:       varchar('barcode', { length: 64 }),
+  isDefault:     boolean('is_default').notNull().default(false),
+}, (t) => ({
+  productIdx: index('inv_pkg_product_idx').on(t.productId),
+}))
+
+export type ProductPackaging = typeof productPackagings.$inferSelect

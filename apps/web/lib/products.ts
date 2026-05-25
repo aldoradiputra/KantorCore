@@ -283,3 +283,174 @@ export async function getProductStats(tenantId: string): Promise<{
     return { total, active, byType }
   })
 }
+
+// ── Variants & Attributes ────────────────────────────────────────────────────
+
+import {
+  productVariants, productAttributes, productAttributeValues,
+  productAttributeLines, productUomConversions, productPackagings,
+  type ProductVariant, type ProductAttribute, type ProductAttributeValue,
+  type ProductUomConversion, type ProductPackaging,
+} from '@kantorcore/db'
+import { inArray } from 'drizzle-orm'
+
+export type { ProductVariant, ProductAttribute, ProductAttributeValue, ProductUomConversion, ProductPackaging }
+
+export interface ProductWithVariants {
+  product:    Product
+  attributes: { attribute: ProductAttribute; values: ProductAttributeValue[] }[]
+  variants:   ProductVariant[]
+}
+
+export async function getProductWithVariants(
+  tenantId: string,
+  productId: string,
+): Promise<ProductWithVariants | null> {
+  return withTenant(tenantId, async (tx) => {
+    const [product] = await tx
+      .select()
+      .from(products)
+      .where(and(eq(products.id, productId), eq(products.tenantId, tenantId)))
+      .limit(1)
+    if (!product) return null
+
+    const attrLines = await tx
+      .select({ attributeId: productAttributeLines.attributeId })
+      .from(productAttributeLines)
+      .where(eq(productAttributeLines.productId, productId))
+    const attrIds = attrLines.map((a) => a.attributeId)
+
+    const attrs = attrIds.length > 0
+      ? await tx.select().from(productAttributes).where(inArray(productAttributes.id, attrIds))
+      : []
+    const vals = attrIds.length > 0
+      ? await tx.select().from(productAttributeValues).where(inArray(productAttributeValues.attributeId, attrIds))
+      : []
+
+    const variants = await tx
+      .select()
+      .from(productVariants)
+      .where(and(eq(productVariants.productId, productId), eq(productVariants.isActive, true)))
+
+    return {
+      product,
+      attributes: attrs.map((a) => ({
+        attribute: a,
+        values:    vals.filter((v) => v.attributeId === a.id).sort((x, y) => x.sortOrder - y.sortOrder),
+      })),
+      variants,
+    }
+  })
+}
+
+/** Generate variants for every combination of selected attribute value IDs. */
+export async function generateVariants(input: {
+  tenantId:       string
+  productId:      string
+  selectedValues: string[][]   // one inner array per attribute
+}): Promise<{ ok: true; created: number; skipped: number } | { ok: false; error: string }> {
+  if (input.selectedValues.length === 0 || input.selectedValues.some((arr) => arr.length === 0)) {
+    return { ok: false, error: 'Pilih minimal satu nilai untuk setiap atribut.' }
+  }
+
+  const combos: string[][] = input.selectedValues.reduce<string[][]>(
+    (acc, group) => acc.flatMap((existing) => group.map((v) => [...existing, v])),
+    [[]],
+  )
+
+  return withTenant(input.tenantId, async (tx) => {
+    const existing = await tx
+      .select({ attributeValueIds: productVariants.attributeValueIds })
+      .from(productVariants)
+      .where(eq(productVariants.productId, input.productId))
+
+    const key = (ids: string[]) => [...ids].sort().join('|')
+    const existingKeys = new Set(existing.map((v) => key(v.attributeValueIds)))
+
+    const newVariants = combos
+      .filter((c) => !existingKeys.has(key(c)))
+      .map((c) => ({
+        tenantId:          input.tenantId,
+        productId:         input.productId,
+        attributeValueIds: c,
+      }))
+
+    if (newVariants.length > 0) {
+      await tx.insert(productVariants).values(newVariants)
+    }
+
+    return { ok: true as const, created: newVariants.length, skipped: combos.length - newVariants.length }
+  })
+}
+
+export async function createAttribute(input: {
+  tenantId:     string
+  name:         string
+  displayType?: 'select' | 'color' | 'radio'
+  values:       { value: string; colorHex?: string }[]
+}): Promise<{ ok: true; attribute: ProductAttribute } | { ok: false; error: string }> {
+  if (!input.name.trim()) return { ok: false, error: 'Nama atribut wajib diisi.' }
+  return withTenant(input.tenantId, async (tx) => {
+    const [attr] = await tx
+      .insert(productAttributes)
+      .values({
+        tenantId:    input.tenantId,
+        name:        input.name.trim(),
+        displayType: input.displayType ?? 'select',
+      })
+      .returning()
+
+    if (input.values.length > 0) {
+      await tx.insert(productAttributeValues).values(
+        input.values.map((v, i) => ({
+          attributeId: attr!.id,
+          value:       v.value.trim(),
+          colorHex:    v.colorHex ?? null,
+          sortOrder:   i,
+        })),
+      )
+    }
+    return { ok: true as const, attribute: attr! }
+  })
+}
+
+// ── UoM conversion ───────────────────────────────────────────────────────────
+
+/** Convert qty via sourceUom → product.baseUom → targetUom. */
+export async function convertUom(
+  tenantId:    string,
+  productId:   string,
+  qty:         number,
+  sourceUomId: string,
+  targetUomId: string,
+): Promise<number | null> {
+  if (sourceUomId === targetUomId) return qty
+
+  return withTenant(tenantId, async (tx) => {
+    const [product] = await tx
+      .select({ baseUomId: products.uomId })
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1)
+    if (!product?.baseUomId) return null
+
+    const conversions = await tx
+      .select()
+      .from(productUomConversions)
+      .where(eq(productUomConversions.productId, productId))
+
+    let baseQty: number
+    if (sourceUomId === product.baseUomId) {
+      baseQty = qty
+    } else {
+      const c = conversions.find((c) => c.altUomId === sourceUomId)
+      if (!c) return null
+      baseQty = qty * Number(c.factor)
+    }
+
+    if (targetUomId === product.baseUomId) return baseQty
+    const targetConv = conversions.find((c) => c.altUomId === targetUomId)
+    if (!targetConv) return null
+    return baseQty / Number(targetConv.factor)
+  })
+}
