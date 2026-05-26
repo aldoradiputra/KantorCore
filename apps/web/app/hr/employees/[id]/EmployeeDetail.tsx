@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import type { EmployeeWithDept } from '../../../../lib/hr'
 import { EMPLOYMENT_TYPE_LABEL, EMPLOYEE_STATUS_LABEL } from '../../../../lib/hr'
 import type { Department } from '@kantorcore/db'
@@ -333,6 +334,18 @@ export function EmployeeDetail({
                 </p>
               </section>
             )}
+
+            <section style={{ paddingTop: 'var(--s-3)', borderTop: '1px solid var(--border)' }}>
+              <div style={{ font: '600 11px/1 var(--font-sans)', color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 'var(--s-3)' }}>
+                Penggajian
+              </div>
+              <div style={{ display: 'flex', gap: 'var(--s-3)', flexWrap: 'wrap' }}>
+                <Link href={`/hr/employees/${employee.id}/salary`}
+                  style={{ padding: '7px 14px', borderRadius: 'var(--r-sm)', border: '1px solid var(--indigo)', color: 'var(--indigo)', font: '500 13px/1 var(--font-sans)', textDecoration: 'none', display: 'inline-block' }}>
+                  Pengaturan Gaji & BPJS →
+                </Link>
+              </div>
+            </section>
           </div>
         )}
       </div>

@@ -24,7 +24,7 @@ export default async function PayRunDetailPage({ params }: { params: Promise<{ i
 
   const { run, payslips, totalGross, totalDeductions, totalNet } = data
   const statusColor = PAY_RUN_STATUS_COLOR[run.status] ?? 'var(--fg-3)'
-  const editable = run.status === 'draft'
+  const editable = run.status === 'draft' || run.status === 'calculated'
 
   return (
     <PayShell
@@ -64,21 +64,32 @@ export default async function PayRunDetailPage({ params }: { params: Promise<{ i
           </div>
         ) : (
           <section style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-3)' }}>
-            <h2 style={{ font: '600 11px/1 var(--font-sans)', color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
-              Payslip ({payslips.length})
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ font: '600 11px/1 var(--font-sans)', color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+                Payslip ({payslips.length})
+              </h2>
+            </div>
             {payslips.map((p) => (
-              <PayslipEditor
-                key={p.id}
-                payslipId={p.id}
-                employeeName={p.employeeName}
-                position={p.position}
-                lines={p.lines.map((l) => ({ kind: l.kind, name: l.name, amount: l.amount }))}
-                grossTotal={p.grossTotal}
-                deductionTotal={p.deductionTotal}
-                netTotal={p.netTotal}
-                editable={editable}
-              />
+              <div key={p.id} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                <PayslipEditor
+                  payslipId={p.id}
+                  employeeName={p.employeeName}
+                  position={p.position}
+                  lines={p.lines.map((l) => ({ kind: l.kind, name: l.name, amount: l.amount }))}
+                  grossTotal={p.grossTotal}
+                  deductionTotal={p.deductionTotal}
+                  netTotal={p.netTotal}
+                  editable={editable}
+                />
+                {!editable && (
+                  <div style={{ textAlign: 'right', paddingTop: 4 }}>
+                    <Link href={`/pay/payslips/${p.id}/print`} target="_blank"
+                      style={{ font: '500 11px/1 var(--font-sans)', color: 'var(--indigo)', textDecoration: 'none' }}>
+                      Cetak Slip Gaji ↗
+                    </Link>
+                  </div>
+                )}
+              </div>
             ))}
           </section>
         )}

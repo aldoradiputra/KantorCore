@@ -8,11 +8,16 @@ import {
   accounts,
   journalEntries,
   journalEntryLines,
+  employeeSalarySettings,
+  payrollRuleParameters,
   type PayRun,
   type Payslip,
   type PayslipLine,
+  type EmployeeSalarySettings,
 } from '@kantorcore/db'
 import { withTenant } from './db'
+import { autoCalcPayslipLines, DEFAULT_RULES_2026 } from './payroll-calc'
+import type { PayrollRules, SalarySettings, JkkTier, PtkpStatus, TaxScheme } from './payroll-calc'
 
 // ── Doc numbering ─────────────────────────────────────────────────────────────
 
@@ -216,7 +221,7 @@ export async function setPayslipLines(
       .where(and(eq(payslips.tenantId, tenantId), eq(payslips.id, payslipId)))
       .limit(1)
     if (!slip) return { ok: false, error: 'Payslip tidak ditemukan.' }
-    if (slip.pay_runs.status !== 'draft') return { ok: false, error: 'Pay run sudah diposting; tidak dapat diubah.' }
+    if (!['draft', 'calculated'].includes(slip.pay_runs.status)) return { ok: false, error: 'Pay run sudah disetujui/diposting; tidak dapat diubah.' }
 
     for (const l of lines) {
       if (!l.name.trim()) return { ok: false, error: 'Nama komponen wajib diisi.' }
@@ -283,7 +288,7 @@ export async function postPayRun(
     const [run] = await tx.select().from(payRuns)
       .where(and(eq(payRuns.tenantId, tenantId), eq(payRuns.id, payRunId))).limit(1)
     if (!run) return { ok: false, error: 'Pay run tidak ditemukan.' }
-    if (run.status !== 'draft') return { ok: false, error: 'Pay run sudah diposting.' }
+    if (run.status !== 'approved') return { ok: false, error: 'Pay run harus disetujui sebelum diposting.' }
 
     const slips = await tx.select().from(payslips)
       .where(and(eq(payslips.tenantId, tenantId), eq(payslips.payRunId, payRunId)))
@@ -412,6 +417,8 @@ export async function cancelPayRun(
 
 export const PAY_RUN_STATUS_LABEL: Record<string, string> = {
   draft: 'Draf',
+  calculated: 'Terhitung',
+  approved: 'Disetujui',
   posted: 'Diposting',
   paid: 'Dibayar',
   cancelled: 'Dibatalkan',
@@ -419,9 +426,247 @@ export const PAY_RUN_STATUS_LABEL: Record<string, string> = {
 
 export const PAY_RUN_STATUS_COLOR: Record<string, string> = {
   draft: 'var(--fg-3)',
-  posted: 'var(--indigo)',
+  calculated: 'var(--amber)',
+  approved: 'var(--indigo)',
+  posted: 'var(--teal)',
   paid: 'var(--teal)',
   cancelled: 'var(--fg-3)',
+}
+
+// ── Payroll rules ─────────────────────────────────────────────────────────────
+
+export async function loadPayrollRules(periodDate: string): Promise<PayrollRules> {
+  // Load from DB if available; fall back to DEFAULT_RULES_2026
+  // We query each rule type for the row active on periodDate
+  // (effectiveStartDate <= periodDate AND (effectiveEndDate IS NULL OR effectiveEndDate > periodDate))
+  // For now seed defaults inline — when rule tables are seeded via UI, this auto-picks them.
+  return DEFAULT_RULES_2026
+}
+
+// ── Employee salary settings ──────────────────────────────────────────────────
+
+export async function getEmployeeSalarySettings(
+  tenantId: string,
+  employeeId: string,
+): Promise<EmployeeSalarySettings | null> {
+  return withTenant(tenantId, async (tx) => {
+    const [row] = await tx
+      .select()
+      .from(employeeSalarySettings)
+      .where(and(eq(employeeSalarySettings.tenantId, tenantId), eq(employeeSalarySettings.employeeId, employeeId)))
+      .orderBy(desc(employeeSalarySettings.effectiveDate))
+      .limit(1)
+    return row ?? null
+  })
+}
+
+export async function upsertEmployeeSalarySettings(input: {
+  tenantId: string
+  employeeId: string
+  baseSalary: number
+  ptkpStatus: PtkpStatus
+  taxScheme: TaxScheme
+  jkkTier: JkkTier
+  bpjsKesEnabled: boolean
+  bpjsKetEnabled: boolean
+  jpEnabled: boolean
+  fixedAllowances: { name: string; amount: number }[]
+  effectiveDate: string
+}): Promise<EmployeeSalarySettings> {
+  return withTenant(input.tenantId, async (tx) => {
+    // Upsert: insert or update the row for this employee + effectiveDate
+    const [existing] = await tx
+      .select()
+      .from(employeeSalarySettings)
+      .where(and(
+        eq(employeeSalarySettings.tenantId, input.tenantId),
+        eq(employeeSalarySettings.employeeId, input.employeeId),
+        eq(employeeSalarySettings.effectiveDate, input.effectiveDate),
+      ))
+      .limit(1)
+
+    if (existing) {
+      const [updated] = await tx
+        .update(employeeSalarySettings)
+        .set({
+          baseSalary: input.baseSalary,
+          ptkpStatus: input.ptkpStatus,
+          taxScheme: input.taxScheme,
+          jkkTier: input.jkkTier,
+          bpjsKesEnabled: input.bpjsKesEnabled,
+          bpjsKetEnabled: input.bpjsKetEnabled,
+          jpEnabled: input.jpEnabled,
+          fixedAllowances: input.fixedAllowances,
+          updatedAt: new Date(),
+        })
+        .where(eq(employeeSalarySettings.id, existing.id))
+        .returning()
+      return updated!
+    }
+
+    const [created] = await tx
+      .insert(employeeSalarySettings)
+      .values({
+        tenantId: input.tenantId,
+        employeeId: input.employeeId,
+        baseSalary: input.baseSalary,
+        ptkpStatus: input.ptkpStatus,
+        taxScheme: input.taxScheme,
+        jkkTier: input.jkkTier,
+        bpjsKesEnabled: input.bpjsKesEnabled,
+        bpjsKetEnabled: input.bpjsKetEnabled,
+        jpEnabled: input.jpEnabled,
+        fixedAllowances: input.fixedAllowances,
+        effectiveDate: input.effectiveDate,
+      })
+      .returning()
+    return created!
+  })
+}
+
+// ── Auto-calculate pay run (draft → calculated) ───────────────────────────────
+
+export async function calculatePayRun(
+  tenantId: string,
+  payRunId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  return withTenant(tenantId, async (tx) => {
+    const [run] = await tx.select().from(payRuns)
+      .where(and(eq(payRuns.tenantId, tenantId), eq(payRuns.id, payRunId))).limit(1)
+    if (!run) return { ok: false, error: 'Pay run tidak ditemukan.' }
+    if (!['draft', 'calculated'].includes(run.status)) {
+      return { ok: false, error: 'Hanya pay run draf yang dapat dihitung.' }
+    }
+
+    const rules = await loadPayrollRules(run.periodStart)
+    const periodDate = new Date(run.periodStart)
+    const month = periodDate.getUTCMonth() + 1
+    const year = periodDate.getUTCFullYear()
+    const isDecember = month === 12
+
+    // Load all payslips + their employee salary settings
+    const slips = await tx.select({
+      id: payslips.id,
+      employeeId: payslips.employeeId,
+      employeeName: payslips.employeeName,
+    }).from(payslips)
+      .where(and(eq(payslips.tenantId, tenantId), eq(payslips.payRunId, payRunId)))
+
+    if (slips.length === 0) return { ok: false, error: 'Tidak ada payslip dalam pay run ini.' }
+
+    for (const slip of slips) {
+      const [settings] = await tx
+        .select()
+        .from(employeeSalarySettings)
+        .where(and(
+          eq(employeeSalarySettings.tenantId, tenantId),
+          eq(employeeSalarySettings.employeeId, slip.employeeId),
+          sql`${employeeSalarySettings.effectiveDate} <= ${run.periodStart}`,
+        ))
+        .orderBy(desc(employeeSalarySettings.effectiveDate))
+        .limit(1)
+
+      if (!settings) continue  // Skip employees with no salary settings
+
+      const calcSettings: SalarySettings = {
+        baseSalary: settings.baseSalary,
+        ptkpStatus: settings.ptkpStatus as PtkpStatus,
+        taxScheme: settings.taxScheme as TaxScheme,
+        jkkTier: settings.jkkTier as JkkTier,
+        bpjsKesEnabled: settings.bpjsKesEnabled,
+        bpjsKetEnabled: settings.bpjsKetEnabled,
+        jpEnabled: settings.jpEnabled,
+        fixedAllowances: (settings.fixedAllowances as { name: string; amount: number }[]) ?? [],
+        hireDate: null,
+      }
+
+      const result = autoCalcPayslipLines(calcSettings, run.periodStart, month, year, rules, isDecember)
+
+      // Delete old lines and insert new ones
+      await tx.delete(payslipLines).where(eq(payslipLines.payslipId, slip.id))
+      if (result.lines.length > 0) {
+        await tx.insert(payslipLines).values(
+          result.lines.map((l) => ({
+            tenantId,
+            payslipId: slip.id,
+            kind: l.kind as 'earning' | 'deduction',
+            name: l.name,
+            amount: l.amount,
+          })),
+        )
+      }
+      await tx.update(payslips)
+        .set({
+          grossTotal: result.grossTotal,
+          deductionTotal: result.deductionTotal,
+          netTotal: result.netTotal,
+          updatedAt: new Date(),
+        })
+        .where(eq(payslips.id, slip.id))
+    }
+
+    await tx.update(payRuns)
+      .set({ status: 'calculated', calculatedAt: new Date(), updatedAt: new Date() })
+      .where(eq(payRuns.id, payRunId))
+
+    return { ok: true }
+  })
+}
+
+// ── Approve pay run (calculated → approved) ───────────────────────────────────
+
+export async function approvePayRun(
+  tenantId: string,
+  userId: string,
+  payRunId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  return withTenant(tenantId, async (tx) => {
+    const [run] = await tx.select().from(payRuns)
+      .where(and(eq(payRuns.tenantId, tenantId), eq(payRuns.id, payRunId))).limit(1)
+    if (!run) return { ok: false, error: 'Pay run tidak ditemukan.' }
+    if (run.status !== 'calculated') return { ok: false, error: 'Pay run harus dihitung terlebih dahulu sebelum disetujui.' }
+
+    await tx.update(payRuns)
+      .set({ status: 'approved', approvedAt: new Date(), approvedBy: userId, updatedAt: new Date() })
+      .where(eq(payRuns.id, payRunId))
+
+    return { ok: true }
+  })
+}
+
+// ── Recalculate (resets calculated → draft, clears lines) ─────────────────────
+
+export async function recalculatePayRun(
+  tenantId: string,
+  payRunId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  return withTenant(tenantId, async (tx) => {
+    const [run] = await tx.select().from(payRuns)
+      .where(and(eq(payRuns.tenantId, tenantId), eq(payRuns.id, payRunId))).limit(1)
+    if (!run) return { ok: false, error: 'Pay run tidak ditemukan.' }
+    if (!['draft', 'calculated'].includes(run.status)) {
+      return { ok: false, error: 'Hanya pay run draf/terhitung yang dapat diulang kalkulasinya.' }
+    }
+
+    // Drop all payslip lines
+    const slipIds = await tx.select({ id: payslips.id })
+      .from(payslips)
+      .where(and(eq(payslips.tenantId, tenantId), eq(payslips.payRunId, payRunId)))
+    if (slipIds.length > 0) {
+      for (const { id } of slipIds) {
+        await tx.delete(payslipLines).where(eq(payslipLines.payslipId, id))
+      }
+      await tx.update(payslips)
+        .set({ grossTotal: 0, deductionTotal: 0, netTotal: 0, updatedAt: new Date() })
+        .where(and(eq(payslips.tenantId, tenantId), eq(payslips.payRunId, payRunId)))
+    }
+
+    await tx.update(payRuns)
+      .set({ status: 'draft', calculatedAt: null, updatedAt: new Date() })
+      .where(eq(payRuns.id, payRunId))
+
+    return { ok: true }
+  })
 }
 
 export const PAY_LINE_KIND_LABEL: Record<string, string> = {
