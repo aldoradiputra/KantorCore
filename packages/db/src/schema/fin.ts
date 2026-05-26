@@ -11,6 +11,7 @@ import {
   bigint,
   integer,
   boolean,
+  numeric,
 } from 'drizzle-orm/pg-core'
 import { tenants } from './tenants'
 import { users } from './users'
@@ -282,3 +283,137 @@ export const billLineTaxes = fin.table('bill_line_taxes', {
 
 export type BillLineTax = typeof billLineTaxes.$inferSelect
 export type NewBillLineTax = typeof billLineTaxes.$inferInsert
+
+// ── Journals (named accounting journals, not raw journal entries) ─────────────
+
+export const journalType = pgEnum('journal_type', ['sale', 'purchase', 'bank', 'cash', 'general'])
+
+export const journals = fin.table('journals', {
+  id:              uuid('id').primaryKey().defaultRandom(),
+  tenantId:        uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  code:            varchar('code', { length: 5 }).notNull(),   // 2–5 chars, uppercase alphanumeric
+  name:            varchar('name', { length: 100 }).notNull(),
+  type:            journalType('type').notNull().default('general'),
+  currencyCode:    varchar('currency_code', { length: 10 }).notNull().default('IDR'),
+  bankAccountId:   uuid('bank_account_id'),                    // FK to accounts, nullable
+  sequencePrefix:  varchar('sequence_prefix', { length: 20 }),
+  isDefault:       boolean('is_default').notNull().default(false),
+  active:          boolean('active').notNull().default(true),
+  createdAt:       timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:       timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  tenantCodeUniq: uniqueIndex('fin_journal_tenant_code_uniq').on(t.tenantId, t.code),
+  tenantIdx:      index('fin_journal_tenant_idx').on(t.tenantId),
+}))
+export type Journal    = typeof journals.$inferSelect
+export type NewJournal = typeof journals.$inferInsert
+
+// ── Payment Terms ─────────────────────────────────────────────────────────────
+
+export const paymentTerms = fin.table('payment_terms', {
+  id:               uuid('id').primaryKey().defaultRandom(),
+  tenantId:         uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  name:             varchar('name', { length: 100 }).notNull(),
+  note:             text('note'),
+  complexLogicCode: text('complex_logic_code'),               // sandboxed eval, nullable
+  createdAt:        timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:        timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  tenantIdx: index('fin_pt_tenant_idx').on(t.tenantId),
+}))
+export type PaymentTerm    = typeof paymentTerms.$inferSelect
+export type NewPaymentTerm = typeof paymentTerms.$inferInsert
+
+export const paymentTermLines = fin.table('payment_term_lines', {
+  id:            uuid('id').primaryKey().defaultRandom(),
+  paymentTermId: uuid('payment_term_id').notNull().references(() => paymentTerms.id, { onDelete: 'cascade' }),
+  sequence:      integer('sequence').notNull().default(0),
+  valuePercent:  numeric('value_percent', { precision: 5, scale: 2 }).notNull(),
+  daysOffset:    integer('days_offset').notNull().default(0),
+  createdAt:     timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  ptIdx: index('fin_ptl_pt_idx').on(t.paymentTermId),
+}))
+export type PaymentTermLine    = typeof paymentTermLines.$inferSelect
+export type NewPaymentTermLine = typeof paymentTermLines.$inferInsert
+
+// ── Reconciliation Models ─────────────────────────────────────────────────────
+
+export const reconModelType = pgEnum('recon_model_type', ['suggest', 'auto_match'])
+
+export const reconciliationModels = fin.table('reconciliation_models', {
+  id:             uuid('id').primaryKey().defaultRandom(),
+  tenantId:       uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  name:           varchar('name', { length: 100 }).notNull(),
+  type:           reconModelType('type').notNull().default('suggest'),
+  tolerance:      numeric('tolerance', { precision: 12, scale: 2 }).notNull().default('0.00'),
+  matchLabel:     boolean('match_label').notNull().default(true),
+  matchPartner:   boolean('match_partner').notNull().default(false),
+  sameCurrency:   boolean('same_currency').notNull().default(true),
+  active:         boolean('active').notNull().default(true),
+  createdAt:      timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:      timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  tenantIdx: index('fin_recon_model_tenant_idx').on(t.tenantId),
+}))
+export type ReconciliationModel    = typeof reconciliationModels.$inferSelect
+export type NewReconciliationModel = typeof reconciliationModels.$inferInsert
+
+// ── Bank Statements ───────────────────────────────────────────────────────────
+
+export const statementStatus = pgEnum('statement_status', ['draft', 'processing', 'reconciled'])
+
+export const bankStatements = fin.table('bank_statements', {
+  id:             uuid('id').primaryKey().defaultRandom(),
+  tenantId:       uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  journalId:      uuid('journal_id').notNull().references(() => journals.id, { onDelete: 'restrict' }),
+  accountNumber:  varchar('account_number', { length: 50 }),
+  startingBalance: numeric('starting_balance', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  endingBalance:  numeric('ending_balance', { precision: 15, scale: 2 }).notNull().default('0.00'),
+  dateFrom:       date('date_from').notNull(),
+  dateTo:         date('date_to').notNull(),
+  status:         statementStatus('status').notNull().default('draft'),
+  recordsCount:   integer('records_count').notNull().default(0),
+  reconciledAt:   timestamp('reconciled_at', { withTimezone: true }),
+  createdBy:      uuid('created_by').notNull().references(() => users.id, { onDelete: 'restrict' }),
+  createdAt:      timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:      timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  tenantIdx:  index('fin_stmt_tenant_idx').on(t.tenantId),
+  statusIdx:  index('fin_stmt_status_idx').on(t.tenantId, t.status),
+}))
+export type BankStatement    = typeof bankStatements.$inferSelect
+export type NewBankStatement = typeof bankStatements.$inferInsert
+
+export const statementRecords = fin.table('statement_records', {
+  id:              uuid('id').primaryKey().defaultRandom(),
+  tenantId:        uuid('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  statementId:     uuid('statement_id').notNull().references(() => bankStatements.id, { onDelete: 'cascade' }),
+  date:            date('date').notNull(),
+  amount:          numeric('amount', { precision: 15, scale: 2 }).notNull(),
+  partnerId:       uuid('partner_id'),                         // nullable ref to contacts
+  reference:       text('reference'),
+  notes:           text('notes'),
+  cleared:         boolean('cleared').notNull().default(false),
+  journalEntryId:  uuid('journal_entry_id').references(() => journalEntries.id, { onDelete: 'set null' }),
+  createdAt:       timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  stmtIdx:    index('fin_sr_stmt_idx').on(t.statementId),
+  clearedIdx: index('fin_sr_cleared_idx').on(t.tenantId, t.cleared),
+}))
+export type StatementRecord    = typeof statementRecords.$inferSelect
+export type NewStatementRecord = typeof statementRecords.$inferInsert
+
+// ── Indonesian Bank Master (global reference table, no tenant scoping) ────────
+
+export const indonesianBanks = fin.table('indonesian_banks', {
+  id:        uuid('id').primaryKey().defaultRandom(),
+  code:      varchar('code', { length: 10 }).notNull().unique(),   // e.g. 'BCA'
+  name:      varchar('name', { length: 100 }).notNull(),
+  swiftCode: varchar('swift_code', { length: 11 }),
+  active:    boolean('active').notNull().default(true),
+}, (t) => ({
+  codeUniq: uniqueIndex('fin_bank_code_uniq').on(t.code),
+}))
+export type IndonesianBank    = typeof indonesianBanks.$inferSelect
+export type NewIndonesianBank = typeof indonesianBanks.$inferInsert
