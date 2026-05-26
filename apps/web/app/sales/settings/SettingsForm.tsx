@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { formatSoNumber } from '../../../lib/sales-settings'
+import { formatSoNumber } from '../../../lib/sales-constants'
 import type { SalesSettings } from '../../../lib/sales-settings'
 
 const PAYMENT_TERMS = ['COD', 'Net 7', 'Net 14', 'Net 30', 'Net 45', 'Net 60', 'Net 90']

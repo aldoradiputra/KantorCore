@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ENTITY_COLUMNS, ENTITY_LABEL, type ImportEntity, type ColSpec } from '../../../lib/migration'
+import { ENTITY_COLUMNS, ENTITY_LABEL, type ImportEntity, type ColSpec } from '../../../lib/migration-constants'
 
 const ENTITIES: ImportEntity[] = ['contacts', 'vendors', 'products', 'accounts']
 
