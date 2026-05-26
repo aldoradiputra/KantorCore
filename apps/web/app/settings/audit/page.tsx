@@ -2,11 +2,6 @@ import { redirect } from 'next/navigation'
 import { getCurrentSession } from '../../../lib/auth'
 import { getCurrentTenant } from '../../../lib/tenants'
 import { listAuditLog } from '../../../lib/admin'
-import { SettingsShell } from '../SettingsShell'
-
-function initials(name: string) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
-}
 
 function formatDate(d: Date | string) {
   return new Intl.DateTimeFormat('id-ID', {
@@ -40,13 +35,6 @@ export default async function AuditLogPage() {
   const rows = await listAuditLog(ctx.tenant.id, 200, 0)
 
   return (
-    <SettingsShell
-      activeSection="audit"
-      isAdmin={isAdmin}
-      tenantName={ctx.tenant.name}
-      userInitials={initials(session.user.name)}
-      userEmail={session.user.email}
-    >
       <div style={{ flex: 1, overflow: 'auto', padding: 'var(--s-6) var(--content-gutter)' }}>
         <div style={{ maxWidth: 920, width: '100%' }}>
           <div style={{ marginBottom: 'var(--s-6)' }}>
@@ -112,6 +100,5 @@ export default async function AuditLogPage() {
           )}
         </div>
       </div>
-    </SettingsShell>
   )
 }

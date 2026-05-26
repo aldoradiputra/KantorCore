@@ -4,11 +4,6 @@ import { getCurrentSession } from '../../../../lib/auth'
 import { getCurrentTenant } from '../../../../lib/tenants'
 import { listAuditLog } from '../../../../lib/admin'
 import { CONFIG_AUDIT_PREFIX } from '../../../../lib/platform/audit-config'
-import { SettingsShell } from '../../SettingsShell'
-
-function initials(name: string) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
-}
 
 function formatDate(d: Date | string) {
   return new Intl.DateTimeFormat('id-ID', {
@@ -52,13 +47,6 @@ export default async function ConfigHistoryPage() {
   const rows = await listAuditLog(ctx.tenant.id, 200, 0, { actionPrefix: CONFIG_AUDIT_PREFIX })
 
   return (
-    <SettingsShell
-      activeSection="platform-history"
-      isAdmin={isAdmin}
-      tenantName={ctx.tenant.name}
-      userInitials={initials(session.user.name)}
-      userEmail={session.user.email}
-    >
       <div style={{ flex: 1, overflow: 'auto', padding: 'var(--s-6) var(--content-gutter)' }}>
         <div style={{ maxWidth: 960, width: '100%' }}>
           <div style={{ font: '12px/1 var(--font-sans)', color: 'var(--fg-3)', marginBottom: 'var(--s-3)' }}>
@@ -147,6 +135,5 @@ export default async function ConfigHistoryPage() {
           )}
         </div>
       </div>
-    </SettingsShell>
   )
 }

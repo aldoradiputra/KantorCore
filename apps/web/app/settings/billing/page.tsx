@@ -1,11 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getCurrentSession } from '../../../lib/auth'
 import { getCurrentTenant } from '../../../lib/tenants'
-import { SettingsShell } from '../SettingsShell'
-
-function initials(name: string) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
-}
 
 export default async function BillingPage() {
   const session = await getCurrentSession()
@@ -16,7 +11,6 @@ export default async function BillingPage() {
   if (!isAdmin) redirect('/settings/profile')
 
   return (
-    <SettingsShell activeSection="billing" isAdmin={isAdmin} tenantName={ctx.tenant.name} userInitials={initials(session.user.name)} userEmail={session.user.email}>
       <div style={{ flex: 1, overflow: 'auto', padding: 'var(--s-6) var(--content-gutter)' }}>
         <div style={{ maxWidth: 600 }}>
           <h2 style={{ margin: '0 0 var(--s-2)' }}>Langganan</h2>
@@ -66,6 +60,5 @@ export default async function BillingPage() {
           </div>
         </div>
       </div>
-    </SettingsShell>
   )
 }

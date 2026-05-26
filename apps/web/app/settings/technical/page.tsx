@@ -1,11 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getCurrentSession } from '../../../lib/auth'
 import { getCurrentTenant } from '../../../lib/tenants'
-import { SettingsShell } from '../SettingsShell'
-
-function initials(name: string) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
-}
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -40,13 +35,6 @@ export default async function TechnicalPage() {
   const user = session.user
 
   return (
-    <SettingsShell
-      activeSection="technical"
-      isAdmin={isAdmin}
-      tenantName={tenant.name}
-      userInitials={initials(user.name)}
-      userEmail={user.email}
-    >
       <div style={{ flex: 1, overflow: 'auto', padding: 'var(--s-6) var(--content-gutter)' }}>
         <div style={{ maxWidth: 720, width: '100%' }}>
           <h2 style={{ marginBottom: 'var(--s-2)' }}>Informasi Teknis</h2>
@@ -91,7 +79,6 @@ export default async function TechnicalPage() {
           </div>
         </div>
       </div>
-    </SettingsShell>
   )
 }
 
