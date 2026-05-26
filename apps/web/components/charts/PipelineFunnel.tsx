@@ -59,7 +59,7 @@ export function PipelineFunnel({ data, height = 220, metric = 'count' }: Props) 
           <LabelList
             dataKey="value"
             position="top"
-            formatter={(v: string | number) => metric === 'count' ? v : formatIDR(Number(v))}
+            formatter={(v: unknown) => metric === 'count' ? (v as number) : formatIDR(Number(v))}
             style={{ fontSize: 10, fill: 'var(--fg-3)', fontFamily: 'var(--font-mono, monospace)' }}
           />
         </Bar>
