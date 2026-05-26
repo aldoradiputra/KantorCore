@@ -176,7 +176,7 @@ function IconProses() {
 }
 
 // ── Module list ───────────────────────────────────────────────
-type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'fin' | 'pay' | 'proses' | 'inv' | 'proc' | 'sales' | 'crm' | 'doc' | 'aip' | 'mig' | 'trig'
+type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'fin' | 'pay' | 'proses' | 'inv' | 'proc' | 'sales' | 'crm' | 'doc' | 'aip' | 'mig' | 'trig' | 'gamification' | 'recruitment'
 
 type ModuleEntry = { id: ModuleId; label: string; href: string; hotkey: string; Icon: () => React.ReactElement }
 type ModuleGroup = { id: string; label: string; items: ModuleEntry[] }
