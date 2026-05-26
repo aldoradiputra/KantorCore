@@ -1,14 +1,37 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { APP_REGISTRY, searchApps, type AppEntry } from '../lib/app-registry'
 
-interface SearchHit {
+type RemoteHit = {
   type: 'channel' | 'project'
   id: string
   label: string
   hint: string
   href: string
+}
+
+type AppHit = {
+  type: 'app'
+  id: string
+  label: string
+  hint: string
+  href: string
+  hotkey: string
+}
+
+type PaletteItem = AppHit | RemoteHit
+
+function appToHit(app: AppEntry): AppHit {
+  return {
+    type: 'app',
+    id: app.id,
+    label: app.label,
+    hint: app.group === 'workspace' ? 'Workspace' : app.group === 'apps' ? 'Apps' : 'Platform',
+    href: app.href,
+    hotkey: app.hotkey,
+  }
 }
 
 const HOTKEY_WINDOW_MS = 1200
@@ -119,7 +142,7 @@ export default function KeyboardChrome() {
 function Palette({ onClose }: { onClose: () => void }) {
   const router = useRouter()
   const [q, setQ] = useState('')
-  const [hits, setHits] = useState<SearchHit[]>([])
+  const [remoteHits, setRemoteHits] = useState<RemoteHit[]>([])
   const [active, setActive] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -127,10 +150,10 @@ function Palette({ onClose }: { onClose: () => void }) {
     inputRef.current?.focus()
   }, [])
 
-  // Debounced fetch. Empty query → no results.
+  // Debounced remote search for channels/projects. Apps are filtered locally.
   useEffect(() => {
     if (!q.trim()) {
-      setHits([])
+      setRemoteHits([])
       setActive(0)
       return
     }
@@ -138,9 +161,8 @@ function Palette({ onClose }: { onClose: () => void }) {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
         if (!res.ok) return
-        const data = (await res.json()) as { hits: SearchHit[] }
-        setHits(data.hits)
-        setActive(0)
+        const data = (await res.json()) as { hits: RemoteHit[] }
+        setRemoteHits(data.hits)
       } catch {
         /* network blip */
       }
@@ -148,8 +170,23 @@ function Palette({ onClose }: { onClose: () => void }) {
     return () => clearTimeout(t)
   }, [q])
 
+  // Apps appear first when matched (or as the default list when query is empty),
+  // followed by remote search hits (channels, projects).
+  const items = useMemo<PaletteItem[]>(() => {
+    const trimmed = q.trim()
+    const appHits = trimmed
+      ? searchApps(trimmed).map(appToHit)
+      : APP_REGISTRY.map(appToHit)
+    return [...appHits, ...remoteHits]
+  }, [q, remoteHits])
+
+  // Keep `active` in bounds whenever the visible list shrinks.
+  useEffect(() => {
+    setActive((i) => Math.min(i, Math.max(0, items.length - 1)))
+  }, [items.length])
+
   const select = useCallback(
-    (hit: SearchHit) => {
+    (hit: PaletteItem) => {
       onClose()
       router.push(hit.href)
     },
@@ -162,13 +199,13 @@ function Palette({ onClose }: { onClose: () => void }) {
       onClose()
     } else if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setActive((i) => Math.min(i + 1, Math.max(0, hits.length - 1)))
+      setActive((i) => Math.min(i + 1, Math.max(0, items.length - 1)))
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setActive((i) => Math.max(i - 1, 0))
     } else if (e.key === 'Enter') {
       e.preventDefault()
-      const hit = hits[active]
+      const hit = items[active]
       if (hit) select(hit)
     }
   }
@@ -204,7 +241,7 @@ function Palette({ onClose }: { onClose: () => void }) {
           ref={inputRef}
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Cari kanal, proyek…"
+          placeholder="Cari aplikasi, kanal, proyek…"
           style={{
             width: '100%',
             height: 48,
@@ -218,12 +255,10 @@ function Palette({ onClose }: { onClose: () => void }) {
           }}
         />
         <div style={{ maxHeight: 360, overflowY: 'auto', padding: 'var(--s-2) 0' }}>
-          {q.trim() === '' ? (
-            <Empty>Ketik untuk mencari kanal atau proyek.</Empty>
-          ) : hits.length === 0 ? (
+          {items.length === 0 ? (
             <Empty>Tidak ada hasil.</Empty>
           ) : (
-            hits.map((hit, i) => (
+            items.map((hit, i) => (
               <button
                 key={`${hit.type}-${hit.id}`}
                 type="button"
@@ -242,7 +277,7 @@ function Palette({ onClose }: { onClose: () => void }) {
                   textAlign: 'left',
                 }}
               >
-                <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)', minWidth: 0 }}>
                   <TypeBadge type={hit.type} />
                   <span style={{ font: '500 13px/1 var(--font-sans)', color: 'var(--fg-1)' }}>
                     {hit.label}
@@ -251,8 +286,25 @@ function Palette({ onClose }: { onClose: () => void }) {
                     {hit.hint}
                   </span>
                 </span>
-                <span style={{ font: '500 11px/1 var(--font-mono)', color: 'var(--fg-3)' }}>
-                  ↵
+                <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-2)' }}>
+                  {hit.type === 'app' && (
+                    <kbd
+                      style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: 10,
+                        padding: '2px 5px',
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 3,
+                        color: 'var(--fg-3)',
+                      }}
+                    >
+                      {hit.hotkey}
+                    </kbd>
+                  )}
+                  <span style={{ font: '500 11px/1 var(--font-mono)', color: 'var(--fg-3)' }}>
+                    ↵
+                  </span>
                 </span>
               </button>
             ))
@@ -295,8 +347,8 @@ function Empty({ children }: { children: React.ReactNode }) {
   )
 }
 
-function TypeBadge({ type }: { type: SearchHit['type'] }) {
-  const label = type === 'channel' ? 'Chat' : 'Proyek'
+function TypeBadge({ type }: { type: PaletteItem['type'] }) {
+  const label = type === 'channel' ? 'Chat' : type === 'project' ? 'Proyek' : 'Aplikasi'
   return (
     <span
       style={{
