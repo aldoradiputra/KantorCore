@@ -10,7 +10,7 @@ import {
   RESERVATION_STATUS_LABEL,
   formatIDR,
   type ReservationWithRelations,
-} from '../../../../lib/rent'
+} from '../../../../lib/rent-constants'
 
 const STATUS_COLOR: Record<string, string> = {
   available: 'var(--teal)',

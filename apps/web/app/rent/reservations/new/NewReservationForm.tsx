@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Asset, RentCustomer } from '@kantorcore/db'
-import { ASSET_CATEGORY_LABEL, formatIDR } from '../../../../lib/rent'
+import { ASSET_CATEGORY_LABEL, formatIDR } from '../../../../lib/rent-constants'
 
 const inputStyle: React.CSSProperties = {
   height: 34,

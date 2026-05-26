@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import type { TimesheetEntryRow } from '../../../lib/timesheet'
-import { formatDuration } from '../../../lib/timesheet'
+import { formatDuration } from '../../../lib/timesheet-constants'
 import type { Employee } from '@kantorcore/db'
 
 const BILLABLE_DOT: React.CSSProperties = {

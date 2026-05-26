@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import type { Asset } from '@kantorcore/db'
-import { ASSET_CATEGORY_LABEL, ASSET_STATUS_LABEL, formatIDR } from '../../../lib/rent'
+import { ASSET_CATEGORY_LABEL, ASSET_STATUS_LABEL, formatIDR } from '../../../lib/rent-constants'
 
 const STATUS_COLOR: Record<string, string> = {
   available: 'var(--teal)',

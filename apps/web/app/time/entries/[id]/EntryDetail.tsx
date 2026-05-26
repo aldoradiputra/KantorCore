@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { TimesheetEntryRow } from '../../../../lib/timesheet'
-import { formatDuration } from '../../../../lib/timesheet'
+import { formatDuration } from '../../../../lib/timesheet-constants'
 
 export function EntryDetail({ entry }: { entry: TimesheetEntryRow }) {
   const router = useRouter()

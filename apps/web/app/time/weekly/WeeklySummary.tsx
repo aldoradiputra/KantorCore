@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import type { WeeklySummaryRow } from '../../../lib/timesheet'
-import { formatDuration, weekStart, weekEnd } from '../../../lib/timesheet'
+import { formatDuration, weekStart, weekEnd } from '../../../lib/timesheet-constants'
 import type { Employee } from '@kantorcore/db'
 
 function todayStr() {
