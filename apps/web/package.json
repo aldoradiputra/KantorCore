@@ -16,11 +16,15 @@
     "@kantorcore/design-tokens": "workspace:*",
     "@kantorcore/types": "workspace:*",
     "@kantorcore/ui": "workspace:*",
+    "csv-parse": "^6.2.1",
     "drizzle-orm": "^0.36.0",
+    "fast-xml-parser": "^5.8.0",
     "next": "^15.0.0",
+    "pdf-parse": "^2.4.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "recharts": "^3.8.1"
+    "recharts": "^3.8.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "^20",
