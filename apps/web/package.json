@@ -12,6 +12,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.3",
     "@kantorcore/auth": "workspace:*",
+    "@node-rs/argon2": "^2.0.0",
     "@kantorcore/db": "workspace:*",
     "@kantorcore/design-tokens": "workspace:*",
     "@kantorcore/types": "workspace:*",
