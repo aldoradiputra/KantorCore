@@ -19,8 +19,6 @@ interface Props {
   metric?: 'count' | 'value'
 }
 
-const STAGE_ORDER: DealStage[] = ['lead', 'qualified', 'proposal', 'negotiation', 'won', 'lost']
-
 function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload as FunnelStage
@@ -61,7 +59,7 @@ export function PipelineFunnel({ data, height = 220, metric = 'count' }: Props) 
           <LabelList
             dataKey="value"
             position="top"
-            formatter={(v: number) => metric === 'count' ? v : formatIDR(v)}
+            formatter={(v: string | number) => metric === 'count' ? v : formatIDR(Number(v))}
             style={{ fontSize: 10, fill: 'var(--fg-3)', fontFamily: 'var(--font-mono, monospace)' }}
           />
         </Bar>
