@@ -219,6 +219,9 @@ export async function gradeSession(sessionId: string, gradedBy: string): Promise
       .where(eq(assessSessions.id, sessionId)).limit(1)
     if (!session) throw new Error('Session not found')
 
+    const [assessmentRow] = await tx.select().from(assessments)
+      .where(eq(assessments.id, session.assessmentId)).limit(1)
+
     const questionRows = await tx.select().from(questions)
       .where(eq(questions.assessmentId, session.assessmentId))
 
@@ -263,8 +266,8 @@ export async function gradeSession(sessionId: string, gradedBy: string): Promise
       // essay / rating: manual grading — score set by grader separately
     }
 
-    const passed = session.assessment?.passingScore != null
-      ? (totalScore / maxScore * 100) >= Number((session as any).passingScore ?? 0)
+    const passed = assessmentRow?.passingScore != null
+      ? (totalScore / maxScore * 100) >= Number(assessmentRow.passingScore)
       : null
 
     await tx.update(assessSessions).set({
