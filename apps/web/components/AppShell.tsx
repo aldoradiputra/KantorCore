@@ -6,6 +6,7 @@ import NotificationBell from './NotificationBell'
 import KeyboardChrome, { SearchTrigger } from './KeyboardChrome'
 import AgentInboxPill from './AgentInboxPill'
 import UserAvatar from './UserAvatar'
+import ChatFab from './ChatFab'
 
 // ── Icon primitives ───────────────────────────────────────────
 function IconHome() {
@@ -420,6 +421,8 @@ export function AppShell({
           {children}
         </main>
       </div>
+
+      <ChatFab />
     </div>
   )
 }
