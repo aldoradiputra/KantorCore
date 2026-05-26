@@ -17,19 +17,18 @@ Language: Bahasa Indonesia primary, English secondary (i18next, ID/EN from day o
 ## Monorepo Structure
 
 ```
-indonesia-system/          ← root (Turborepo + npm workspaces)
+kantr/                         ← root (Turborepo + pnpm workspaces)
   apps/
-    web/                   ← React 19 + Vite SPA (frontend)
-    api/                   ← Hono + Node.js (backend)
+    web/                       ← KantorCore main app (Next.js 15 App Router)
+    roadmap/                   ← Public product roadmap (Next.js 15 App Router)
+    marketing/                 ← Marketing site (Next.js 15 App Router)
+    docs/                      ← Deprecated
   packages/
-    db/                    ← Drizzle ORM schema + migrations
-    ui/                    ← Shared component library (Shadcn/ui + custom tokens)
-    config/                ← Shared tsconfig, eslint, prettier configs
-  docker/
-    Dockerfile.api
-    Dockerfile.web
-    docker-compose.yml     ← local dev stack
-  .kamal/                  ← Kamal deploy config
+    auth/          @kantorcore/auth           ← better-auth: sessions, Argon2id, TOTP
+    db/            @kantorcore/db             ← Drizzle ORM + Supabase client + migrations
+    design-tokens/ @kantorcore/design-tokens  ← Locked IS design tokens
+    types/         @kantorcore/types          ← Shared TypeScript types
+    ui/            @kantorcore/ui             ← Shared React components
 ```
 
 ---
@@ -38,19 +37,18 @@ indonesia-system/          ← root (Turborepo + npm workspaces)
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Frontend | React 19 + Vite + TypeScript | No Next.js — SPA with TanStack Router |
-| Backend | Hono + Node.js + TypeScript | Lightweight, fast, great TS support |
-| Database | PostgreSQL | One DB per company (tenant isolation) |
-| ORM | Drizzle ORM | SQL-close, excellent multi-tenant connection model |
-| Auth | better-auth | Self-built; covers TOTP, passkeys, SAML/OIDC, sessions |
+| Framework | Next.js 15 App Router + TypeScript | All apps; no separate frontend/backend split |
+| Runtime | React 19 | Latest stable |
+| Database | Supabase (Postgres) | Hosted Postgres; one project per environment |
+| ORM | Drizzle ORM (`@kantorcore/db`) | SQL-close, strong TypeScript inference |
+| Auth | better-auth (`@kantorcore/auth`) | Argon2id, sessions, TOTP, passkeys, SAML/OIDC |
 | State | TanStack Query (server) + Zustand (client) | |
-| UI | Shadcn/ui + Radix primitives | Restyled with IS design tokens, no Tailwind in logic |
-| Styling | CSS Modules + design tokens | No Tailwind |
+| UI | `@kantorcore/ui` + Radix primitives | IS design tokens; no Tailwind in logic |
+| Styling | CSS Modules + design tokens (`@kantorcore/design-tokens`) | No Tailwind |
 | i18n | i18next + react-i18next | ID/EN, ID default |
-| Dev DB | Supabase (local CLI) | Supabase CLI for local dev; production = self-hosted PG |
-| Deploy | Kamal + Docker | On-premise first; cloud staging on a VPS |
-| CI/CD | GitHub Actions | Lint → test → build → push image → Kamal deploy |
-| Monorepo | Turborepo + npm workspaces | |
+| Deploy | Vercel | Auto-detects Next.js; env vars set in Vercel dashboard |
+| CI/CD | GitHub Actions | Lint → typecheck → build |
+| Monorepo | Turborepo + pnpm workspaces | pnpm@10.33.0, Node >=18 |
 
 ---
 

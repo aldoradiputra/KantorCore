@@ -4,25 +4,83 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-A **public product roadmap** for **Indonesia System** — a long-term vision for a national corporate OS for Indonesia (simpler than Odoo, powerful enough to replace SAP, natively integrated with Indonesian government infrastructure like BPJS, Ketenagakerjaan, taxation, and national identifiers).
+This repo (`kantr`) is the **KantorCore monorepo** — a Turborepo + pnpm workspaces monorepo containing the full Indonesia System product platform plus supporting apps.
 
-The roadmap app is standalone — separate from sister products Supapark, Jurna, and a planned B2B Marketplace (separate brand, same PT entity).
+**Indonesia System** is a national corporate OS for Indonesia — simpler than Odoo, powerful enough to replace SAP, natively integrated with Indonesian government infrastructure (BPJS, Ketenagakerjaan, CoreTax DJP, Dukcapil via PrivyID, QRIS).
 
 ## Commands
 
 ```bash
-npm run dev      # Start dev server (Next.js 15 App Router)
-npm run build    # Production build
-npm run start    # Start production server
+# Per-app dev servers
+pnpm dev:web          # apps/web — KantorCore main app
+pnpm dev:roadmap      # apps/roadmap — public product roadmap
+pnpm dev:marketing    # apps/marketing — marketing site
+
+# Build
+pnpm build:web
+pnpm build:roadmap
+pnpm build:marketing
+
+# Database (Drizzle via packages/db)
+pnpm db:generate      # generate migration files
+pnpm db:migrate       # run migrations
+pnpm db:push          # push schema to DB (dev)
+pnpm db:studio        # open Drizzle Studio
+
+# Auth package
+pnpm auth:build
+pnpm auth:check
+
+# Run all (Turborepo)
+pnpm dev              # all apps in parallel
+pnpm build            # all apps
+pnpm typecheck        # all apps + packages
 ```
 
-No test runner or linter is configured yet.
+Package manager: **pnpm@10.33.0** (Node >=18 required). Never use `npm` or `yarn` in this repo.
+
+## Monorepo Structure
+
+```
+kantr/                         ← root (Turborepo + pnpm workspaces)
+  apps/
+    web/                       ← KantorCore main app (Next.js 15 App Router)
+    roadmap/                   ← Public product roadmap (Next.js 15 App Router)
+    marketing/                 ← Marketing site (Next.js 15 App Router)
+    docs/                      ← Deprecated (docs.kantorcore.com removed May 2026)
+  packages/
+    auth/          @kantorcore/auth           # better-auth: password hashing, sessions, cookies
+    db/            @kantorcore/db             # Drizzle ORM schema + Supabase client + migrations
+    design-tokens/ @kantorcore/design-tokens  # Locked color/type/spacing/motion tokens
+    types/         @kantorcore/types          # Shared TypeScript types across all apps
+    ui/            @kantorcore/ui             # Shared React components (token-driven)
+```
+
+### Monorepo rules
+- **No cross-app imports** — `apps/web` must not import from `apps/roadmap` or vice versa
+- **Shared code belongs in `packages/`** — if two apps need the same thing, extract it
+- **Internal packages use `@kantorcore/*` namespace** — always reference by package name, not relative path
+- **`apps/docs` is deprecated** — do not add features there; roadmap content stands alone
+- **`apps/roadmap` is purely static** — no auth, no DB; `data/features.json` is its only data source
 
 ## Architecture
 
-**Next.js 15 App Router** deployed on Vercel. No database — `data/features.json` is the single source of truth for all nodes.
+**Tech stack**: Next.js 15 App Router · Supabase (Postgres) · Drizzle ORM · better-auth · Vercel · Turborepo + pnpm
 
-### Current project structure (fully built):
+### apps/web — KantorCore main application
+
+Next.js 15 App Router. Authenticated multi-tenant SaaS app. Uses `@kantorcore/auth`, `@kantorcore/db`, `@kantorcore/ui`, `@kantorcore/types`.
+
+Key route groups under `apps/web/app/`:
+- `hr/`, `pay/`, `fin/`, `inv/`, `sales/`, `crm/`, `proj/` — domain modules (Phase 1)
+- `chat/`, `doc/`, `kms/` — collaboration modules
+- `aip/`, `agent/` — AI Platform and Agent Runtime
+- `settings/`, `portal/`, `approvals/` — platform cross-cuts
+- `api/` — Next.js Route Handlers (server-side only; never expose secrets to client)
+
+### apps/roadmap — Public product roadmap
+
+No database. `data/features.json` is the single source of truth for all nodes (v0.9, 654 nodes). Deployed separately on Vercel.
 
 ```
 apps/roadmap/
@@ -40,10 +98,8 @@ apps/roadmap/
       SearchModal.tsx         # Keyboard-triggered (⌘K) search overlay
       SearchFilterBar.tsx     # Filter controls
   data/
-    features.json             # All roadmap nodes (v0.9, 654 nodes)
+    features.json             # All roadmap nodes
 ```
-
-The roadmap is one of several apps in the monorepo (`apps/marketing`, `apps/web` for KantorCore itself). Docs and Learn views were removed in May 2026 — `docs.kantorcore.com` is deprecated; roadmap content stands alone.
 
 ### `features.json` node schema
 
