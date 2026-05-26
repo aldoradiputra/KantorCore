@@ -25,7 +25,7 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 CREATE TABLE IF NOT EXISTS flow.process_instances (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id             UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  tenant_id             UUID NOT NULL REFERENCES platform.tenants(id) ON DELETE CASCADE,
   process_id            UUID NOT NULL REFERENCES flow.process_templates(id),
   -- The record that kicked off this instance (e.g. the SO that was confirmed)
   trigger_record_type   VARCHAR(64),
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS flow.process_instances (
   current_sequence      INTEGER NOT NULL DEFAULT 0,
   -- Arbitrary context passed between steps (populated record IDs, etc.)
   context               JSONB NOT NULL DEFAULT '{}',
-  started_by            UUID REFERENCES public.users(id),
+  started_by            UUID REFERENCES platform.users(id),
   started_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   completed_at          TIMESTAMPTZ,
   error                 TEXT,
@@ -50,7 +50,7 @@ CREATE INDEX IF NOT EXISTS flow_instances_trigger_record_idx
 
 CREATE TABLE IF NOT EXISTS flow.process_run_steps (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id             UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  tenant_id             UUID NOT NULL REFERENCES platform.tenants(id) ON DELETE CASCADE,
   instance_id           UUID NOT NULL REFERENCES flow.process_instances(id) ON DELETE CASCADE,
   step_id               UUID NOT NULL REFERENCES flow.process_steps(id),
   sequence              INTEGER NOT NULL,
@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS flow.process_run_steps (
   outcome_record_type   VARCHAR(64),
   outcome_record_id     UUID,
   -- Actor who completed (for human steps)
-  completed_by          UUID REFERENCES public.users(id),
+  completed_by          UUID REFERENCES platform.users(id),
   notes                 TEXT,
   error                 TEXT,
   started_at            TIMESTAMPTZ,

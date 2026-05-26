@@ -2,8 +2,8 @@
 -- on transactional and contact records. Stores the minimum membership role
 -- required to see and use the copy button.
 --
--- Values match platform.membership_role enum: 'owner' | 'admin' | 'member'.
+-- Values match public.membership_role enum: 'owner' | 'admin' | 'member'.
 -- Default 'member' = everyone in the workspace can copy.
 
 ALTER TABLE platform.workspace_security_policy
-  ADD COLUMN IF NOT EXISTS copy_info_min_role platform.membership_role NOT NULL DEFAULT 'member';
+  ADD COLUMN IF NOT EXISTS copy_info_min_role public.membership_role NOT NULL DEFAULT 'member';

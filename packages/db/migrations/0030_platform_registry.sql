@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS platform.transitions (
   from_state      varchar(32),                            -- NULL = any state
   to_state        varchar(32) NOT NULL,
   label           varchar(128) NOT NULL,
-  required_role   platform.membership_role NOT NULL DEFAULT 'member',
+  required_role   public.membership_role NOT NULL DEFAULT 'member',
   guard_expr      text,                                   -- JSON-encoded guard, future use
   display_order   integer NOT NULL DEFAULT 0
 );

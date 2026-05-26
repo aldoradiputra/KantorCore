@@ -10,7 +10,7 @@
 --    entities without colliding with each other or with system models
 --    (tenant_id IS NULL = system/global model).
 ALTER TABLE platform.models
-  ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES public.tenants(id) ON DELETE CASCADE;
+  ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES platform.tenants(id) ON DELETE CASCADE;
 
 -- Replace the global UNIQUE on key with a composite that allows the same key
 -- to exist in different tenants (and once as the system version).
@@ -27,7 +27,7 @@ CREATE INDEX IF NOT EXISTS platform_models_tenant_idx
 
 CREATE TABLE IF NOT EXISTS platform.records (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id   UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  tenant_id   UUID NOT NULL REFERENCES platform.tenants(id) ON DELETE CASCADE,
   model_id    UUID NOT NULL REFERENCES platform.models(id) ON DELETE CASCADE,
   number      VARCHAR(64),
   name        VARCHAR(255),
@@ -57,7 +57,7 @@ CREATE POLICY "tenant_isolation" ON platform.records
 
 CREATE TABLE IF NOT EXISTS platform.views (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id    UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  tenant_id    UUID NOT NULL REFERENCES platform.tenants(id) ON DELETE CASCADE,
   model_id     UUID NOT NULL REFERENCES platform.models(id) ON DELETE CASCADE,
   name         VARCHAR(128) NOT NULL,
   -- 'list' for now; 'board' / 'calendar' reserved for later phases.
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS platform.views (
   is_default   BOOLEAN NOT NULL DEFAULT FALSE,
   -- Shared with all tenant users (vs personal view).
   is_shared    BOOLEAN NOT NULL DEFAULT TRUE,
-  created_by   UUID REFERENCES public.users(id),
+  created_by   UUID REFERENCES platform.users(id),
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

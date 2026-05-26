@@ -6,7 +6,7 @@
 
 CREATE TABLE IF NOT EXISTS platform.custom_roles (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id   UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  tenant_id   UUID NOT NULL REFERENCES platform.tenants(id) ON DELETE CASCADE,
   key         VARCHAR(64) NOT NULL,
   name        VARCHAR(128) NOT NULL,
   description TEXT,
@@ -20,10 +20,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS platform_custom_roles_tenant_key_unique
 
 CREATE TABLE IF NOT EXISTS platform.role_assignments (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id   UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
-  user_id     UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  tenant_id   UUID NOT NULL REFERENCES platform.tenants(id) ON DELETE CASCADE,
+  user_id     UUID NOT NULL REFERENCES platform.users(id) ON DELETE CASCADE,
   role_id     UUID NOT NULL REFERENCES platform.custom_roles(id) ON DELETE CASCADE,
-  granted_by  UUID REFERENCES public.users(id),
+  granted_by  UUID REFERENCES platform.users(id),
   granted_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -43,7 +43,7 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 CREATE TABLE IF NOT EXISTS platform.policies (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id        UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  tenant_id        UUID NOT NULL REFERENCES platform.tenants(id) ON DELETE CASCADE,
   name             VARCHAR(128) NOT NULL,
   description      TEXT,
   -- Resource match. Supports prefix-wildcard via trailing ':*'
@@ -78,7 +78,7 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 CREATE TABLE IF NOT EXISTS platform.approvals (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id       UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+  tenant_id       UUID NOT NULL REFERENCES platform.tenants(id) ON DELETE CASCADE,
   -- e.g. 'fin.invoice', 'flow.instance', 'platform.contact'
   resource_type   VARCHAR(64) NOT NULL,
   resource_id     UUID NOT NULL,
@@ -86,11 +86,11 @@ CREATE TABLE IF NOT EXISTS platform.approvals (
   action          VARCHAR(64) NOT NULL,
   title           VARCHAR(255) NOT NULL,
   description     TEXT,
-  requester_id    UUID REFERENCES public.users(id),
+  requester_id    UUID REFERENCES platform.users(id),
   -- Which role(s) can decide. NULL = any admin/owner.
   required_role   VARCHAR(64),
   status          platform.approval_status NOT NULL DEFAULT 'pending',
-  decided_by      UUID REFERENCES public.users(id),
+  decided_by      UUID REFERENCES platform.users(id),
   decided_at      TIMESTAMPTZ,
   decision_notes  TEXT,
   -- Free-form context to render and use post-decision (e.g. step_run_id)
