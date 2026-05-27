@@ -6,6 +6,7 @@ import NotificationBell from './NotificationBell'
 import KeyboardChrome, { SearchTrigger } from './KeyboardChrome'
 import AgentInboxPill from './AgentInboxPill'
 import UserAvatar from './UserAvatar'
+import { APP_GROUPS, APP_REGISTRY, type AppId } from '../lib/app-registry'
 
 // ── Icon primitives ───────────────────────────────────────────
 function IconHome() {
@@ -176,51 +177,46 @@ function IconProses() {
 }
 
 // ── Module list ───────────────────────────────────────────────
-type ModuleId = 'home' | 'chat' | 'proj' | 'agent' | 'hr' | 'rent' | 'time' | 'fin' | 'pay' | 'proses' | 'inv' | 'proc' | 'sales' | 'crm' | 'doc' | 'aip' | 'mig' | 'trig' | 'gamification' | 'recruitment'
+// ModuleId mirrors AppId from the registry, plus legacy ids that still
+// pass through activeModule for highlighting (gamification, recruitment).
+type ModuleId = AppId | 'gamification' | 'recruitment'
 
 type ModuleEntry = { id: ModuleId; label: string; href: string; hotkey: string; Icon: () => React.ReactElement }
 type ModuleGroup = { id: string; label: string; items: ModuleEntry[] }
 
+// Icon map for registry-driven module rendering. Apps without a custom icon
+// fall back to IconHome (none are expected to hit the fallback today).
+const APP_ICONS: Record<AppId, () => React.ReactElement> = {
+  home: IconHome,
+  chat: IconChat,
+  proj: IconProj,
+  time: IconTime,
+  doc:  IconDoc,
+  proses: IconProses,
+  crm:   IconCrm,
+  sales: IconSales,
+  proc:  IconProc,
+  inv:   IconInv,
+  fin:   IconFin,
+  hr:    IconHR,
+  pay:   IconPay,
+  rent:  IconRent,
+  aip:   IconAip,
+  agent: IconAgent,
+  trig:  IconTrig,
+  mig:   IconMig,
+}
+
 // Grouped nav rail. Workspace = personal/collaboration; Apps = business modules;
 // Platform = automation / AI / config primitives. Visual separators between groups.
-const MODULE_GROUPS: ModuleGroup[] = [
-  {
-    id: 'workspace',
-    label: 'Workspace',
-    items: [
-      { id: 'home', label: 'Beranda', href: '/', hotkey: 'G H', Icon: IconHome },
-      { id: 'chat', label: 'Chat', href: '/chat', hotkey: 'G C', Icon: IconChat },
-      { id: 'proj', label: 'Proyek', href: '/proj', hotkey: 'G P', Icon: IconProj },
-      { id: 'time', label: 'Waktu', href: '/time', hotkey: 'G W', Icon: IconTime },
-      { id: 'doc',  label: 'Dokumen', href: '/doc/documents', hotkey: 'G D', Icon: IconDoc },
-      { id: 'proses', label: 'Proses', href: '/proses', hotkey: 'G O', Icon: IconProses },
-    ],
-  },
-  {
-    id: 'apps',
-    label: 'Apps',
-    items: [
-      { id: 'crm',   label: 'CRM',       href: '/crm/deals',    hotkey: 'G M', Icon: IconCrm },
-      { id: 'sales', label: 'Penjualan', href: '/sales/orders', hotkey: 'G L', Icon: IconSales },
-      { id: 'proc',  label: 'Pembelian', href: '/proc/orders',  hotkey: 'G B', Icon: IconProc },
-      { id: 'inv',   label: 'Inventori', href: '/inv/products', hotkey: 'G I', Icon: IconInv },
-      { id: 'fin',   label: 'Keuangan',  href: '/fin', hotkey: 'G F', Icon: IconFin },
-      { id: 'hr',    label: 'SDM',       href: '/hr', hotkey: 'G R', Icon: IconHR },
-      { id: 'pay',   label: 'Penggajian', href: '/pay', hotkey: 'G Y', Icon: IconPay },
-      { id: 'rent',  label: 'Sewa',      href: '/rent', hotkey: 'G S', Icon: IconRent },
-    ],
-  },
-  {
-    id: 'platform',
-    label: 'Platform',
-    items: [
-      { id: 'aip',   label: 'AI Search', href: '/aip/search', hotkey: 'G K', Icon: IconAip },
-      { id: 'agent', label: 'Agent',     href: '/agent',      hotkey: 'G A', Icon: IconAgent },
-      { id: 'trig',  label: 'Triggers',  href: '/trig/rules', hotkey: 'G T', Icon: IconTrig },
-      { id: 'mig',   label: 'Import',    href: '/mig/import', hotkey: 'G N', Icon: IconMig },
-    ],
-  },
-]
+// Data comes from lib/app-registry; icons are attached here.
+const MODULE_GROUPS: ModuleGroup[] = APP_GROUPS.map((g) => ({
+  id: g.id,
+  label: g.label,
+  items: APP_REGISTRY
+    .filter((a) => a.group === g.id)
+    .map((a) => ({ id: a.id, label: a.label, href: a.href, hotkey: a.hotkey, Icon: APP_ICONS[a.id] })),
+}))
 
 /**
  * Map a module id to the matching settings deep-link, when one exists.
