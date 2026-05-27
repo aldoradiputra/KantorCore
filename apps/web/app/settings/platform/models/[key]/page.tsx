@@ -3,12 +3,7 @@ import Link from 'next/link'
 import { getCurrentSession } from '../../../../../lib/auth'
 import { getCurrentTenant } from '../../../../../lib/tenants'
 import { getModel, listFields, listFieldTypes } from '../../../../../lib/platform/registry'
-import { SettingsShell } from '../../../SettingsShell'
 import ModelFieldsPanel from './ModelFieldsPanel'
-
-function initials(name: string) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
-}
 
 export default async function ModelDetailPage({ params }: { params: Promise<{ key: string }> }) {
   const { key } = await params
@@ -28,13 +23,6 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ ke
   ])
 
   return (
-    <SettingsShell
-      activeSection="platform-models"
-      isAdmin={isAdmin}
-      tenantName={ctx.tenant.name}
-      userInitials={initials(session.user.name)}
-      userEmail={session.user.email}
-    >
       <div style={{ flex: 1, overflow: 'auto', padding: 'var(--s-6) var(--content-gutter)' }}>
         <div style={{ maxWidth: 800, width: '100%' }}>
           <div style={{ font: '12px/1 var(--font-sans)', color: 'var(--fg-3)', marginBottom: 4 }}>
@@ -56,6 +44,5 @@ export default async function ModelDetailPage({ params }: { params: Promise<{ ke
           />
         </div>
       </div>
-    </SettingsShell>
   )
 }

@@ -3,12 +3,7 @@ import { getCurrentSession } from '../../../lib/auth'
 import { getCurrentTenant } from '../../../lib/tenants'
 import { listGroups } from '../../../lib/admin'
 import { listTenantMembers } from '../../../lib/proj'
-import { SettingsShell } from '../SettingsShell'
 import GroupsPanel from './GroupsPanel'
-
-function initials(name: string) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
-}
 
 export default async function GroupsPage() {
   const session = await getCurrentSession()
@@ -24,18 +19,10 @@ export default async function GroupsPage() {
   ])
 
   return (
-    <SettingsShell
-      activeSection="groups"
-      isAdmin={isAdmin}
-      tenantName={ctx.tenant.name}
-      userInitials={initials(session.user.name)}
-      userEmail={session.user.email}
-    >
-      <GroupsPanel
-        tenantId={ctx.tenant.id}
-        groups={groups}
-        members={members}
-      />
-    </SettingsShell>
+    <GroupsPanel
+      tenantId={ctx.tenant.id}
+      groups={groups}
+      members={members}
+    />
   )
 }

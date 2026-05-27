@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 
 export interface SettingsNavItem {
@@ -10,13 +11,8 @@ export interface SettingsNavItem {
   group: string
 }
 
-export function SettingsSidebar({
-  items,
-  activeSection,
-}: {
-  items: SettingsNavItem[]
-  activeSection: string
-}) {
+export function SettingsSidebar({ items }: { items: SettingsNavItem[] }) {
+  const pathname = usePathname()
   const [q, setQ] = useState('')
 
   const filtered = useMemo(() => {
@@ -85,7 +81,7 @@ export function SettingsSidebar({
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {gItems.map((item) => {
-                const active = item.section === activeSection
+                const active = pathname?.startsWith(item.href) ?? false
                 return (
                   <Link
                     key={item.section}

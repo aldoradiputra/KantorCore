@@ -2,12 +2,7 @@ import { redirect } from 'next/navigation'
 import { getCurrentSession } from '../../../lib/auth'
 import { getCurrentTenant } from '../../../lib/tenants'
 import { getSecurityPolicy } from '../../../lib/admin'
-import { SettingsShell } from '../SettingsShell'
 import SecurityPolicyForm from './SecurityPolicyForm'
-
-function initials(name: string) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
-}
 
 export default async function SecurityPolicyPage() {
   const session = await getCurrentSession()
@@ -20,14 +15,6 @@ export default async function SecurityPolicyPage() {
   const policy = await getSecurityPolicy(ctx.tenant.id)
 
   return (
-    <SettingsShell
-      activeSection="security-policy"
-      isAdmin={isAdmin}
-      tenantName={ctx.tenant.name}
-      userInitials={initials(session.user.name)}
-      userEmail={session.user.email}
-    >
-      <SecurityPolicyForm policy={policy} />
-    </SettingsShell>
+    <SecurityPolicyForm policy={policy} />
   )
 }

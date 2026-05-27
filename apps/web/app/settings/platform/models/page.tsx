@@ -3,12 +3,7 @@ import Link from 'next/link'
 import { getCurrentSession } from '../../../../lib/auth'
 import { getCurrentTenant } from '../../../../lib/tenants'
 import { listModels } from '../../../../lib/platform/registry'
-import { SettingsShell } from '../../SettingsShell'
 import { NewModelForm } from './NewModelForm'
-
-function initials(name: string) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
-}
 
 export default async function PlatformModelsPage() {
   const session = await getCurrentSession()
@@ -21,13 +16,6 @@ export default async function PlatformModelsPage() {
   const models = await listModels(ctx.tenant.id)
 
   return (
-    <SettingsShell
-      activeSection="platform-models"
-      isAdmin={isAdmin}
-      tenantName={ctx.tenant.name}
-      userInitials={initials(session.user.name)}
-      userEmail={session.user.email}
-    >
       <div style={{ flex: 1, overflow: 'auto', padding: 'var(--s-6) var(--content-gutter)' }}>
         <div style={{ maxWidth: 800, width: '100%' }}>
           <h2 style={{ margin: 0 }}>Model &amp; Custom Fields</h2>
@@ -86,6 +74,5 @@ export default async function PlatformModelsPage() {
           </div>
         </div>
       </div>
-    </SettingsShell>
   )
 }

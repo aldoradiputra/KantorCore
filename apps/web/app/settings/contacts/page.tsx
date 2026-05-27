@@ -4,12 +4,7 @@ import { getCurrentTenant } from '../../../lib/tenants'
 import { listContacts, getContactStats } from '../../../lib/contacts'
 import { listTenantMembers } from '../../../lib/proj'
 import { getSecurityPolicy, canCopyRecordInfo } from '../../../lib/admin'
-import { SettingsShell } from '../SettingsShell'
 import ContactsPanel from './ContactsPanel'
-
-function initials(name: string) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join('')
-}
 
 export default async function ContactsPage() {
   const session = await getCurrentSession()
@@ -28,19 +23,11 @@ export default async function ContactsPage() {
   const canCopy = canCopyRecordInfo(ctx.membership.role, securityPolicy)
 
   return (
-    <SettingsShell
-      activeSection="contacts"
-      isAdmin={isAdmin}
-      tenantName={ctx.tenant.name}
-      userInitials={initials(session.user.name)}
-      userEmail={session.user.email}
-    >
-      <ContactsPanel
-        contacts={contacts}
-        stats={stats}
-        members={members}
-        canCopy={canCopy}
-      />
-    </SettingsShell>
+    <ContactsPanel
+      contacts={contacts}
+      stats={stats}
+      members={members}
+      canCopy={canCopy}
+    />
   )
 }
