@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import { requireAuthedContext } from '../../../lib/requireSession'
-import { listContacts, createContact } from '../../../lib/contacts'
-import type { ContactRole, ContactType } from '@kantorcore/db'
+import { listContacts, listContactsKanban, createContact } from '../../../lib/contacts'
+import type { ContactRole, ContactType, ContactAddressType } from '@kantorcore/db'
 
-const TYPES: ReadonlyArray<ContactType> = ['person', 'organization']
+const TYPES: ReadonlyArray<ContactType> = ['company', 'individual']
 const ROLES: ReadonlyArray<ContactRole> = ['staff', 'customer', 'vendor', 'lead', 'other']
+const ADDR_TYPES: ReadonlyArray<ContactAddressType> = ['main', 'invoice', 'delivery', 'contact', 'other']
 
 function asRoles(input: unknown): ContactRole[] {
   if (!Array.isArray(input)) return []
@@ -15,11 +16,33 @@ function str(v: unknown): string | null {
   return typeof v === 'string' ? v : null
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const result = await requireAuthedContext()
   if (!result.ok) return result.response
   const { ctx } = result
+
+  const { searchParams } = new URL(req.url)
+  const view = searchParams.get('view') ?? 'list'
+
+  if (view === 'kanban') {
+    const kanban = await listContactsKanban(ctx.tenant.id)
+    return NextResponse.json(kanban)
+  }
+
+  // list (default) and map both return flat array; map adds formatted address fields
   const contacts = await listContacts(ctx.tenant.id)
+
+  if (view === 'map') {
+    const mapData = contacts.map((r) => ({
+      ...r,
+      formattedAddress: r.contact.country === 'ID'
+        ? [r.contact.addrLine1, r.contact.addrKelurahan, r.contact.addrKecamatan, r.contact.addrKota, r.contact.addrProvinsi].filter(Boolean).join(', ')
+        : r.contact.address ?? '',
+      coords: null, // geocoding out of scope per spec §10
+    }))
+    return NextResponse.json({ contacts: mapData })
+  }
+
   return NextResponse.json({ contacts })
 }
 
@@ -33,7 +56,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing name.' }, { status: 400 })
   }
 
-  const type: ContactType = TYPES.includes(body.type) ? body.type : 'person'
+  const type: ContactType = TYPES.includes(body.type) ? body.type : 'individual'
+  const addressType: ContactAddressType | null = ADDR_TYPES.includes(body.addressType) ? body.addressType : 'main'
 
   const res = await createContact(ctx.tenant.id, {
     type,
@@ -45,6 +69,8 @@ export async function POST(req: Request) {
     notes: str(body.notes),
     userId: str(body.userId),
     roles: asRoles(body.roles),
+    parentId: str(body.parentId),
+    addressType,
     isPkp: body.isPkp === true,
     website: str(body.website),
     language: str(body.language),

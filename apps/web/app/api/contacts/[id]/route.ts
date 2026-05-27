@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { requireAuthedContext } from '../../../../lib/requireSession'
 import { updateContact, deleteContact } from '../../../../lib/contacts'
-import type { ContactRole, ContactType } from '@kantorcore/db'
+import type { ContactRole, ContactType, ContactAddressType } from '@kantorcore/db'
 
-const TYPES: ReadonlyArray<ContactType> = ['person', 'organization']
+const TYPES: ReadonlyArray<ContactType> = ['company', 'individual']
+const ADDR_TYPES: ReadonlyArray<ContactAddressType> = ['main', 'invoice', 'delivery', 'contact', 'other']
 const ROLES: ReadonlyArray<ContactRole> = ['staff', 'customer', 'vendor', 'lead', 'other']
 
 function asRoles(input: unknown): ContactRole[] {
@@ -36,6 +37,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     notes: strOrUndef(body.notes),
     userId: strOrUndef(body.userId),
     roles: Array.isArray(body.roles) ? asRoles(body.roles) : undefined,
+    parentId: strOrUndef(body.parentId),
+    addressType: ADDR_TYPES.includes(body.addressType) ? body.addressType : undefined,
     isPkp: typeof body.isPkp === 'boolean' ? body.isPkp : undefined,
     website: strOrUndef(body.website),
     language: strOrUndef(body.language),

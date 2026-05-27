@@ -122,7 +122,7 @@ async function importRow(tenantId: string, entity: ImportEntity, row: ImportRow)
             ['customer', 'vendor', 'staff', 'lead', 'other'].includes(r),
           )
     const result = await createContact(tenantId, {
-      type:    'organization',
+      type:    'company',
       name:    row.name ?? '',
       email:   row.email || null,
       phone:   row.phone || null,

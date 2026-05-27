@@ -22,8 +22,8 @@ const ROLE_COLOR: Record<ContactRole, string> = {
 }
 
 const TYPE_LABEL: Record<ContactType, string> = {
-  person: 'Perorangan',
-  organization: 'Organisasi',
+  individual: 'Perorangan',
+  company: 'Perusahaan',
 }
 
 interface Member {
@@ -263,7 +263,7 @@ function ContactForm({
   onCancel: () => void
   onDelete?: () => void
 }) {
-  const [type, setType] = useState<ContactType>(initial?.contact.type ?? 'person')
+  const [type, setType] = useState<ContactType>(initial?.contact.type ?? 'individual')
   const [name, setName] = useState(initial?.contact.name ?? '')
   const [email, setEmail] = useState(initial?.contact.email ?? '')
   const [phone, setPhone] = useState(initial?.contact.phone ?? '')
@@ -336,8 +336,8 @@ function ContactForm({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s-3)' }}>
         <Field label="Tipe">
           <select value={type} onChange={(e) => setType(e.target.value as ContactType)} style={inputStyle}>
-            <option value="person">Perorangan</option>
-            <option value="organization">Organisasi</option>
+            <option value="individual">Perorangan</option>
+            <option value="company">Perusahaan</option>
           </select>
         </Field>
         <Field label="Nama *">

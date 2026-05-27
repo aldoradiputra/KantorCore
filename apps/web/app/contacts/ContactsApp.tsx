@@ -1,9 +1,14 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
-import type { ContactRow, ContactStats, IndonesianAddress } from '../../lib/contacts'
+import { lazy, Suspense, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
+import type { ContactRow, ContactStats } from '../../lib/contacts'
 import { formatIndonesianAddress } from '../../lib/contacts'
-import type { ContactRole, ContactType } from '@kantorcore/db'
+import type { ContactAddressType, ContactRole, ContactType } from '@kantorcore/db'
+
+// Lazy-loaded view components for bundle code-splitting
+const ContactKanbanView = lazy(() => import('./ContactKanbanView'))
+const ContactMapView = lazy(() => import('./ContactMapView'))
 
 // ── Constants ──────────────────────────────────────────────────
 
@@ -13,7 +18,12 @@ const ROLE_LABEL: Record<ContactRole, string> = {
 const ROLE_COLOR: Record<ContactRole, string> = {
   staff: 'var(--indigo)', customer: 'var(--teal)', vendor: 'var(--amber)', lead: '#7B5AD8', other: 'var(--fg-3)',
 }
-const TYPE_LABEL: Record<ContactType, string> = { person: 'Perorangan', organization: 'Organisasi' }
+const TYPE_LABEL: Record<ContactType, string> = { individual: 'Perorangan', company: 'Perusahaan' }
+
+const ADDR_TYPE_LABEL: Record<ContactAddressType, string> = {
+  main: 'Kontak Utama', invoice: 'Alamat Invoice', delivery: 'Alamat Pengiriman',
+  contact: 'Kontak', other: 'Alamat Lain',
+}
 
 interface Country { code: string; name: string; dialCode: string }
 
@@ -129,6 +139,8 @@ function formatNpwpDisplay(raw: string): string {
 
 // ── Main component ─────────────────────────────────────────────
 
+type ViewMode = 'list' | 'kanban' | 'map'
+
 interface Member { id: string; name: string; email: string }
 
 export default function ContactsApp({
@@ -148,6 +160,7 @@ export default function ContactsApp({
   const [roleFilter, setRoleFilter] = useState<ContactRole | 'all'>('all')
   const [editing, setEditing] = useState<ContactRow | null>(null)
   const [creating, setCreating] = useState(false)
+  const [view, setView] = useState<ViewMode>('list')
 
   const filtered = useMemo(() => {
     return contacts.filter((c) => {
@@ -164,6 +177,28 @@ export default function ContactsApp({
       return true
     })
   }, [contacts, search, roleFilter])
+
+  // Kanban payload derived from filtered list
+  const kanbanData = useMemo(() => {
+    const companies = filtered.filter((r) => r.contact.type === 'company')
+    const byCompany: Record<string, ContactRow[]> = {}
+    const orphans: ContactRow[] = []
+    for (const ind of filtered.filter((r) => r.contact.type === 'individual')) {
+      const pid = ind.contact.parentId
+      if (pid) { byCompany[pid] ??= []; byCompany[pid]!.push(ind) }
+      else orphans.push(ind)
+    }
+    return { companies, byCompany, orphans }
+  }, [filtered])
+
+  // Map payload
+  const mapContacts = useMemo(() => filtered.map((r) => ({
+    ...r,
+    formattedAddress: r.contact.country === 'ID'
+      ? [r.contact.addrLine1, r.contact.addrKelurahan, r.contact.addrKecamatan, r.contact.addrKota, r.contact.addrProvinsi].filter(Boolean).join(', ')
+      : (r.contact.address?.split('\n')[0] ?? ''),
+    coords: null as null,
+  })), [filtered])
 
   function refreshStats(next: ContactRow[]) {
     const byRole: Record<ContactRole, number> = { staff: 0, customer: 0, vendor: 0, lead: 0, other: 0 }
@@ -195,9 +230,7 @@ export default function ContactsApp({
   }
 
   function locationLabel(c: ContactRow['contact']): string {
-    if (c.country === 'ID') {
-      return [c.addrKota, c.addrProvinsi].filter(Boolean).join(', ')
-    }
+    if (c.country === 'ID') return [c.addrKota, c.addrProvinsi].filter(Boolean).join(', ')
     if (c.address) return c.address.split('\n')[0] ?? ''
     return ''
   }
@@ -213,14 +246,28 @@ export default function ContactsApp({
               Catatan tunggal untuk setiap orang/organisasi — karyawan, pelanggan, vendor, dan lead.
             </p>
           </div>
-          {canEdit && (
-            <button
-              onClick={() => { setEditing(null); setCreating(true) }}
-              style={{ height: 34, padding: '0 14px', background: 'var(--indigo)', color: 'var(--white)', border: 'none', borderRadius: 'var(--r-sm)', font: '600 12px/1 var(--font-sans)', cursor: 'pointer', flexShrink: 0 }}
-            >
-              + Kontak Baru
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {/* View switcher */}
+            <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', overflow: 'hidden' }}>
+              {(['list', 'kanban', 'map'] as ViewMode[]).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  style={{ height: 32, padding: '0 12px', border: 'none', background: view === v ? 'var(--indigo)' : 'transparent', color: view === v ? 'var(--white)' : 'var(--fg-2)', font: '500 12px/1 var(--font-sans)', cursor: 'pointer', textTransform: 'capitalize' }}
+                >
+                  {v === 'list' ? 'Daftar' : v === 'kanban' ? 'Kanban' : 'Peta'}
+                </button>
+              ))}
+            </div>
+            {canEdit && (
+              <button
+                onClick={() => { setEditing(null); setCreating(true) }}
+                style={{ height: 34, padding: '0 14px', background: 'var(--indigo)', color: 'var(--white)', border: 'none', borderRadius: 'var(--r-sm)', font: '600 12px/1 var(--font-sans)', cursor: 'pointer', flexShrink: 0 }}
+              >
+                + Kontak Baru
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Stats */}
@@ -232,31 +279,12 @@ export default function ContactsApp({
           <StatCard label="Tertaut user" value={stats.linkedToUsers} />
         </div>
 
-        {/* Filters */}
-        <div style={{ display: 'flex', gap: 'var(--s-2)', marginBottom: 'var(--s-3)', alignItems: 'center' }}>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari nama, email, telepon, kota…"
-            style={{ flex: 1, height: 34, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', background: 'var(--bg)', font: '400 13px/1 var(--font-sans)', color: 'var(--fg-1)', outline: 'none' }}
-          />
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value as ContactRole | 'all')}
-            style={{ height: 34, padding: '0 10px', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', background: 'var(--bg)', font: '500 12px/1 var(--font-sans)', color: 'var(--fg-2)', outline: 'none', cursor: 'pointer' }}
-          >
-            <option value="all">Semua peran</option>
-            {(Object.keys(ROLE_LABEL) as ContactRole[]).map((r) => (
-              <option key={r} value={r}>{ROLE_LABEL[r]}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Form */}
+        {/* Inline form — visible in any view when creating/editing */}
         {(creating || editing) && canEdit && (
           <ContactForm
             initial={editing}
             members={members}
+            companies={contacts.filter((c) => c.contact.type === 'company')}
             existingUserLinks={new Set(contacts.filter((c) => c.linkedUser && c.contact.id !== editing?.contact.id).map((c) => c.linkedUser!.id))}
             onCreated={onCreated}
             onUpdated={onUpdated}
@@ -265,14 +293,35 @@ export default function ContactsApp({
           />
         )}
 
-        {/* List */}
-        {filtered.length === 0 ? (
-          <div style={{ padding: '40px 24px', border: '1px dashed var(--border)', borderRadius: 'var(--r-md)', textAlign: 'center', marginTop: 'var(--s-3)' }}>
-            <div style={{ font: '500 14px/1.4 var(--font-sans)', color: 'var(--fg-2)' }}>
-              {contacts.length === 0 ? 'Belum ada kontak.' : 'Tidak ada kontak yang cocok dengan filter.'}
+        {/* List view */}
+        {view === 'list' && (
+          <>
+            <div style={{ display: 'flex', gap: 'var(--s-2)', marginBottom: 'var(--s-3)', alignItems: 'center' }}>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari nama, email, telepon, kota…"
+                style={{ flex: 1, height: 34, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', background: 'var(--bg)', font: '400 13px/1 var(--font-sans)', color: 'var(--fg-1)', outline: 'none' }}
+              />
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value as ContactRole | 'all')}
+                style={{ height: 34, padding: '0 10px', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', background: 'var(--bg)', font: '500 12px/1 var(--font-sans)', color: 'var(--fg-2)', outline: 'none', cursor: 'pointer' }}
+              >
+                <option value="all">Semua peran</option>
+                {(Object.keys(ROLE_LABEL) as ContactRole[]).map((r) => (
+                  <option key={r} value={r}>{ROLE_LABEL[r]}</option>
+                ))}
+              </select>
             </div>
-          </div>
-        ) : (
+
+            {filtered.length === 0 ? (
+              <div style={{ padding: '40px 24px', border: '1px dashed var(--border)', borderRadius: 'var(--r-md)', textAlign: 'center', marginTop: 'var(--s-3)' }}>
+                <div style={{ font: '500 14px/1.4 var(--font-sans)', color: 'var(--fg-2)' }}>
+                  {contacts.length === 0 ? 'Belum ada kontak.' : 'Tidak ada kontak yang cocok dengan filter.'}
+                </div>
+              </div>
+            ) : (
           <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', overflow: 'hidden', background: 'var(--surface)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', font: '13px/1.4 var(--font-sans)' }}>
               <thead style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}>
@@ -324,14 +373,22 @@ export default function ContactsApp({
                         ) : <span style={{ color: 'var(--fg-3)' }}>—</span>}
                       </td>
                       <td style={{ padding: '10px 14px', textAlign: 'right' }}>
-                        {canEdit && (
-                          <button
-                            onClick={() => { setCreating(false); setEditing(row) }}
-                            style={{ height: 26, padding: '0 10px', border: '1px solid var(--border)', background: 'transparent', borderRadius: 'var(--r-sm)', font: '500 11px/1 var(--font-sans)', color: 'var(--fg-2)', cursor: 'pointer' }}
+                        <div style={{ display: 'inline-flex', gap: 6 }}>
+                          <Link
+                            href={`/contacts/${row.contact.id}`}
+                            style={{ height: 26, padding: '0 10px', border: '1px solid var(--border)', background: 'transparent', borderRadius: 'var(--r-sm)', font: '500 11px/1 var(--font-sans)', color: 'var(--fg-2)', cursor: 'pointer', display: 'flex', alignItems: 'center', textDecoration: 'none' }}
                           >
-                            Edit
-                          </button>
-                        )}
+                            Detail
+                          </Link>
+                          {canEdit && (
+                            <button
+                              onClick={() => { setCreating(false); setEditing(row) }}
+                              style={{ height: 26, padding: '0 10px', border: '1px solid var(--border)', background: 'transparent', borderRadius: 'var(--r-sm)', font: '500 11px/1 var(--font-sans)', color: 'var(--fg-2)', cursor: 'pointer' }}
+                            >
+                              Edit
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )
@@ -339,6 +396,21 @@ export default function ContactsApp({
               </tbody>
             </table>
           </div>
+        )}
+        </>)}
+
+        {/* Kanban view — lazy loaded */}
+        {view === 'kanban' && (
+          <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: 'var(--fg-3)', font: '13px/1 var(--font-sans)' }}>Memuat…</div>}>
+            <ContactKanbanView data={kanbanData} />
+          </Suspense>
+        )}
+
+        {/* Map view — lazy loaded */}
+        {view === 'map' && (
+          <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: 'var(--fg-3)', font: '13px/1 var(--font-sans)' }}>Memuat…</div>}>
+            <ContactMapView contacts={mapContacts} />
+          </Suspense>
         )}
       </div>
     </div>
@@ -359,6 +431,7 @@ function StatCard({ label, value, color }: { label: string; value: number; color
 function ContactForm({
   initial,
   members,
+  companies,
   existingUserLinks,
   onCreated,
   onUpdated,
@@ -367,6 +440,7 @@ function ContactForm({
 }: {
   initial: ContactRow | null
   members: Member[]
+  companies: ContactRow[]
   existingUserLinks: Set<string>
   onCreated: (row: ContactRow) => void
   onUpdated: (row: ContactRow) => void
@@ -376,8 +450,10 @@ function ContactForm({
   const isEdit = !!initial
   const c = initial?.contact
 
-  const [type, setType] = useState<ContactType>(c?.type ?? 'person')
+  const [type, setType] = useState<ContactType>(c?.type ?? 'individual')
   const [name, setName] = useState(c?.name ?? '')
+  const [parentId, setParentId] = useState(c?.parentId ?? '')
+  const [addressType, setAddressType] = useState<ContactAddressType>(c?.addressType ?? 'main')
   const [email, setEmail] = useState(c?.email ?? '')
   const [phoneRaw, setPhoneRaw] = useState(c?.phone ?? '')
   const [npwpRaw, setNpwpRaw] = useState(() => (c?.npwp ?? '').replace(/\D/g, ''))
@@ -447,6 +523,8 @@ function ContactForm({
 
     const payload = {
       type, name: name.trim(),
+      parentId: type === 'individual' ? (parentId || null) : null,
+      addressType: type === 'individual' ? addressType : null,
       email: email.trim() || null,
       phone: phoneRaw.trim() || null,
       npwp: npwpDisplay || null,
@@ -509,13 +587,32 @@ function ContactForm({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s-3)' }}>
         <Field label="Tipe">
           <select value={type} onChange={(e) => setType(e.target.value as ContactType)} style={inputStyle}>
-            <option value="person">Perorangan</option>
-            <option value="organization">Organisasi</option>
+            <option value="individual">Perorangan</option>
+            <option value="company">Perusahaan</option>
           </select>
         </Field>
         <Field label="Nama *">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Mis. Budi Santoso / PT Maju Jaya" style={inputStyle} />
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder={type === 'company' ? 'PT Maju Jaya' : 'Budi Santoso'} style={inputStyle} />
         </Field>
+        {type === 'individual' && (
+          <>
+            <Field label="Induk Perusahaan">
+              <select value={parentId} onChange={(e) => setParentId(e.target.value)} style={inputStyle}>
+                <option value="">— Tanpa induk —</option>
+                {companies
+                  .filter((co) => co.contact.id !== initial?.contact.id)
+                  .map((co) => <option key={co.contact.id} value={co.contact.id}>{co.contact.name}</option>)}
+              </select>
+            </Field>
+            <Field label="Tipe Alamat">
+              <select value={addressType} onChange={(e) => setAddressType(e.target.value as ContactAddressType)} style={inputStyle}>
+                {(Object.keys(ADDR_TYPE_LABEL) as ContactAddressType[]).map((at) => (
+                  <option key={at} value={at}>{ADDR_TYPE_LABEL[at]}</option>
+                ))}
+              </select>
+            </Field>
+          </>
+        )}
         <Field label="Negara">
           <select value={country} onChange={(e) => handleCountryChange(e.target.value)} style={inputStyle}>
             <option value="">— Pilih negara —</option>

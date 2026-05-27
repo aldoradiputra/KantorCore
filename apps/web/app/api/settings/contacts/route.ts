@@ -3,7 +3,7 @@ import { requireAuthedContext } from '../../../../lib/requireSession'
 import { listContacts, createContact } from '../../../../lib/contacts'
 import type { ContactRole, ContactType } from '@kantorcore/db'
 
-const TYPES: ReadonlyArray<ContactType> = ['person', 'organization']
+const TYPES: ReadonlyArray<ContactType> = ['company', 'individual']
 const ROLES: ReadonlyArray<ContactRole> = ['staff', 'customer', 'vendor', 'lead', 'other']
 
 function asRoles(input: unknown): ContactRole[] {
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing name.' }, { status: 400 })
   }
 
-  const type: ContactType = TYPES.includes(body.type) ? body.type : 'person'
+  const type: ContactType = TYPES.includes(body.type) ? body.type : 'individual'
 
   const res = await createContact(ctx.tenant.id, {
     type,
