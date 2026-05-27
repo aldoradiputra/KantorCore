@@ -368,9 +368,37 @@ export default function PresenceBadge() {
                   <PresenceGroup label="Online"       rows={online} />
                   <PresenceGroup label="AFK"          rows={afk} />
                 </>
-              ) : (
+              ) : hasLeave ? (
                 <div style={{ padding: '10px 12px', font: '12px var(--font-sans)', color: 'var(--fg-3)' }}>
-                  Tidak ada yang sedang online.
+                  Belum ada yang online.
+                </div>
+              ) : (
+                <div style={{
+                  padding: '24px 16px 20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 6,
+                  textAlign: 'center',
+                }}>
+                  <div aria-hidden style={{
+                    width: 36, height: 36, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'var(--bg-2, rgba(0,0,0,0.04))',
+                    color: 'var(--fg-3)',
+                    marginBottom: 2,
+                  }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="8" r="3.2" />
+                      <path d="M5.5 19c1.2-3.2 3.8-4.8 6.5-4.8s5.3 1.6 6.5 4.8" />
+                    </svg>
+                  </div>
+                  <div style={{ font: '600 13px/1.3 var(--font-sans)', color: 'var(--fg-1)' }}>
+                    Lagi sendirian
+                  </div>
+                  <div style={{ font: '12px/1.4 var(--font-sans)', color: 'var(--fg-3)', maxWidth: 220 }}>
+                    Belum ada rekan tim yang online saat ini.
+                  </div>
                 </div>
               )}
 
@@ -391,12 +419,6 @@ export default function PresenceBadge() {
                   <LeaveSection label="Hari Ini" rows={leave.today}    color="var(--amber)" />
                   <LeaveSection label="Besok"    rows={leave.tomorrow} color="var(--indigo)" />
                 </>
-              )}
-
-              {!hasPresence && !hasLeave && (
-                <div style={{ padding: '12px 12px', font: '12px var(--font-sans)', color: 'var(--fg-3)' }}>
-                  Tidak ada data.
-                </div>
               )}
             </>
           )}
