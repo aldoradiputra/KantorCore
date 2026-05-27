@@ -3,6 +3,7 @@ import '@kantorcore/design-tokens/tokens.css'
 import './globals.css'
 import PwaInit from '../components/PwaInit'
 import NavigationProgress from '../components/NavigationProgress'
+import { ThemeProvider } from '../components/ThemeProvider'
 
 export const metadata: Metadata = {
   title: 'KantorCore — Sistem operasi korporat',
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('kc-theme');if(t==='dark'||(t==='system'&&window.matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.setAttribute('data-theme','dark');}catch(e){}})()` }} />
       </head>
       <body>
+        <ThemeProvider />
         <NavigationProgress />
         {children}
         <PwaInit />

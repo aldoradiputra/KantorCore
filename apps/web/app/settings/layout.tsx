@@ -27,8 +27,7 @@ const NAV: { group: string; items: { section: string; label: string; href: strin
     items: [
       { section: 'workspace', label: 'Pengaturan Umum',    href: '/settings/workspace',  adminOnly: true },
       { section: 'members',   label: 'Anggota & Undangan', href: '/settings/members',    adminOnly: true },
-      { section: 'contacts',  label: 'Kontak',             href: '/settings/contacts',   adminOnly: true },
-      { section: 'groups',    label: 'Grup',               href: '/settings/groups',     adminOnly: true },
+{ section: 'groups',    label: 'Grup',               href: '/settings/groups',     adminOnly: true },
       { section: 'directory', label: 'Direktori',          href: '/settings/directory',  adminOnly: true },
       { section: 'billing',   label: 'Langganan',          href: '/settings/billing',    adminOnly: true },
     ],
