@@ -8,7 +8,7 @@ import type { ReactElement } from 'react'
 export type NavModuleId =
   | 'home' | 'chat' | 'proj' | 'time' | 'doc' | 'proses'
   | 'crm' | 'sales' | 'proc' | 'inv' | 'fin' | 'hr' | 'pay' | 'rent'
-  | 'aip' | 'agent' | 'trig' | 'mig'
+  | 'aip' | 'agent' | 'trig' | 'mig' | 'ops'
   | 'gamification' | 'recruitment'
 
 export interface NavEntry {

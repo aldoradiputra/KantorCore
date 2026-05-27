@@ -2,7 +2,10 @@ import { redirect } from 'next/navigation'
 import { Button } from '@kantorcore/ui'
 import { getCurrentSession } from '../lib/auth'
 import { getCurrentTenant } from '../lib/tenants'
+import { getActivityBuckets, pivotBuckets } from '../lib/admin'
 import { AppShell } from '../components/AppShell'
+import { ChartCard } from '../components/charts/ChartCard'
+import { ActivityTimeline } from '../components/charts/ActivityTimeline'
 import SignOutButton from './SignOutButton'
 
 function initials(name: string): string {
@@ -67,9 +70,11 @@ export default async function Home() {
   if (!session) redirect('/sign-in')
   const { user } = session
   const ctx = await getCurrentTenant(user.id)
-  // Legacy users without a provisioned workspace go to /sign-up to create one.
   if (!ctx) redirect('/sign-up')
   const { tenant, membership } = ctx
+
+  const buckets = await getActivityBuckets(tenant.id, { granularity: 'hour', lookback: 24 })
+  const { data: chartData, categories } = pivotBuckets(buckets)
 
   return (
     <AppShell
@@ -83,44 +88,52 @@ export default async function Home() {
         style={{
           flex: 1,
           overflow: 'auto',
-          padding: 'var(--s-7) var(--content-gutter)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
+          padding: 'var(--s-6) var(--content-gutter)',
         }}
       >
-        <div
-          style={{
-            width: '100%',
-            maxWidth: 560,
-            padding: 'var(--s-7)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--r-md)',
-            background: 'var(--surface)',
-            textAlign: 'center',
-          }}
-        >
-          <span className="t-micro" style={{ display: 'block', marginBottom: 'var(--s-4)' }}>
-            Pre-alpha · v0.0.1
-          </span>
-          <h2 style={{ marginBottom: 'var(--s-3)' }}>Halo, {user.name.split(' ')[0]}.</h2>
-          <p style={{ marginBottom: 'var(--s-5)', color: 'var(--fg-3)' }}>
-            Anda sudah masuk. Cangkang aplikasi siap; modul pertama (Chat, lalu
-            Proyek) sedang dipasang. Lihat roadmap untuk progres.
-          </p>
-          <div style={{ display: 'flex', gap: 'var(--s-3)', justifyContent: 'center' }}>
-            <a href="https://roadmap.kantorcore.com">
-              <Button variant="primary" size="md">
-                Lihat Roadmap
-              </Button>
-            </a>
-            <a href="https://kantorcore.com">
-              <Button variant="secondary" size="md">
-                Beranda
-              </Button>
-            </a>
+        <div style={{ maxWidth: 720, width: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--s-4)' }}>
+          {/* Welcome card */}
+          <div
+            style={{
+              padding: 'var(--s-6)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--r-md)',
+              background: 'var(--surface)',
+              textAlign: 'center',
+            }}
+          >
+            <span className="t-micro" style={{ display: 'block', marginBottom: 'var(--s-4)' }}>
+              Pre-alpha · v0.0.1
+            </span>
+            <h2 style={{ marginBottom: 'var(--s-3)' }}>Halo, {user.name.split(' ')[0]}.</h2>
+            <p style={{ marginBottom: 'var(--s-5)', color: 'var(--fg-3)' }}>
+              Anda sudah masuk. Cangkang aplikasi siap; modul pertama (Chat, lalu
+              Proyek) sedang dipasang. Lihat roadmap untuk progres.
+            </p>
+            <div style={{ display: 'flex', gap: 'var(--s-3)', justifyContent: 'center' }}>
+              <a href="https://roadmap.kantorcore.com">
+                <Button variant="primary" size="md">
+                  Lihat Roadmap
+                </Button>
+              </a>
+              <a href="https://kantorcore.com">
+                <Button variant="secondary" size="md">
+                  Beranda
+                </Button>
+              </a>
+            </div>
           </div>
+
+          {/* Activity widget */}
+          <ChartCard title="Aktivitas 24 Jam" subtitle="Event per jam di workspace ini">
+            <ActivityTimeline
+              data={chartData}
+              categories={categories}
+              granularity="hour"
+              height={160}
+              showLegend={false}
+            />
+          </ChartCard>
         </div>
       </div>
     </AppShell>

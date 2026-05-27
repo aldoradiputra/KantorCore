@@ -118,6 +118,15 @@ function IconMig() {
   )
 }
 
+function IconOps() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 13l3-5 3 3 3-6 3 4 2-2" />
+      <path d="M2 16h14" />
+    </svg>
+  )
+}
+
 function IconTrig() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -214,10 +223,11 @@ const NAV_GROUPS: NavGroup[] = [
     id: 'platform',
     label: 'Platform',
     items: [
-      { id: 'aip',   label: 'AI Search', href: '/aip/search', hotkey: 'G K', Icon: IconAip },
-      { id: 'agent', label: 'Agent',     href: '/agent',      hotkey: 'G A', Icon: IconAgent },
-      { id: 'trig',  label: 'Triggers',  href: '/trig/rules', hotkey: 'G T', Icon: IconTrig },
-      { id: 'mig',   label: 'Import',    href: '/mig/import', hotkey: 'G N', Icon: IconMig },
+      { id: 'aip',   label: 'AI Search',      href: '/aip/search', hotkey: 'G K', Icon: IconAip },
+      { id: 'agent', label: 'Agent',          href: '/agent',      hotkey: 'G A', Icon: IconAgent },
+      { id: 'trig',  label: 'Triggers',       href: '/trig/rules', hotkey: 'G T', Icon: IconTrig },
+      { id: 'mig',   label: 'Import',         href: '/mig/import', hotkey: 'G N', Icon: IconMig },
+      { id: 'ops',   label: 'Ops & Aktivitas', href: '/ops',       hotkey: 'G O', Icon: IconOps },
     ],
   },
 ]

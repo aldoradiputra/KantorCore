@@ -1,5 +1,5 @@
 import 'server-only'
-import { and, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, countDistinct, desc, eq, gt, inArray, sql } from 'drizzle-orm'
 import {
   groups,
   groupMembers,
@@ -285,5 +285,106 @@ export async function listAuditLog(
       .limit(limit)
       .offset(offset)
     return rows
+  })
+}
+
+/* ── Activity bucketing ──────────────────────────────────────────────── */
+
+export interface ActivityBucket {
+  bucket: string   // ISO datetime string (hour or day truncated)
+  category: string // first dot-segment of action: "auth" | "config" | "agent" | …
+  count: number
+}
+
+export interface ActivityPoint {
+  bucket: string
+  [category: string]: number | string
+}
+
+/** Groups audit_log rows by time bucket + action category for charting. */
+export async function getActivityBuckets(
+  tenantId: string,
+  opts: { granularity: 'hour' | 'day'; lookback: number /* hours */ },
+): Promise<ActivityBucket[]> {
+  return withTenant(tenantId, async (tx) => {
+    const rows = await tx.execute(sql`
+      SELECT
+        date_trunc(${opts.granularity}, created_at) AS bucket,
+        split_part(action, '.', 1)                  AS category,
+        count(*)::int                               AS count
+      FROM platform.audit_log
+      WHERE tenant_id = ${tenantId}::uuid
+        AND created_at > NOW() - (${opts.lookback} || ' hours')::interval
+      GROUP BY 1, 2
+      ORDER BY 1 ASC
+    `)
+    return (rows as { bucket: Date; category: string; count: number }[]).map((r) => ({
+      bucket: r.bucket.toISOString(),
+      category: r.category,
+      count: r.count,
+    }))
+  })
+}
+
+/** Pivots flat bucket rows into wide format suitable for recharts. */
+export function pivotBuckets(rows: ActivityBucket[]): {
+  data: ActivityPoint[]
+  categories: string[]
+} {
+  const catSet = new Set<string>()
+  const byBucket = new Map<string, ActivityPoint>()
+  for (const r of rows) {
+    catSet.add(r.category)
+    let point = byBucket.get(r.bucket)
+    if (!point) {
+      point = { bucket: r.bucket }
+      byBucket.set(r.bucket, point)
+    }
+    point[r.category] = r.count
+  }
+  const categories = [...catSet].sort()
+  const data = [...byBucket.values()].map((p) => {
+    for (const cat of categories) {
+      if (!(cat in p)) p[cat] = 0
+    }
+    return p
+  })
+  return { data, categories }
+}
+
+export interface ActivityStats {
+  eventsLast24h: number
+  activeUsersLast24h: number
+  topCategory: string | null
+}
+
+/** Summary stats for the ops dashboard stats row. */
+export async function getActivityStats(tenantId: string): Promise<ActivityStats> {
+  return withTenant(tenantId, async (tx) => {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const [countRow, userRow, topRow] = await Promise.all([
+      tx
+        .select({ n: sql<number>`count(*)::int` })
+        .from(auditLog)
+        .where(and(eq(auditLog.tenantId, tenantId), gt(auditLog.createdAt, cutoff))),
+      tx
+        .select({ n: countDistinct(auditLog.actorUserId) })
+        .from(auditLog)
+        .where(and(eq(auditLog.tenantId, tenantId), gt(auditLog.createdAt, cutoff))),
+      tx.execute(sql`
+        SELECT split_part(action, '.', 1) AS category, count(*)::int AS n
+        FROM platform.audit_log
+        WHERE tenant_id = ${tenantId}::uuid
+          AND created_at > NOW() - interval '24 hours'
+        GROUP BY 1
+        ORDER BY 2 DESC
+        LIMIT 1
+      `),
+    ])
+    return {
+      eventsLast24h: (countRow[0]?.n ?? 0) as number,
+      activeUsersLast24h: (userRow[0]?.n ?? 0) as number,
+      topCategory: ((topRow as { category: string }[])[0]?.category) ?? null,
+    }
   })
 }
