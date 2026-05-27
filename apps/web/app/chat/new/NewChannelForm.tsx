@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@kantorcore/ui'
 
 function slugify(input: string): string {
@@ -16,6 +17,7 @@ function slugify(input: string): string {
 }
 
 export default function NewChannelForm() {
+  const router = useRouter()
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [slugTouched, setSlugTouched] = useState(false)
@@ -38,7 +40,7 @@ export default function NewChannelForm() {
       body: JSON.stringify({ name, slug, description }),
     })
     if (res.ok) {
-      window.location.href = `/chat/${slug}`
+      router.push(`/chat/${slug}`)
       return
     }
     const data = await res.json().catch(() => ({ error: 'Gagal membuat kanal.' }))
