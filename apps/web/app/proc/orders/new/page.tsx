@@ -35,7 +35,14 @@ export default async function NewPOPage() {
       <NewPOForm
         accounts={expenseAccounts.map((a) => ({ id: a.id, code: a.code, name: a.name }))}
         taxes={taxes.map((t) => ({ id: t.id, name: t.name, amount: t.amount, amountType: t.amountType }))}
-        contacts={contacts.map((c) => ({ id: c.contact.id, name: c.contact.name }))}
+        contacts={contacts.map((c) => ({
+          id: c.contact.id, name: c.contact.name,
+          email: c.contact.email, phone: c.contact.phone, npwp: c.contact.npwp,
+          addrLine1: c.contact.addrLine1, addrLine2: c.contact.addrLine2,
+          addrKelurahan: c.contact.addrKelurahan, addrKecamatan: c.contact.addrKecamatan,
+          addrKota: c.contact.addrKota, addrProvinsi: c.contact.addrProvinsi, addrKodePos: c.contact.addrKodePos,
+          paymentTermsLabel: c.paymentTermsLabel,
+        }))}
         products={products.map((p) => ({
           id: p.product.id,
           name: p.product.name,

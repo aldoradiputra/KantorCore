@@ -4,7 +4,11 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { DealStage } from '../../../../lib/crm'
 
-interface ContactOpt { id: string; name: string }
+interface ContactOpt {
+  id: string; name: string
+  email: string | null; phone: string | null
+  addrKota: string | null; addrProvinsi: string | null
+}
 
 const inputStyle: React.CSSProperties = {
   height: 34,
@@ -31,6 +35,9 @@ export function NewDealForm({ contacts }: { contacts: ContactOpt[] }) {
   const router = useRouter()
   const [contactId, setContactId] = useState('')
   const [contactName, setContactName] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+  const [contactLocation, setContactLocation] = useState('')
   const [title, setTitle] = useState('')
   const [stage, setStage] = useState<DealStage>('lead')
   const [expectedValue, setExpectedValue] = useState(0)
@@ -43,6 +50,9 @@ export function NewDealForm({ contacts }: { contacts: ContactOpt[] }) {
     const c = contacts.find((x) => x.id === id)
     setContactId(id)
     setContactName(c?.name ?? '')
+    setContactEmail(c?.email ?? '')
+    setContactPhone(c?.phone ?? '')
+    setContactLocation([c?.addrKota, c?.addrProvinsi].filter(Boolean).join(', '))
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -58,6 +68,8 @@ export function NewDealForm({ contacts }: { contacts: ContactOpt[] }) {
         stage,
         contactId: contactId || null,
         contactName: contactName || null,
+        contactEmail: contactEmail || null,
+        contactPhone: contactPhone || null,
         expectedValue,
         expectedClose: expectedClose || null,
         notes: notes || null,
@@ -102,6 +114,15 @@ export function NewDealForm({ contacts }: { contacts: ContactOpt[] }) {
           <Field label="Nama Kontak (manual)">
             <input style={inputStyle} value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Nama perusahaan atau kontak" />
           </Field>
+        )}
+
+        {/* Auto-fill strip */}
+        {contactId && (contactEmail || contactPhone || contactLocation) && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', padding: '8px 12px', background: 'rgba(59,79,196,0.04)', border: '1px solid rgba(59,79,196,0.15)', borderRadius: 'var(--r-sm)', font: '12px/1.5 var(--font-sans)', color: 'var(--fg-3)' }}>
+            {contactEmail && <span>✉ {contactEmail}</span>}
+            {contactPhone && <span>☎ {contactPhone}</span>}
+            {contactLocation && <span>📍 {contactLocation}</span>}
+          </div>
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--s-3)' }}>

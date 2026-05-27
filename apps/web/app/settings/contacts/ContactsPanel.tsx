@@ -313,7 +313,7 @@ function ContactForm({
     const data = await res.json().catch(() => ({}))
     if (res.ok && data.contact) {
       const linkedUser = userId ? members.find((m) => m.id === userId) ?? null : null
-      const row: ContactRow = { contact: data.contact, roles: Array.from(roles), linkedUser }
+      const row: ContactRow = { contact: data.contact, roles: Array.from(roles), linkedUser, paymentTermsLabel: null, pricelistLabel: null }
       isEdit ? onUpdated(row) : onCreated(row)
     } else {
       setError(data.error ?? 'Gagal menyimpan kontak.')

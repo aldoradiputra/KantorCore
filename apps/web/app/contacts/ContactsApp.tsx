@@ -562,7 +562,7 @@ function ContactForm({
     const data = await res.json().catch(() => ({}))
     if (res.ok && data.contact) {
       const linkedUser = userId ? members.find((m) => m.id === userId) ?? null : null
-      const row: ContactRow = { contact: data.contact, roles: Array.from(roles), linkedUser }
+      const row: ContactRow = { contact: data.contact, roles: Array.from(roles), linkedUser, paymentTermsLabel: null, pricelistLabel: null }
       isEdit ? onUpdated(row) : onCreated(row)
     } else {
       setError(data.error ?? 'Gagal menyimpan kontak.')
@@ -597,7 +597,33 @@ function ContactForm({
         {type === 'individual' && (
           <>
             <Field label="Induk Perusahaan">
-              <select value={parentId} onChange={(e) => setParentId(e.target.value)} style={inputStyle}>
+              <select
+                value={parentId}
+                onChange={(e) => {
+                  const pid = e.target.value
+                  setParentId(pid)
+                  if (pid) {
+                    const co = companies.find((x) => x.contact.id === pid)
+                    if (co) {
+                      // Auto-fill country if not set
+                      if (!country && co.contact.country) setCountry(co.contact.country)
+                      // Auto-fill address fields if all empty
+                      if (!addrLine1 && !addrKota && !addrProvinsi) {
+                        if (co.contact.addrLine1) setAddrLine1(co.contact.addrLine1)
+                        if (co.contact.addrLine2) setAddrLine2(co.contact.addrLine2)
+                        if (co.contact.addrRt) setAddrRt(co.contact.addrRt)
+                        if (co.contact.addrRw) setAddrRw(co.contact.addrRw)
+                        if (co.contact.addrKelurahan) setAddrKelurahan(co.contact.addrKelurahan)
+                        if (co.contact.addrKecamatan) setAddrKecamatan(co.contact.addrKecamatan)
+                        if (co.contact.addrKota) setAddrKota(co.contact.addrKota)
+                        if (co.contact.addrProvinsi) setAddrProvinsi(co.contact.addrProvinsi)
+                        if (co.contact.addrKodePos) setAddrKodePos(co.contact.addrKodePos)
+                      }
+                    }
+                  }
+                }}
+                style={inputStyle}
+              >
                 <option value="">— Tanpa induk —</option>
                 {companies
                   .filter((co) => co.contact.id !== initial?.contact.id)

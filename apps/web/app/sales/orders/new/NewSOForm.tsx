@@ -5,7 +5,14 @@ import { useRouter } from 'next/navigation'
 
 interface AccountOpt { id: string; code: string; name: string }
 interface TaxOpt { id: string; name: string; amount: number; amountType: 'percent' | 'fixed' }
-interface ContactOpt { id: string; name: string }
+interface ContactOpt {
+  id: string; name: string
+  email: string | null; phone: string | null; npwp: string | null
+  addrLine1: string | null; addrLine2: string | null
+  addrKelurahan: string | null; addrKecamatan: string | null
+  addrKota: string | null; addrProvinsi: string | null; addrKodePos: string | null
+  paymentTermsLabel: string | null; pricelistLabel: string | null
+}
 interface ProductOpt {
   id: string; name: string; code: string | null
   salePrice: number; defaultAccountId: string | null
@@ -80,6 +87,11 @@ export function NewSOForm({ accounts, taxes, contacts, products, warehouses }: {
   const defaultAcct = accounts[0]?.id ?? ''
   const [contactId, setContactId] = useState<string | null>(null)
   const [customerName, setCustomerName] = useState('')
+  const [customerEmail, setCustomerEmail] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
+  const [customerNpwp, setCustomerNpwp] = useState('')
+  const [shippingAddr, setShippingAddr] = useState('')
+  const [paymentTermsLabel, setPaymentTermsLabel] = useState('')
   const [date, setDate] = useState(today())
   const [expiryDate, setExpiryDate] = useState(addDays(today(), 30))
   const [notes, setNotes] = useState('')
@@ -105,9 +117,15 @@ export function NewSOForm({ accounts, taxes, contacts, products, warehouses }: {
 
   function handleSelectContact(id: string) {
     const c = contacts.find((x) => x.id === id)
-    if (!c) return
+    if (!c) { setContactId(null); return }
     setContactId(c.id)
     setCustomerName(c.name)
+    setCustomerEmail(c.email ?? '')
+    setCustomerPhone(c.phone ?? '')
+    setCustomerNpwp(c.npwp ?? '')
+    setPaymentTermsLabel(c.paymentTermsLabel ?? '')
+    const parts = [c.addrLine1, c.addrLine2, c.addrKelurahan ? `Kel. ${c.addrKelurahan}` : null, c.addrKecamatan ? `Kec. ${c.addrKecamatan}` : null, c.addrKota, c.addrKodePos, c.addrProvinsi].filter(Boolean)
+    setShippingAddr(parts.join(', '))
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -129,6 +147,11 @@ export function NewSOForm({ accounts, taxes, contacts, products, warehouses }: {
       body: JSON.stringify({
         contactId,
         customerName,
+        customerEmail: customerEmail || null,
+        customerPhone: customerPhone || null,
+        customerNpwp: customerNpwp || null,
+        shippingAddress: shippingAddr || null,
+        paymentTermsLabel: paymentTermsLabel || null,
         date,
         expiryDate: expiryDate || null,
         notes: notes || null,
@@ -178,7 +201,9 @@ export function NewSOForm({ accounts, taxes, contacts, products, warehouses }: {
           <Field label="Nama Pelanggan *">
             <input style={inputStyle} value={customerName} onChange={(e) => { setCustomerName(e.target.value); setContactId(null) }} placeholder="Nama pelanggan" />
           </Field>
-          <div />
+          <Field label="Termin Pembayaran">
+            <input style={inputStyle} value={paymentTermsLabel} onChange={(e) => setPaymentTermsLabel(e.target.value)} placeholder="mis. Net 30" />
+          </Field>
           <Field label="Tanggal *">
             <input style={inputStyle} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </Field>
@@ -186,6 +211,16 @@ export function NewSOForm({ accounts, taxes, contacts, products, warehouses }: {
             <input style={inputStyle} type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} />
           </Field>
         </div>
+
+        {/* Auto-fill strip */}
+        {contactId && (customerEmail || customerPhone || customerNpwp || shippingAddr) && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', padding: '8px 12px', background: 'rgba(59,79,196,0.04)', border: '1px solid rgba(59,79,196,0.15)', borderRadius: 'var(--r-sm)', font: '12px/1.5 var(--font-sans)', color: 'var(--fg-3)' }}>
+            {customerEmail && <span>✉ {customerEmail}</span>}
+            {customerPhone && <span>☎ {customerPhone}</span>}
+            {customerNpwp && <span>NPWP {customerNpwp}</span>}
+            {shippingAddr && <span>📍 {shippingAddr}</span>}
+          </div>
+        )}
 
         {/* Line items */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-2)' }}>

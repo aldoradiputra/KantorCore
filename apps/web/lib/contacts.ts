@@ -22,6 +22,8 @@ export interface ContactRow {
   contact: Contact
   roles: ContactRole[]
   linkedUser: { id: string; name: string; email: string } | null
+  paymentTermsLabel: string | null
+  pricelistLabel: string | null
 }
 
 export interface ContactWithInheritance extends ContactRow {
@@ -88,9 +90,12 @@ export async function listContacts(
         linkedUserId: users.id,
         linkedUserName: users.name,
         linkedUserEmail: users.email,
+        paymentTermsLabel: contactFinancialProfiles.paymentTermsLabel,
+        pricelistLabel: contactFinancialProfiles.pricelistLabel,
       })
       .from(contacts)
       .leftJoin(users, eq(contacts.userId, users.id))
+      .leftJoin(contactFinancialProfiles, eq(contactFinancialProfiles.contactId, contacts.id))
       .where(whereCond)
       .orderBy(asc(contacts.name))
 
@@ -112,6 +117,8 @@ export async function listContacts(
       linkedUser: r.linkedUserId && r.linkedUserName && r.linkedUserEmail
         ? { id: r.linkedUserId, name: r.linkedUserName, email: r.linkedUserEmail }
         : null,
+      paymentTermsLabel: r.paymentTermsLabel ?? null,
+      pricelistLabel: r.pricelistLabel ?? null,
     }))
   })
 }
@@ -210,6 +217,8 @@ export async function getContactWithInheritance(
       linkedUser: r.linkedUserId && r.linkedUserName && r.linkedUserEmail
         ? { id: r.linkedUserId, name: r.linkedUserName, email: r.linkedUserEmail }
         : null,
+      paymentTermsLabel: effectiveFinancials?.paymentTermsLabel ?? null,
+      pricelistLabel: effectiveFinancials?.pricelistLabel ?? null,
       effectiveFinancials,
       parent,
     }

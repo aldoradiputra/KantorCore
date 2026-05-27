@@ -36,7 +36,14 @@ export default async function NewBillPage() {
         <NewBillForm
           expenseAccounts={expenseAccounts.map((a) => ({ id: a.id, code: a.code, name: a.name }))}
           taxes={taxes.map((t) => ({ id: t.id, name: t.name, amount: t.amount, amountType: t.amountType, isWithholding: t.isWithholding }))}
-          contacts={contactRows.map((r) => ({ id: r.contact.id, name: r.contact.name, email: r.contact.email, phone: r.contact.phone }))}
+          contacts={contactRows.map((r) => ({
+            id: r.contact.id, name: r.contact.name,
+            email: r.contact.email, phone: r.contact.phone, npwp: r.contact.npwp,
+            addrLine1: r.contact.addrLine1, addrLine2: r.contact.addrLine2,
+            addrKelurahan: r.contact.addrKelurahan, addrKecamatan: r.contact.addrKecamatan,
+            addrKota: r.contact.addrKota, addrProvinsi: r.contact.addrProvinsi, addrKodePos: r.contact.addrKodePos,
+            paymentTermsLabel: r.paymentTermsLabel,
+          }))}
           products={productRows.map((r) => ({
             id: r.product.id,
             name: r.product.name,

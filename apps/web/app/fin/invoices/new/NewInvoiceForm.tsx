@@ -18,10 +18,12 @@ interface TaxOpt {
 }
 
 interface ContactOpt {
-  id: string
-  name: string
-  email: string | null
-  phone: string | null
+  id: string; name: string
+  email: string | null; phone: string | null; npwp: string | null
+  addrLine1: string | null; addrLine2: string | null
+  addrKelurahan: string | null; addrKecamatan: string | null
+  addrKota: string | null; addrProvinsi: string | null; addrKodePos: string | null
+  paymentTermsLabel: string | null
 }
 
 interface ProductOpt {
@@ -200,6 +202,10 @@ export function NewInvoiceForm({ revenueAccounts, taxes, contacts, products }: {
   const [contactId, setContactId] = useState<string | null>(null)
   const [customerName, setCustomerName] = useState('')
   const [customerEmail, setCustomerEmail] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
+  const [customerNpwp, setCustomerNpwp] = useState('')
+  const [customerAddr, setCustomerAddr] = useState('')
+  const [paymentTermsLabel, setPaymentTermsLabel] = useState('')
   const [date, setDate] = useState(today())
   const [dueDate, setDueDate] = useState(addDays(today(), 30))
   const [notes, setNotes] = useState('')
@@ -214,10 +220,19 @@ export function NewInvoiceForm({ revenueAccounts, taxes, contacts, products }: {
     setContactId(c.id)
     setCustomerName(c.name)
     setCustomerEmail(c.email ?? '')
+    setCustomerPhone(c.phone ?? '')
+    setCustomerNpwp(c.npwp ?? '')
+    setPaymentTermsLabel(c.paymentTermsLabel ?? '')
+    const parts = [c.addrLine1, c.addrLine2, c.addrKelurahan ? `Kel. ${c.addrKelurahan}` : null, c.addrKecamatan ? `Kec. ${c.addrKecamatan}` : null, c.addrKota, c.addrKodePos, c.addrProvinsi].filter(Boolean)
+    setCustomerAddr(parts.join(', '))
   }
 
   function handleClearContact() {
     setContactId(null)
+    setCustomerPhone('')
+    setCustomerNpwp('')
+    setCustomerAddr('')
+    setPaymentTermsLabel('')
   }
 
   // Compute breakdown
@@ -278,6 +293,10 @@ export function NewInvoiceForm({ revenueAccounts, taxes, contacts, products }: {
       body: JSON.stringify({
         customerName,
         customerEmail: customerEmail || null,
+        customerPhone: customerPhone || null,
+        customerNpwp: customerNpwp || null,
+        customerAddress: customerAddr || null,
+        paymentTermsLabel: paymentTermsLabel || null,
         contactId,
         date,
         dueDate,
@@ -320,7 +339,7 @@ export function NewInvoiceForm({ revenueAccounts, taxes, contacts, products }: {
             style={inputStyle}
             type="email"
             value={customerEmail}
-            onChange={(e) => { setCustomerEmail(e.target.value); setContactId(null) }}
+            onChange={(e) => { setCustomerEmail(e.target.value) }}
           />
         </Field>
         <Field label="Tanggal Faktur">
@@ -329,7 +348,20 @@ export function NewInvoiceForm({ revenueAccounts, taxes, contacts, products }: {
         <Field label="Jatuh Tempo">
           <input style={inputStyle} type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
         </Field>
+        <Field label="Termin Pembayaran">
+          <input style={inputStyle} value={paymentTermsLabel} onChange={(e) => setPaymentTermsLabel(e.target.value)} placeholder="mis. Net 30" />
+        </Field>
+        <div />
       </div>
+
+      {/* Auto-fill strip */}
+      {contactId && (customerPhone || customerNpwp || customerAddr) && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', padding: '8px 12px', background: 'rgba(59,79,196,0.04)', border: '1px solid rgba(59,79,196,0.15)', borderRadius: 'var(--r-sm)', font: '12px/1.5 var(--font-sans)', color: 'var(--fg-3)' }}>
+          {customerPhone && <span>☎ {customerPhone}</span>}
+          {customerNpwp && <span>NPWP {customerNpwp}</span>}
+          {customerAddr && <span>📍 {customerAddr}</span>}
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-2)' }}>
         <span style={{ font: '600 11px/1 var(--font-sans)', color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>

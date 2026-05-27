@@ -23,7 +23,11 @@ export default async function NewDealPage() {
       userInitials={initials(session.user.name)}
       activeSection="pipeline"
     >
-      <NewDealForm contacts={contacts.map((c) => ({ id: c.contact.id, name: c.contact.name }))} />
+      <NewDealForm contacts={contacts.map((c) => ({
+        id: c.contact.id, name: c.contact.name,
+        email: c.contact.email, phone: c.contact.phone,
+        addrKota: c.contact.addrKota, addrProvinsi: c.contact.addrProvinsi,
+      }))} />
     </CrmShell>
   )
 }

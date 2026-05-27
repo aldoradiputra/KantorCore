@@ -5,7 +5,14 @@ import { useRouter } from 'next/navigation'
 
 interface AccountOpt { id: string; code: string; name: string }
 interface TaxOpt { id: string; name: string; amount: number; amountType: 'percent' | 'fixed' }
-interface ContactOpt { id: string; name: string }
+interface ContactOpt {
+  id: string; name: string
+  email: string | null; phone: string | null; npwp: string | null
+  addrLine1: string | null; addrLine2: string | null
+  addrKelurahan: string | null; addrKecamatan: string | null
+  addrKota: string | null; addrProvinsi: string | null; addrKodePos: string | null
+  paymentTermsLabel: string | null
+}
 interface ProductOpt {
   id: string; name: string; code: string | null
   costPrice: number; defaultAccountId: string | null
@@ -39,6 +46,11 @@ export function NewPOForm({ accounts, taxes, contacts, products }: {
   const defaultAcct = accounts[0]?.id ?? ''
   const [contactId, setContactId] = useState<string | null>(null)
   const [vendorName, setVendorName] = useState('')
+  const [vendorEmail, setVendorEmail] = useState('')
+  const [vendorPhone, setVendorPhone] = useState('')
+  const [vendorNpwp, setVendorNpwp] = useState('')
+  const [vendorAddr, setVendorAddr] = useState('')
+  const [paymentTermsLabel, setPaymentTermsLabel] = useState('')
   const [date, setDate] = useState(today())
   const [expectedDate, setExpectedDate] = useState('')
   const [notes, setNotes] = useState('')
@@ -66,9 +78,15 @@ export function NewPOForm({ accounts, taxes, contacts, products }: {
 
   function handleSelectContact(id: string) {
     const c = contacts.find((x) => x.id === id)
-    if (!c) return
+    if (!c) { setContactId(null); return }
     setContactId(c.id)
     setVendorName(c.name)
+    setVendorEmail(c.email ?? '')
+    setVendorPhone(c.phone ?? '')
+    setVendorNpwp(c.npwp ?? '')
+    setPaymentTermsLabel(c.paymentTermsLabel ?? '')
+    const parts = [c.addrLine1, c.addrLine2, c.addrKelurahan ? `Kel. ${c.addrKelurahan}` : null, c.addrKecamatan ? `Kec. ${c.addrKecamatan}` : null, c.addrKota, c.addrKodePos, c.addrProvinsi].filter(Boolean)
+    setVendorAddr(parts.join(', '))
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -87,6 +105,11 @@ export function NewPOForm({ accounts, taxes, contacts, products }: {
       body: JSON.stringify({
         contactId,
         vendorName,
+        vendorEmail: vendorEmail || null,
+        vendorPhone: vendorPhone || null,
+        vendorNpwp: vendorNpwp || null,
+        vendorAddress: vendorAddr || null,
+        paymentTermsLabel: paymentTermsLabel || null,
         date,
         expectedDate: expectedDate || null,
         notes: notes || null,
@@ -130,7 +153,9 @@ export function NewPOForm({ accounts, taxes, contacts, products }: {
           <Field label="Nama Vendor *">
             <input style={inputStyle} value={vendorName} onChange={(e) => { setVendorName(e.target.value); setContactId(null) }} placeholder="Nama vendor" />
           </Field>
-          <div />
+          <Field label="Termin Pembayaran">
+            <input style={inputStyle} value={paymentTermsLabel} onChange={(e) => setPaymentTermsLabel(e.target.value)} placeholder="mis. Net 30" />
+          </Field>
           <Field label="Tanggal PO *">
             <input style={inputStyle} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </Field>
@@ -138,6 +163,16 @@ export function NewPOForm({ accounts, taxes, contacts, products }: {
             <input style={inputStyle} type="date" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} />
           </Field>
         </div>
+
+        {/* Auto-fill strip */}
+        {contactId && (vendorEmail || vendorPhone || vendorNpwp || vendorAddr) && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', padding: '8px 12px', background: 'rgba(59,79,196,0.04)', border: '1px solid rgba(59,79,196,0.15)', borderRadius: 'var(--r-sm)', font: '12px/1.5 var(--font-sans)', color: 'var(--fg-3)' }}>
+            {vendorEmail && <span>✉ {vendorEmail}</span>}
+            {vendorPhone && <span>☎ {vendorPhone}</span>}
+            {vendorNpwp && <span>NPWP {vendorNpwp}</span>}
+            {vendorAddr && <span>📍 {vendorAddr}</span>}
+          </div>
+        )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-2)' }}>
           <span style={{ font: '600 11px/1 var(--font-sans)', color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Baris PO</span>

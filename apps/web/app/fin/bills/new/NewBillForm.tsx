@@ -5,7 +5,14 @@ import { useRouter } from 'next/navigation'
 
 interface AccountOpt { id: string; code: string; name: string }
 interface TaxOpt { id: string; name: string; amount: number; amountType: 'percent' | 'fixed'; isWithholding: boolean }
-interface ContactOpt { id: string; name: string; email: string | null; phone: string | null }
+interface ContactOpt {
+  id: string; name: string
+  email: string | null; phone: string | null; npwp: string | null
+  addrLine1: string | null; addrLine2: string | null
+  addrKelurahan: string | null; addrKecamatan: string | null
+  addrKota: string | null; addrProvinsi: string | null; addrKodePos: string | null
+  paymentTermsLabel: string | null
+}
 
 interface ProductOpt {
   id: string; name: string; code: string | null
@@ -169,6 +176,11 @@ export function NewBillForm({ expenseAccounts, taxes, contacts, products }: {
   const defaultTaxIds = firstRegularTax ? [firstRegularTax.id] : []
   const [contactId, setContactId] = useState<string | null>(null)
   const [vendorName, setVendorName] = useState('')
+  const [vendorEmail, setVendorEmail] = useState('')
+  const [vendorPhone, setVendorPhone] = useState('')
+  const [vendorNpwp, setVendorNpwp] = useState('')
+  const [vendorAddr, setVendorAddr] = useState('')
+  const [paymentTermsLabel, setPaymentTermsLabel] = useState('')
   const [vendorRef, setVendorRef] = useState('')
   const [date, setDate] = useState(today())
   const [dueDate, setDueDate] = useState(addDays(today(), 30))
@@ -181,10 +193,21 @@ export function NewBillForm({ expenseAccounts, taxes, contacts, products }: {
   function handleSelectContact(c: ContactOpt) {
     setContactId(c.id)
     setVendorName(c.name)
+    setVendorEmail(c.email ?? '')
+    setVendorPhone(c.phone ?? '')
+    setVendorNpwp(c.npwp ?? '')
+    setPaymentTermsLabel(c.paymentTermsLabel ?? '')
+    const parts = [c.addrLine1, c.addrLine2, c.addrKelurahan ? `Kel. ${c.addrKelurahan}` : null, c.addrKecamatan ? `Kec. ${c.addrKecamatan}` : null, c.addrKota, c.addrKodePos, c.addrProvinsi].filter(Boolean)
+    setVendorAddr(parts.join(', '))
   }
 
   function handleClearContact() {
     setContactId(null)
+    setVendorEmail('')
+    setVendorPhone('')
+    setVendorNpwp('')
+    setVendorAddr('')
+    setPaymentTermsLabel('')
   }
 
   const computed = lines.map((l) => {
@@ -231,6 +254,11 @@ export function NewBillForm({ expenseAccounts, taxes, contacts, products }: {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         vendorName,
+        vendorEmail: vendorEmail || null,
+        vendorPhone: vendorPhone || null,
+        vendorNpwp: vendorNpwp || null,
+        vendorAddress: vendorAddr || null,
+        paymentTermsLabel: paymentTermsLabel || null,
         vendorRef: vendorRef || null,
         contactId,
         date,
@@ -270,7 +298,21 @@ export function NewBillForm({ expenseAccounts, taxes, contacts, products }: {
         </Field>
         <Field label="Tanggal"><input style={inputStyle} type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
         <Field label="Jatuh Tempo"><input style={inputStyle} type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} /></Field>
+        <Field label="Termin Pembayaran">
+          <input style={inputStyle} value={paymentTermsLabel} onChange={(e) => setPaymentTermsLabel(e.target.value)} placeholder="mis. Net 30" />
+        </Field>
+        <div />
       </div>
+
+      {/* Auto-fill strip */}
+      {contactId && (vendorEmail || vendorPhone || vendorNpwp || vendorAddr) && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px', padding: '8px 12px', background: 'rgba(59,79,196,0.04)', border: '1px solid rgba(59,79,196,0.15)', borderRadius: 'var(--r-sm)', font: '12px/1.5 var(--font-sans)', color: 'var(--fg-3)' }}>
+          {vendorEmail && <span>✉ {vendorEmail}</span>}
+          {vendorPhone && <span>☎ {vendorPhone}</span>}
+          {vendorNpwp && <span>NPWP {vendorNpwp}</span>}
+          {vendorAddr && <span>📍 {vendorAddr}</span>}
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-2)' }}>
         <span style={{ font: '600 11px/1 var(--font-sans)', color: 'var(--fg-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Baris Tagihan</span>
