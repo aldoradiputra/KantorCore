@@ -8,6 +8,7 @@ import AgentInboxPill from './AgentInboxPill'
 import UserAvatar from './UserAvatar'
 import NavRail from './NavRail'
 import type { NavModuleId, NavGroup } from './NavRail'
+import ChatFab from './ChatFab'
 
 // ── Icon primitives ───────────────────────────────────────────
 function IconHome() {
@@ -334,6 +335,8 @@ export function AppShell({
           {children}
         </main>
       </div>
+
+      <ChatFab />
     </div>
   )
 }
