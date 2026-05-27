@@ -318,7 +318,7 @@ export async function getActivityBuckets(
       GROUP BY 1, 2
       ORDER BY 1 ASC
     `)
-    return (rows as { bucket: Date; category: string; count: number }[]).map((r) => ({
+    return (rows as unknown as { bucket: Date; category: string; count: number }[]).map((r) => ({
       bucket: r.bucket.toISOString(),
       category: r.category,
       count: r.count,
@@ -384,7 +384,7 @@ export async function getActivityStats(tenantId: string): Promise<ActivityStats>
     return {
       eventsLast24h: (countRow[0]?.n ?? 0) as number,
       activeUsersLast24h: (userRow[0]?.n ?? 0) as number,
-      topCategory: ((topRow as { category: string }[])[0]?.category) ?? null,
+      topCategory: ((topRow as unknown as { category: string }[])[0]?.category) ?? null,
     }
   })
 }
