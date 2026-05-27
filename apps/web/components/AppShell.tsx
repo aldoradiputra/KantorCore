@@ -176,6 +176,17 @@ function IconSales() {
   )
 }
 
+function IconContacts() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="7" cy="6" r="2.5" />
+      <path d="M2 15c0-2.8 2.2-5 5-5s5 2.2 5 5" />
+      <path d="M13 8l2.5 2.5L13 13" />
+      <path d="M11 10.5h4.5" />
+    </svg>
+  )
+}
+
 function IconProses() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -219,6 +230,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'hr',    label: 'SDM',        href: '/hr',           hotkey: 'G R', Icon: IconHR },
       { id: 'pay',   label: 'Penggajian', href: '/pay',          hotkey: 'G Y', Icon: IconPay },
       { id: 'rent',  label: 'Sewa',       href: '/rent',         hotkey: 'G S', Icon: IconRent },
+      { id: 'contacts', label: 'Kontak', href: '/contacts', hotkey: 'G J', Icon: IconContacts },
     ],
   },
   {

@@ -74,6 +74,31 @@ export async function getContact(tenantId: string, contactId: string): Promise<C
   return rows.find((r) => r.contact.id === contactId) ?? null
 }
 
+export interface IndonesianAddress {
+  line1?: string | null
+  line2?: string | null
+  rt?: string | null
+  rw?: string | null
+  kelurahan?: string | null
+  kecamatan?: string | null
+  kota?: string | null
+  provinsi?: string | null
+  kodePos?: string | null
+}
+
+/** Format Indonesian address to the standard formal string. */
+export function formatIndonesianAddress(addr: IndonesianAddress): string {
+  const street = [addr.line1?.trim(), addr.line2?.trim()].filter(Boolean).join(', ')
+  const rtRw = addr.rt || addr.rw
+    ? `RT ${(addr.rt ?? '0').padStart(3, '0')}/RW ${(addr.rw ?? '0').padStart(3, '0')}`
+    : null
+  const parts = [street, rtRw, addr.kelurahan?.trim(), addr.kecamatan?.trim(), addr.kota?.trim(), addr.kodePos?.trim()].filter(Boolean)
+  const body = parts.join(' ')
+  if (!body && !addr.provinsi) return ''
+  if (addr.provinsi) return `${body}, ${addr.provinsi.trim().toUpperCase()} INDONESIA`
+  return `${body} INDONESIA`
+}
+
 export interface ContactInput {
   type: ContactType
   name: string
@@ -84,6 +109,20 @@ export interface ContactInput {
   notes?: string | null
   userId?: string | null
   roles: ContactRole[]
+  // Extended
+  isPkp?: boolean
+  website?: string | null
+  language?: string | null
+  country?: string | null
+  addrLine1?: string | null
+  addrLine2?: string | null
+  addrRt?: string | null
+  addrRw?: string | null
+  addrKelurahan?: string | null
+  addrKecamatan?: string | null
+  addrKota?: string | null
+  addrProvinsi?: string | null
+  addrKodePos?: string | null
 }
 
 export async function createContact(
@@ -116,6 +155,19 @@ export async function createContact(
         address: input.address?.trim() || null,
         notes: input.notes?.trim() || null,
         userId: input.userId || null,
+        isPkp: input.isPkp ?? false,
+        website: input.website?.trim() || null,
+        language: input.language?.trim() || null,
+        country: input.country?.trim() || null,
+        addrLine1: input.addrLine1?.trim() || null,
+        addrLine2: input.addrLine2?.trim() || null,
+        addrRt: input.addrRt?.trim() || null,
+        addrRw: input.addrRw?.trim() || null,
+        addrKelurahan: input.addrKelurahan?.trim() || null,
+        addrKecamatan: input.addrKecamatan?.trim() || null,
+        addrKota: input.addrKota?.trim() || null,
+        addrProvinsi: input.addrProvinsi?.trim() || null,
+        addrKodePos: input.addrKodePos?.trim() || null,
       })
       .returning()
 
@@ -161,6 +213,19 @@ export async function updateContact(
     if (input.address !== undefined) patch.address = input.address?.trim() || null
     if (input.notes !== undefined) patch.notes = input.notes?.trim() || null
     if (input.userId !== undefined) patch.userId = input.userId || null
+    if (input.isPkp !== undefined) patch.isPkp = input.isPkp
+    if (input.website !== undefined) patch.website = input.website?.trim() || null
+    if (input.language !== undefined) patch.language = input.language?.trim() || null
+    if (input.country !== undefined) patch.country = input.country?.trim() || null
+    if (input.addrLine1 !== undefined) patch.addrLine1 = input.addrLine1?.trim() || null
+    if (input.addrLine2 !== undefined) patch.addrLine2 = input.addrLine2?.trim() || null
+    if (input.addrRt !== undefined) patch.addrRt = input.addrRt?.trim() || null
+    if (input.addrRw !== undefined) patch.addrRw = input.addrRw?.trim() || null
+    if (input.addrKelurahan !== undefined) patch.addrKelurahan = input.addrKelurahan?.trim() || null
+    if (input.addrKecamatan !== undefined) patch.addrKecamatan = input.addrKecamatan?.trim() || null
+    if (input.addrKota !== undefined) patch.addrKota = input.addrKota?.trim() || null
+    if (input.addrProvinsi !== undefined) patch.addrProvinsi = input.addrProvinsi?.trim() || null
+    if (input.addrKodePos !== undefined) patch.addrKodePos = input.addrKodePos?.trim() || null
 
     const [contact] = await tx
       .update(contacts)
@@ -235,8 +300,4 @@ export async function getContactStats(tenantId: string): Promise<ContactStats> {
   })
 }
 
-/**
- * Suppress unused-import warnings while ContactRow detail view ships in
- * Phase 32 follow-up (per-contact transaction history).
- */
 void desc

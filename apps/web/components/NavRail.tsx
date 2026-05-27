@@ -7,7 +7,7 @@ import type { ReactElement } from 'react'
 // ── Types ─────────────────────────────────────────────────────
 export type NavModuleId =
   | 'home' | 'chat' | 'proj' | 'time' | 'doc' | 'proses'
-  | 'crm' | 'sales' | 'proc' | 'inv' | 'fin' | 'hr' | 'pay' | 'rent'
+  | 'crm' | 'sales' | 'proc' | 'inv' | 'fin' | 'hr' | 'pay' | 'rent' | 'contacts'
   | 'aip' | 'agent' | 'trig' | 'mig' | 'ops'
   | 'gamification' | 'recruitment'
 

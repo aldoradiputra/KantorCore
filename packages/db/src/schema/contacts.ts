@@ -2,6 +2,7 @@ import {
   uuid,
   varchar,
   text,
+  boolean,
   timestamp,
   pgEnum,
   uniqueIndex,
@@ -10,27 +11,8 @@ import {
 import { platform, tenants } from './tenants'
 import { users } from './users'
 
-/**
- * The single golden record for any "person or organization" the workspace
- * interacts with — internal staff, customers, vendors, external consultants.
- *
- * Per ADR-008 (forthcoming): `contacts` is the root identity within a tenant.
- *   - email is unique per tenant (one email → one contact)
- *   - a contact MAY have a linked user account (userId) — internal staff
- *   - a contact MAY have a linked employee record (hr.employees.contactId)
- *   - invoices.contactId, bills.contactId, rent.customers.contactId FK here
- *
- * Why not Odoo-style res.partner (one mega-table)? We keep `contacts` lean —
- * org-only fields, not employment/billing extras — and let each module add
- * its own row keyed by contactId. Looser coupling, fewer NULLable columns.
- */
 export const contactType = pgEnum('platform_contact_type', ['person', 'organization'])
 
-/**
- * Optional role flags per tenant — a single contact can be tagged as multiple
- * roles (customer + vendor is common: e.g. a partner you both buy from and
- * sell to).
- */
 export const contactRole = pgEnum('platform_contact_role', [
   'staff',
   'customer',
@@ -50,30 +32,39 @@ export const contacts = platform.table(
     name: varchar('name', { length: 200 }).notNull(),
     email: varchar('email', { length: 254 }),
     phone: varchar('phone', { length: 32 }),
-    /** NPWP — Indonesian tax ID. 15 digits formatted (e.g. 12.345.678.9-012.000). */
     npwp: varchar('npwp', { length: 25 }),
     address: text('address'),
     notes: text('notes'),
-    /** Link to login account when the contact is an internal user. NULL otherwise. */
     userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+
+    // Extended fields (migration 0046)
+    isPkp:        boolean('is_pkp').notNull().default(false),
+    website:      varchar('website', { length: 500 }),
+    language:     varchar('language', { length: 10 }),
+    /** ISO 3166-1 alpha-2 country code. */
+    country:      varchar('country', { length: 2 }),
+    /** Structured Indonesian address fields — populated only when country = 'ID'. */
+    addrLine1:    text('addr_line1'),
+    addrLine2:    text('addr_line2'),
+    addrRt:       varchar('addr_rt', { length: 10 }),
+    addrRw:       varchar('addr_rw', { length: 10 }),
+    addrKelurahan: varchar('addr_kelurahan', { length: 100 }),
+    addrKecamatan: varchar('addr_kecamatan', { length: 100 }),
+    addrKota:     varchar('addr_kota', { length: 100 }),
+    addrProvinsi: varchar('addr_provinsi', { length: 100 }),
+    addrKodePos:  varchar('addr_kode_pos', { length: 10 }),
+
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
-    /** Email is unique per tenant; multiple tenants can have the same email. */
     tenantEmailUnique: uniqueIndex('contacts_tenant_email_unique').on(t.tenantId, t.email),
-    /** A user can be linked to only one contact per tenant. */
     tenantUserUnique: uniqueIndex('contacts_tenant_user_unique').on(t.tenantId, t.userId),
     tenantIdx: index('contacts_tenant_id_idx').on(t.tenantId),
     nameIdx: index('contacts_name_idx').on(t.tenantId, t.name),
   }),
 )
 
-/**
- * Many-to-many tagging — a contact can be both a customer and a vendor.
- * Replacing this with a boolean isCustomer/isVendor would force three or four
- * NULLable columns; the M:N table stays open-ended.
- */
 export const contactRoles = platform.table(
   'contact_roles',
   {
