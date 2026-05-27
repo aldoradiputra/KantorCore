@@ -6,7 +6,8 @@ import NotificationBell from './NotificationBell'
 import KeyboardChrome, { SearchTrigger } from './KeyboardChrome'
 import AgentInboxPill from './AgentInboxPill'
 import UserAvatar from './UserAvatar'
-import { APP_GROUPS, APP_REGISTRY, type AppId } from '../lib/app-registry'
+import NavRail from './NavRail'
+import type { NavModuleId, NavGroup } from './NavRail'
 
 // ── Icon primitives ───────────────────────────────────────────
 function IconHome() {
@@ -177,65 +178,54 @@ function IconProses() {
 }
 
 // ── Module list ───────────────────────────────────────────────
-// ModuleId mirrors AppId from the registry, plus legacy ids that still
-// pass through activeModule for highlighting (gamification, recruitment).
-type ModuleId = AppId | 'gamification' | 'recruitment'
+// ModuleId = NavModuleId from NavRail (re-exported), plus legacy ids.
+type ModuleId = NavModuleId
 
-type ModuleEntry = { id: ModuleId; label: string; href: string; hotkey: string; Icon: () => React.ReactElement }
-type ModuleGroup = { id: string; label: string; items: ModuleEntry[] }
+// Nav groups passed to NavRail. NavRail owns render; AppShell supplies data + icons.
+const NAV_GROUPS: NavGroup[] = [
+  {
+    id: 'workspace',
+    label: 'Workspace',
+    items: [
+      { id: 'home',   label: 'Beranda',   href: '/',              hotkey: 'G H', Icon: IconHome },
+      { id: 'chat',   label: 'Chat',      href: '/chat',          hotkey: 'G C', Icon: IconChat },
+      { id: 'proj',   label: 'Proyek',    href: '/proj',          hotkey: 'G P', Icon: IconProj },
+      { id: 'time',   label: 'Waktu',     href: '/time',          hotkey: 'G W', Icon: IconTime },
+      { id: 'doc',    label: 'Dokumen',   href: '/doc/documents', hotkey: 'G D', Icon: IconDoc },
+      { id: 'proses', label: 'Proses',    href: '/proses',        hotkey: 'G O', Icon: IconProses },
+    ],
+  },
+  {
+    id: 'apps',
+    label: 'Apps',
+    items: [
+      { id: 'crm',   label: 'CRM',        href: '/crm/deals',    hotkey: 'G M', Icon: IconCrm },
+      { id: 'sales', label: 'Penjualan',  href: '/sales/orders', hotkey: 'G L', Icon: IconSales },
+      { id: 'proc',  label: 'Pembelian',  href: '/proc/orders',  hotkey: 'G B', Icon: IconProc },
+      { id: 'inv',   label: 'Inventori',  href: '/inv/products', hotkey: 'G I', Icon: IconInv },
+      { id: 'fin',   label: 'Keuangan',   href: '/fin',          hotkey: 'G F', Icon: IconFin },
+      { id: 'hr',    label: 'SDM',        href: '/hr',           hotkey: 'G R', Icon: IconHR },
+      { id: 'pay',   label: 'Penggajian', href: '/pay',          hotkey: 'G Y', Icon: IconPay },
+      { id: 'rent',  label: 'Sewa',       href: '/rent',         hotkey: 'G S', Icon: IconRent },
+    ],
+  },
+  {
+    id: 'platform',
+    label: 'Platform',
+    items: [
+      { id: 'aip',   label: 'AI Search', href: '/aip/search', hotkey: 'G K', Icon: IconAip },
+      { id: 'agent', label: 'Agent',     href: '/agent',      hotkey: 'G A', Icon: IconAgent },
+      { id: 'trig',  label: 'Triggers',  href: '/trig/rules', hotkey: 'G T', Icon: IconTrig },
+      { id: 'mig',   label: 'Import',    href: '/mig/import', hotkey: 'G N', Icon: IconMig },
+    ],
+  },
+]
 
-// Icon map for registry-driven module rendering. Apps without a custom icon
-// fall back to IconHome (none are expected to hit the fallback today).
-const APP_ICONS: Record<AppId, () => React.ReactElement> = {
-  home: IconHome,
-  chat: IconChat,
-  proj: IconProj,
-  time: IconTime,
-  doc:  IconDoc,
-  proses: IconProses,
-  crm:   IconCrm,
-  sales: IconSales,
-  proc:  IconProc,
-  inv:   IconInv,
-  fin:   IconFin,
-  hr:    IconHR,
-  pay:   IconPay,
-  rent:  IconRent,
-  aip:   IconAip,
-  agent: IconAgent,
-  trig:  IconTrig,
-  mig:   IconMig,
-}
-
-// Grouped nav rail. Workspace = personal/collaboration; Apps = business modules;
-// Platform = automation / AI / config primitives. Visual separators between groups.
-// Data comes from lib/app-registry; icons are attached here.
-const MODULE_GROUPS: ModuleGroup[] = APP_GROUPS.map((g) => ({
-  id: g.id,
-  label: g.label,
-  items: APP_REGISTRY
-    .filter((a) => a.group === g.id)
-    .map((a) => ({ id: a.id, label: a.label, href: a.href, hotkey: a.hotkey, Icon: APP_ICONS[a.id] })),
-}))
-
-/**
- * Map a module id to the matching settings deep-link, when one exists.
- * Used by the contextual "Settings for this app" button in the top bar.
- */
+// Map a module id to its deep-linked settings page, when one exists.
 const MODULE_TO_SETTINGS: Partial<Record<ModuleId, string>> = {
   chat: '/settings/chat',
   proj: '/settings/proj',
   agent: '/settings/agent',
-}
-
-// Cog icon for the settings entry at the bottom of the rail.
-function IconCog() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="10" cy="10" r="2.5" />
-      <path d="M10 1.5v2.5M10 16v2.5M3.5 3.5l1.8 1.8M14.7 14.7l1.8 1.8M1.5 10h2.5M16 10h2.5M3.5 16.5l1.8-1.8M14.7 5.3l1.8-1.8" />
-    </svg>
-  )
 }
 
 // ── Shell ─────────────────────────────────────────────────────
@@ -314,87 +304,15 @@ export function AppShell({
 
       {/* ── Body ── */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Icon rail */}
-        <nav
-          style={{
-            width: 'var(--sidebar-w-min)',
-            borderRight: '1px solid var(--border)',
-            background: 'var(--surface)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            paddingTop: 'var(--s-3)',
-            paddingBottom: 'var(--s-3)',
-            gap: 2,
-            flexShrink: 0,
-          }}
-        >
-          {MODULE_GROUPS.map((group, gi) => (
-            <div
-              key={group.id}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
-            >
-              {gi > 0 && (
-                <div
-                  aria-hidden
-                  style={{
-                    width: 24,
-                    height: 1,
-                    background: 'var(--border)',
-                    margin: '6px 0',
-                  }}
-                />
-              )}
-              {group.items.map(({ id, label, href, hotkey, Icon }) => {
-                const active = activeModule === id
-                return (
-                  <Link
-                    key={id}
-                    href={href}
-                    title={`${label} · ${group.label} (${hotkey})`}
-                    style={{
-                      width: 40,
-                      height: 40,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: 'var(--r-md)',
-                      color: active ? 'var(--indigo)' : 'var(--fg-3)',
-                      background: active ? 'var(--indigo-light)' : 'transparent',
-                      textDecoration: 'none',
-                      transition: `background var(--d-fast) var(--ease), color var(--d-fast) var(--ease)`,
-                    }}
-                  >
-                    <Icon />
-                  </Link>
-                )
-              })}
-            </div>
-          ))}
-
-          {/* Settings entry pinned to bottom */}
-          <div style={{ flex: 1 }} />
-          <Link
-            href={activeModule && MODULE_TO_SETTINGS[activeModule]
+        <NavRail
+          groups={NAV_GROUPS}
+          activeModule={activeModule}
+          settingsHref={
+            activeModule && MODULE_TO_SETTINGS[activeModule]
               ? MODULE_TO_SETTINGS[activeModule]!
-              : '/settings/profile'}
-            title={activeModule && MODULE_TO_SETTINGS[activeModule]
-              ? `Settings — modul aktif`
-              : 'Settings'}
-            style={{
-              width: 40,
-              height: 40,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 'var(--r-md)',
-              color: 'var(--fg-3)',
-              textDecoration: 'none',
-            }}
-          >
-            <IconCog />
-          </Link>
-        </nav>
+              : '/settings/profile'
+          }
+        />
 
         {/* Module sidebar (optional) */}
         {sidebar != null && (
