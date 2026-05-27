@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 const MODELS = [
   { id: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (Recommended)' },
@@ -9,6 +10,7 @@ const MODELS = [
 ]
 
 export default function NewAgentForm() {
+  const router = useRouter()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [model, setModel] = useState('claude-sonnet-4-6')
@@ -28,7 +30,7 @@ export default function NewAgentForm() {
     })
     if (res.ok) {
       const data = (await res.json()) as { agent: { id: string } }
-      window.location.href = `/agent/${data.agent.id}`
+      router.push(`/agent/${data.agent.id}`)
       return
     }
     const data = await res.json().catch(() => ({ error: 'Gagal membuat agen.' }))

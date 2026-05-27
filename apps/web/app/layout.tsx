@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import '@kantorcore/design-tokens/tokens.css'
 import './globals.css'
 import PwaInit from '../components/PwaInit'
+import NavigationProgress from '../components/NavigationProgress'
 
 export const metadata: Metadata = {
   title: 'KantorCore — Sistem operasi korporat',
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="id">
       <body>
+        <NavigationProgress />
         {children}
         <PwaInit />
       </body>

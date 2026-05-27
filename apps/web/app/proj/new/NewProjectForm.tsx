@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@kantorcore/ui'
 
 function slugify(input: string): string {
@@ -30,6 +31,7 @@ function autoKey(name: string): string {
 }
 
 export default function NewProjectForm() {
+  const router = useRouter()
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [key, setKey] = useState('')
@@ -55,7 +57,7 @@ export default function NewProjectForm() {
       body: JSON.stringify({ name, slug, key, description }),
     })
     if (res.ok) {
-      window.location.href = `/proj/${slug}`
+      router.push(`/proj/${slug}`)
       return
     }
     const data = await res.json().catch(() => ({ error: 'Gagal membuat proyek.' }))
