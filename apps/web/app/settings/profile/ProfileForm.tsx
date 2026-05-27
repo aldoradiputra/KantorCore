@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function ProfileForm({
   userId,
@@ -16,6 +16,7 @@ export default function ProfileForm({
       <div style={{ maxWidth: 560, width: '100%' }}>
         <h2 style={{ marginBottom: 'var(--s-6)' }}>Profil & Keamanan</h2>
         <NameForm userId={userId} initialName={initialName} email={email} />
+        <AppearanceForm />
         <PasswordForm />
       </div>
     </div>
@@ -112,6 +113,74 @@ function PasswordForm() {
         </Field>
         <SaveButton status={status} label="Ubah kata sandi" />
       </form>
+    </Card>
+  )
+}
+
+type ThemeChoice = 'light' | 'dark' | 'system'
+
+const THEME_OPTIONS: { value: ThemeChoice; label: string; desc: string }[] = [
+  { value: 'light',  label: 'Terang',  desc: 'Selalu tampilkan antarmuka terang' },
+  { value: 'dark',   label: 'Gelap',   desc: 'Selalu tampilkan antarmuka gelap' },
+  { value: 'system', label: 'Sistem',  desc: 'Ikuti pengaturan perangkat' },
+]
+
+function applyTheme(choice: ThemeChoice) {
+  const dark = choice === 'dark' || (choice === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  if (dark) document.documentElement.setAttribute('data-theme', 'dark')
+  else document.documentElement.removeAttribute('data-theme')
+}
+
+function AppearanceForm() {
+  const [theme, setTheme] = useState<ThemeChoice>('system')
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('kc-theme') as ThemeChoice | null
+      if (stored && ['light', 'dark', 'system'].includes(stored)) setTheme(stored)
+    } catch {}
+  }, [])
+
+  function handleTheme(choice: ThemeChoice) {
+    setTheme(choice)
+    try { localStorage.setItem('kc-theme', choice) } catch {}
+    applyTheme(choice)
+  }
+
+  return (
+    <Card title="Tampilan">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s-3)' }}>
+        <span style={{ font: '500 12px/1 var(--font-sans)', color: 'var(--fg-2)' }}>Tema warna</span>
+        <div style={{ display: 'flex', gap: 'var(--s-3)' }}>
+          {THEME_OPTIONS.map((opt) => {
+            const active = theme === opt.value
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => handleTheme(opt.value)}
+                style={{
+                  flex: 1, padding: '12px 10px', borderRadius: 'var(--r-md)',
+                  border: `2px solid ${active ? 'var(--indigo)' : 'var(--border)'}`,
+                  background: active ? 'var(--indigo-light)' : 'var(--bg)',
+                  cursor: 'pointer', textAlign: 'center',
+                  transition: 'border-color 0.15s, background 0.15s',
+                }}
+              >
+                <div style={{ fontSize: 22, marginBottom: 6 }}>
+                  {opt.value === 'light' ? '☀️' : opt.value === 'dark' ? '🌙' : '💻'}
+                </div>
+                <div style={{ font: `${active ? '600' : '500'} 12px/1 var(--font-sans)`, color: active ? 'var(--indigo)' : 'var(--fg-1)' }}>
+                  {opt.label}
+                </div>
+                <div style={{ font: '11px/1.3 var(--font-sans)', color: 'var(--fg-3)', marginTop: 4 }}>
+                  {opt.desc}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
     </Card>
   )
 }

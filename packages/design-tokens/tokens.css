@@ -98,6 +98,37 @@
   --content-gutter: 32px;
 }
 
+/* ===================== Dark mode =====================
+   Applied when <html data-theme="dark"> is set.
+   Brand hues (indigo, teal, amber, red) stay the same;
+   only neutrals and semantic surfaces flip.
+   ===================================================== */
+[data-theme="dark"] {
+  --border:         #2D2F3A;
+  --border-strong:  #3A3C4E;
+  --bg:             #0F1117;
+  --surface:        #1A1D27;
+  --white:          #FFFFFF;
+
+  --slate:          #A0A4B8;
+  --slate-2:        #C4C8DC;
+  --muted:          #6B7080;
+
+  --fg-1:           #E8EAF2;
+  --fg-2:           var(--slate);
+  --fg-3:           var(--muted);
+
+  --indigo-light:   rgba(59, 79, 196, 0.18);
+  --teal-light:     rgba(15, 123, 108, 0.18);
+  --amber-light:    rgba(179, 90, 0, 0.18);
+  --red-light:      rgba(180, 35, 24, 0.18);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-focus: 0 0 0 2px var(--surface), 0 0 0 4px var(--indigo);
+}
+
 /* ===================== Semantic typography =====================
    Use the css class OR the variable. Both are kept in sync.
    ============================================================ */

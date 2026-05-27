@@ -3,7 +3,7 @@
 import { lazy, Suspense, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import type { ContactRow, ContactStats } from '../../lib/contacts'
-import { formatIndonesianAddress } from '../../lib/contacts'
+import { formatIndonesianAddress } from '../../lib/contacts-utils'
 import type { ContactAddressType, ContactRole, ContactType } from '@kantorcore/db'
 
 // Lazy-loaded view components for bundle code-splitting
