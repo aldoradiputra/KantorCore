@@ -213,6 +213,10 @@ See `PRODUCT_CLAUDE.md` for all architectural decisions. Key ones relevant to th
 | IS-TPL | Configuration Template Library | 3 |
 | IS-EXT | Workspace Extensions (tenant-scoped mini apps) | 3 |
 
+## Architectural Methodology Decisions
+
+- **Maximize auto-fill, minimize manual input**: Every form must aggressively auto-populate dependent fields from a selected source entity. Selecting a parent/source (e.g., customer on a Sales Order, vendor on a Purchase Order, parent company on a contact) must instantly auto-fill all related fields — address, contact details, payment terms, pricelist, bank accounts, tax settings, etc. — from that entity's stored profile. Users should only need to type data that is genuinely new or an explicit override.
+
 ## Nice-to-haves (post-MVP)
 
 - Minimap for canvas orientation
