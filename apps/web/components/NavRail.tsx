@@ -178,15 +178,16 @@ export default function NavRail({
         background: 'var(--surface)',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: expanded ? 'stretch' : 'center',
+        alignItems: 'stretch',
         paddingTop: 'var(--s-3)',
         paddingBottom: 'var(--s-3)',
-        gap: 2,
         flexShrink: 0,
         overflow: 'hidden',
         transition: 'width 0.2s ease',
       }}
     >
+      {/* Scrollable items area */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexDirection: 'column', gap: 2, alignItems: expanded ? 'stretch' : 'center' }}>
       {groups.map((group, gi) => (
         <div key={group.id} style={{ display: 'flex', flexDirection: 'column', alignItems: expanded ? 'stretch' : 'center', width: '100%' }}>
           {gi > 0 && (
@@ -268,44 +269,46 @@ export default function NavRail({
           />
         </div>
       ))}
+      </div>
 
-      <div style={{ flex: 1 }} />
+      {/* Fixed bottom actions — always visible */}
+      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 4, display: 'flex', flexDirection: 'column', alignItems: expanded ? 'stretch' : 'center', gap: 2 }}>
+        <Link
+          href={settingsHref}
+          title={expanded ? undefined : 'Pengaturan'}
+          aria-label="Pengaturan"
+          style={{
+            display: 'flex', alignItems: 'center', gap: expanded ? 10 : 0,
+            height: 36, padding: expanded ? '0 12px' : '0',
+            margin: expanded ? '0 4px' : '0 auto', width: expanded ? 'auto' : 40,
+            justifyContent: expanded ? 'flex-start' : 'center',
+            borderRadius: 'var(--r-md)', color: 'var(--fg-3)', textDecoration: 'none',
+            whiteSpace: 'nowrap', transition: `background var(--d-fast) var(--ease), color var(--d-fast) var(--ease)`,
+          }}
+        >
+          <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}><IconCog /></span>
+          {expanded && <span style={{ font: '500 13px/1 var(--font-sans)' }}>Pengaturan</span>}
+        </Link>
 
-      <Link
-        href={settingsHref}
-        title={expanded ? undefined : 'Pengaturan'}
-        aria-label="Pengaturan"
-        style={{
-          display: 'flex', alignItems: 'center', gap: expanded ? 10 : 0,
-          height: 36, padding: expanded ? '0 12px' : '0',
-          margin: expanded ? '0 4px' : '0 auto', width: expanded ? 'auto' : 40,
-          justifyContent: expanded ? 'flex-start' : 'center',
-          borderRadius: 'var(--r-md)', color: 'var(--fg-3)', textDecoration: 'none',
-          whiteSpace: 'nowrap', transition: `background var(--d-fast) var(--ease), color var(--d-fast) var(--ease)`,
-        }}
-      >
-        <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}><IconCog /></span>
-        {expanded && <span style={{ font: '500 13px/1 var(--font-sans)' }}>Pengaturan</span>}
-      </Link>
-
-      <button
-        type="button" onClick={toggle}
-        title={expanded ? 'Ciutkan panel' : 'Perluas panel'}
-        aria-label={expanded ? 'Ciutkan panel navigasi' : 'Perluas panel navigasi'}
-        style={{
-          display: 'flex', alignItems: 'center', gap: expanded ? 10 : 0,
-          height: 36, padding: expanded ? '0 12px' : '0',
-          margin: expanded ? '0 4px' : '0 auto', width: expanded ? 'auto' : 40,
-          justifyContent: expanded ? 'flex-start' : 'center',
-          borderRadius: 'var(--r-md)', color: 'var(--fg-3)', background: 'transparent',
-          border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
-        }}
-      >
-        <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-          {expanded ? <IconChevronLeft /> : <IconChevronRight />}
-        </span>
-        {expanded && <span style={{ font: '500 13px/1 var(--font-sans)' }}>Ciutkan</span>}
-      </button>
+        <button
+          type="button" onClick={toggle}
+          title={expanded ? 'Ciutkan panel' : 'Perluas panel'}
+          aria-label={expanded ? 'Ciutkan panel navigasi' : 'Perluas panel navigasi'}
+          style={{
+            display: 'flex', alignItems: 'center', gap: expanded ? 10 : 0,
+            height: 36, padding: expanded ? '0 12px' : '0',
+            margin: expanded ? '0 4px' : '0 auto', width: expanded ? 'auto' : 40,
+            justifyContent: expanded ? 'flex-start' : 'center',
+            borderRadius: 'var(--r-md)', color: 'var(--fg-3)', background: 'transparent',
+            border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
+          }}
+        >
+          <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+            {expanded ? <IconChevronLeft /> : <IconChevronRight />}
+          </span>
+          {expanded && <span style={{ font: '500 13px/1 var(--font-sans)' }}>Ciutkan</span>}
+        </button>
+      </div>
     </nav>
   )
 }

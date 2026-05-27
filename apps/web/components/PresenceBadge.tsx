@@ -238,19 +238,22 @@ export default function PresenceBadge() {
   // Load popover data
   async function loadData() {
     setLoading(true)
-    const [presenceRes, leaveRes] = await Promise.all([
-      fetch('/api/presence').catch(() => null),
-      fetch('/api/hr/time-off?mode=around').catch(() => null),
-    ])
-    if (presenceRes?.ok) {
-      const d = await presenceRes.json()
-      setPresence(d.presence ?? [])
+    try {
+      const [presenceRes, leaveRes] = await Promise.all([
+        fetch('/api/presence').catch(() => null),
+        fetch('/api/hr/time-off?mode=around').catch(() => null),
+      ])
+      if (presenceRes?.ok) {
+        const d = await presenceRes.json()
+        setPresence(d.presence ?? [])
+      }
+      if (leaveRes?.ok) {
+        const d = await leaveRes.json()
+        setLeave(d)
+      }
+    } finally {
+      setLoading(false)
     }
-    if (leaveRes?.ok) {
-      const d = await leaveRes.json()
-      setLeave(d)
-    }
-    setLoading(false)
   }
 
   function openPanel() {

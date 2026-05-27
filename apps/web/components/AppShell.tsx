@@ -229,7 +229,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'agent', label: 'Agent',          href: '/agent',      hotkey: 'G A', Icon: IconAgent },
       { id: 'trig',  label: 'Triggers',       href: '/trig/rules', hotkey: 'G T', Icon: IconTrig },
       { id: 'mig',   label: 'Import',         href: '/mig/import', hotkey: 'G N', Icon: IconMig },
-      { id: 'ops',   label: 'Ops & Aktivitas', href: '/ops',       hotkey: 'G O', Icon: IconOps },
+      { id: 'ops',   label: 'Ops & Aktivitas', href: '/ops',       hotkey: 'G V', Icon: IconOps },
     ],
   },
 ]
